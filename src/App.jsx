@@ -23,7 +23,7 @@ import Tickets     from './pages/Me/Tickets';
 import { Faq, Reports } from './pages/Me/FaqReports';
 
 // Admin
-import { AdminPanel, AdminUsers, AdminTickets } from './pages/Admin/AdminPanel';
+import { AdminPanel, AdminUsers, AdminUserDetail, AdminIntakes, AdminContentAdmins, AdminBlacklist, AdminTickets } from './pages/Admin/AdminPanel';
 import { ContentAdminPanel, ContentQuestions, ContentSchedule, ContentFaq } from './pages/Admin/ContentAdmin';
 
 // Guards
@@ -73,9 +73,13 @@ export default function App() {
         <Route path="/me/reports"       element={<Reports />} />
 
         {/* پنل ادمین */}
-        <Route path="/admin"         element={<AdminRoute><AdminPanel /></AdminRoute>} />
-        <Route path="/admin/users"   element={<AdminRoute><AdminUsers /></AdminRoute>} />
-        <Route path="/admin/tickets" element={<AdminRoute><AdminTickets /></AdminRoute>} />
+        <Route path="/admin"                element={<AdminRoute><AdminPanel /></AdminRoute>} />
+        <Route path="/admin/users"          element={<AdminRoute><AdminUsers /></AdminRoute>} />
+        <Route path="/admin/users/:uid"     element={<AdminRoute><AdminUserDetail /></AdminRoute>} />
+        <Route path="/admin/intakes"        element={<AdminRoute><AdminIntakes /></AdminRoute>} />
+        <Route path="/admin/content-admins" element={<AdminRoute><AdminContentAdmins /></AdminRoute>} />
+        <Route path="/admin/blacklist"      element={<AdminRoute><AdminBlacklist /></AdminRoute>} />
+        <Route path="/admin/tickets"        element={<AdminRoute><AdminTickets /></AdminRoute>} />
 
         {/* پنل محتوا */}
         <Route path="/admin/content"            element={<ContentAdminRoute><ContentAdminPanel /></ContentAdminRoute>} />
