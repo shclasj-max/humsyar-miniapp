@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api';
 import Header from '../../components/layout/Header';
@@ -86,7 +86,16 @@ export function AdminPanel() {
             )}
             <div className="card" style={{ padding:'0 14px',marginBottom:12 }}>
               <button className="menu-row" onClick={() => navigate('/admin/users')}>
-                <span style={{ fontSize:18,width:24,textAlign:'center' }}>👥</span><div style={{ flex:1 }}><div style={{ fontWeight:600,fontSize:13 }}>مدیریت کاربران</div><div style={{ fontSize:11,color:'var(--txm)' }}>لیست، تأیید، تعلیق</div></div><span style={{ color:'var(--txm)' }}>←</span>
+                <span style={{ fontSize:18,width:24,textAlign:'center' }}>👥</span><div style={{ flex:1 }}><div style={{ fontWeight:600,fontSize:13 }}>مدیریت کاربران</div><div style={{ fontSize:11,color:'var(--txm)' }}>لیست، تأیید، تعلیق، ویرایش</div></div><span style={{ color:'var(--txm)' }}>←</span>
+              </button>
+              <button className="menu-row" onClick={() => navigate('/admin/content-admins')}>
+                <span style={{ fontSize:18,width:24,textAlign:'center' }}>🎓</span><div style={{ flex:1 }}><div style={{ fontWeight:600,fontSize:13 }}>ادمین‌های محتوا</div><div style={{ fontSize:11,color:'var(--txm)' }}>دادن/لغو دسترسی</div></div><span style={{ color:'var(--txm)' }}>←</span>
+              </button>
+              <button className="menu-row" onClick={() => navigate('/admin/intakes')}>
+                <span style={{ fontSize:18,width:24,textAlign:'center' }}>📅</span><div style={{ flex:1 }}><div style={{ fontWeight:600,fontSize:13 }}>مدیریت ورودی‌ها</div><div style={{ fontSize:11,color:'var(--txm)' }}>افزودن/فعال‌سازی ورودی</div></div><span style={{ color:'var(--txm)' }}>←</span>
+              </button>
+              <button className="menu-row" onClick={() => navigate('/admin/blacklist')}>
+                <span style={{ fontSize:18,width:24,textAlign:'center' }}>🚫</span><div style={{ flex:1 }}><div style={{ fontWeight:600,fontSize:13 }}>بلک‌لیست</div><div style={{ fontSize:11,color:'var(--txm)' }}>کاربران بلاک‌شده</div></div><span style={{ color:'var(--txm)' }}>←</span>
               </button>
               <button className="menu-row" onClick={() => navigate('/admin/tickets')}>
                 <span style={{ fontSize:18,width:24,textAlign:'center' }}>🎫</span><div style={{ flex:1 }}><div style={{ fontWeight:600,fontSize:13 }}>مدیریت تیکت‌ها</div><div style={{ fontSize:11,color:'var(--txm)' }}>پاسخ و بستن تیکت</div></div>{stats?.tickets?.open>0&&<span className="badge b-yel">{stats.tickets.open}</span>}<span style={{ color:'var(--txm)' }}>←</span>
@@ -126,15 +135,23 @@ export function AdminPanel() {
 
 /* ── Admin Users ── */
 export function AdminUsers() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const [group, setGroup] = useState('');
+  const [intake, setIntake] = useState('');
   const [loadingId, setLoadingId] = useState(null);
   const qc   = useQueryClient();
   const toast = useUIStore(s => s.toast);
   const isPending = new URLSearchParams(typeof window!=='undefined'?window.location.search:'').get('pending')==='1';
 
+  const params = new URLSearchParams();
+  if (search) params.set('search', search);
+  if (group)  params.set('group', group);
+  if (intake) params.set('intake', intake);
+
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-users', search, isPending],
-    queryFn: () => api.get(isPending ? '/api/admin/users/pending' : `/api/admin/users${search?`?search=${encodeURIComponent(search)}`:''}`).then(r => r.data),
+    queryKey: ['admin-users', search, group, intake, isPending],
+    queryFn: () => api.get(isPending ? '/api/admin/users/pending' : `/api/admin/users${params.toString()?`?${params.toString()}`:''}`).then(r => r.data),
     staleTime: 1000 * 30,
   });
 
@@ -164,7 +181,17 @@ export function AdminUsers() {
     <>
       <Header title={isPending?'⏳ منتظر تأیید':'👥 کاربران'} subtitle={`${users.length} نفر`} />
       <div className="page fade-up">
-        {!isPending && <input className="inp" style={{ marginBottom:12 }} placeholder="🔍 جستجو..." value={search} onChange={e=>setSearch(e.target.value)} />}
+        {!isPending && <>
+          <input className="inp" style={{ marginBottom:8 }} placeholder="🔍 جستجو (نام، شماره دانشجویی)..." value={search} onChange={e=>setSearch(e.target.value)} />
+          <div style={{ display:'flex',gap:7,marginBottom:12 }}>
+            <select className="inp" style={{ flex:1 }} value={group} onChange={e=>setGroup(e.target.value)}>
+              <option value="">همه گروه‌ها</option>
+              <option value="1">گروه ۱</option>
+              <option value="2">گروه ۲</option>
+            </select>
+            <input className="inp" style={{ flex:1 }} placeholder="کد ورودی..." value={intake} onChange={e=>setIntake(e.target.value)} />
+          </div>
+        </>}
         {isLoading ? <SkeletonCard /> : !users.length ? <div className="empty"><div style={{ fontSize:36,marginBottom:10 }}>👥</div><div>کاربری پیدا نشد</div></div> :
           users.map(u => (
             <div key={u.id} className="card" style={{ marginBottom:10,borderColor:isPending?'rgba(245,158,11,.3)':u.suspended?'rgba(239,68,68,.2)':'var(--bd)' }}>
@@ -188,10 +215,286 @@ export function AdminUsers() {
                 ) : (
                   <>
                     <button className="btn btn-dark" style={{ flex:1,fontSize:11,padding:'6px 4px' }} onClick={() => suspend(u.id, u.suspended)}>{u.suspended?'🔓 رفع تعلیق':'⛔ تعلیق'}</button>
-                    <button className="btn btn-dark" style={{ flex:1,fontSize:11,padding:'6px 4px' }} onClick={() => toast('ویرایش کاربر','info')}>✏️ ویرایش</button>
+                    <button className="btn btn-dark" style={{ flex:1,fontSize:11,padding:'6px 4px' }} onClick={() => navigate(`/admin/users/${u.id}`)}>✏️ جزئیات</button>
                   </>
                 )}
               </div>
+            </div>
+          ))
+        }
+      </div>
+    </>
+  );
+}
+
+/* ── Admin User Detail (ویرایش کامل) ── */
+export function AdminUserDetail() {
+  const navigate = useNavigate();
+  const { uid } = useParams();
+  const qc = useQueryClient();
+  const toast = useUIStore(s => s.toast);
+  const [form, setForm] = useState(null);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-user-detail', uid],
+    queryFn: () => api.get(`/api/admin/users/${uid}`).then(r => r.data.user),
+    staleTime: 1000 * 10,
+  });
+
+  const u = form || data;
+
+  function invalidate() {
+    qc.invalidateQueries({ queryKey: ['admin-users'] });
+    qc.invalidateQueries({ queryKey: ['admin-user-detail', uid] });
+    qc.invalidateQueries({ queryKey: ['admin-stats'] });
+  }
+
+  const saveMut = useMutation({
+    mutationFn: () => api.patch(`/api/admin/users/${uid}`, {
+      name: u.name, group: u.group, intake: u.intake, student_id: u.student_id,
+    }).then(r => r.data),
+    onSuccess: () => { hapticNotif('success'); toast('✅ تغییرات ذخیره شد','success'); invalidate(); },
+    onError: () => toast('خطا در ذخیره','error'),
+  });
+
+  const suspendMut = useMutation({
+    mutationFn: () => api.post(`/api/admin/users/${uid}/suspend`).then(r => r.data),
+    onSuccess: (d) => { toast(d.suspended?'⛔ تعلیق شد':'✅ رفع تعلیق شد','info'); invalidate(); },
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: () => api.post(`/api/admin/users/${uid}/delete`).then(r => r.data),
+    onSuccess: () => { toast('🗑 کاربر حذف شد','success'); navigate('/admin/users'); },
+    onError: (e) => toast(e.response?.data?.detail || 'خطا','error'),
+  });
+
+  const blockMut = useMutation({
+    mutationFn: () => api.post(`/api/admin/users/${uid}/block`).then(r => r.data),
+    onSuccess: () => { toast('🚫 کاربر بلاک شد','success'); navigate('/admin/users'); },
+    onError: (e) => toast(e.response?.data?.detail || 'خطا','error'),
+  });
+
+  if (isLoading || !u) return (<><Header title="جزئیات کاربر" /><div className="page"><SkeletonCard /></div></>);
+
+  return (
+    <>
+      <Header title={`👤 ${u.name || 'کاربر'}`} right={<button className="btn btn-dark" style={{ fontSize:11,padding:'5px 10px' }} onClick={() => navigate('/admin/users')}>← برگشت</button>} />
+      <div className="page fade-up">
+        <div className="grid2" style={{ marginBottom:14 }}>
+          <div className="card" style={{ textAlign:'center',padding:'11px 7px' }}>
+            <div style={{ fontSize:18,fontWeight:800,color:'var(--acc)' }}>{u.total_answers ?? 0}</div>
+            <div style={{ fontSize:9.5,color:'var(--txm)' }}>سوال پاسخ‌داده</div>
+          </div>
+          <div className="card" style={{ textAlign:'center',padding:'11px 7px' }}>
+            <div style={{ fontSize:18,fontWeight:800,color:'var(--ok)' }}>{u.correct_answers ?? 0}</div>
+            <div style={{ fontSize:9.5,color:'var(--txm)' }}>پاسخ صحیح</div>
+          </div>
+        </div>
+
+        <div className="card" style={{ marginBottom:12 }}>
+          <div className="sec-title">✏️ ویرایش اطلاعات</div>
+          <div style={{ fontSize:11,color:'var(--txm)',marginBottom:4 }}>نام</div>
+          <input className="inp" style={{ marginBottom:10 }} value={u.name||''} onChange={e=>setForm({...u,name:e.target.value})} />
+          <div style={{ fontSize:11,color:'var(--txm)',marginBottom:4 }}>شماره دانشجویی</div>
+          <input className="inp" style={{ marginBottom:10 }} value={u.student_id||''} onChange={e=>setForm({...u,student_id:e.target.value})} />
+          <div style={{ fontSize:11,color:'var(--txm)',marginBottom:4 }}>گروه</div>
+          <div style={{ display:'flex',gap:8,marginBottom:10 }}>
+            {['1','2'].map(g => (
+              <button key={g} onClick={() => setForm({...u,group:g})}
+                style={{ flex:1,padding:'8px',borderRadius:'var(--r-md)',border:`1px solid ${u.group===g?'var(--acc)':'var(--bd)'}`,background:u.group===g?'var(--acc-glow)':'var(--elev)',color:u.group===g?'var(--acc)':'var(--tx)' }}>
+                گروه {g}
+              </button>
+            ))}
+          </div>
+          <div style={{ fontSize:11,color:'var(--txm)',marginBottom:4 }}>کد ورودی</div>
+          <input className="inp" style={{ marginBottom:10 }} value={u.intake||''} onChange={e=>setForm({...u,intake:e.target.value})} />
+          <button className="btn btn-p btn-full" onClick={() => saveMut.mutate()} disabled={saveMut.isPending}>
+            {saveMut.isPending ? <Spinner size={14}/> : '💾 ذخیره تغییرات'}
+          </button>
+        </div>
+
+        <div className="card" style={{ marginBottom:12 }}>
+          <div className="sec-title">⚠️ عملیات حساس</div>
+          <button className="btn btn-dark btn-full" style={{ marginBottom:8 }} onClick={() => suspendMut.mutate()}>
+            {u.suspended ? '🔓 رفع تعلیق' : '⛔ تعلیق موقت'}
+          </button>
+          <button className="btn btn-dark btn-full" style={{ marginBottom:8 }}
+            onClick={() => { if (confirm(`مطمئنی می‌خوای ${u.name} رو بلاک کنی؟ این کاربر دیگه نمی‌تونه دوباره ثبت‌نام کنه.`)) blockMut.mutate(); }}>
+            🚫 بلاک کامل (بدون امکان ثبت‌نام مجدد)
+          </button>
+          <button className="btn btn-d btn-full"
+            onClick={() => { if (confirm(`مطمئنی می‌خوای ${u.name} رو کامل حذف کنی؟`)) deleteMut.mutate(); }}>
+            🗑 حذف کامل کاربر
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ── مدیریت ورودی‌ها ── */
+export function AdminIntakes() {
+  const qc = useQueryClient();
+  const toast = useUIStore(s => s.toast);
+  const [code, setCode] = useState('');
+  const [label, setLabel] = useState('');
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-intakes'],
+    queryFn: () => api.get('/api/admin/intakes').then(r => r.data.intakes),
+    staleTime: 1000 * 30,
+  });
+
+  function invalidate() { qc.invalidateQueries({ queryKey: ['admin-intakes'] }); }
+
+  const addMut = useMutation({
+    mutationFn: () => api.post('/api/admin/intakes', { code, label }).then(r => r.data),
+    onSuccess: () => { hapticNotif('success'); toast('✅ ورودی اضافه شد','success'); setCode(''); setLabel(''); invalidate(); },
+    onError: (e) => toast(e.response?.data?.detail || 'خطا','error'),
+  });
+
+  const toggleMut = useMutation({
+    mutationFn: (c) => api.post(`/api/admin/intakes/${c}/toggle`).then(r => r.data),
+    onSuccess: invalidate,
+  });
+
+  const delMut = useMutation({
+    mutationFn: (c) => api.delete(`/api/admin/intakes/${c}`).then(r => r.data),
+    onSuccess: () => { toast('🗑 حذف شد','info'); invalidate(); },
+  });
+
+  return (
+    <>
+      <Header title="📅 مدیریت ورودی‌ها" />
+      <div className="page fade-up">
+        <div className="card" style={{ marginBottom:14 }}>
+          <div className="sec-title">➕ افزودن ورودی جدید</div>
+          <input className="inp" style={{ marginBottom:8 }} placeholder="کد (مثال: bahman_1404)" value={code} onChange={e=>setCode(e.target.value)} />
+          <input className="inp" style={{ marginBottom:10 }} placeholder="برچسب (مثال: بهمن ۱۴۰۴)" value={label} onChange={e=>setLabel(e.target.value)} />
+          <button className="btn btn-p btn-full" disabled={!code.trim()||!label.trim()||addMut.isPending} onClick={() => addMut.mutate()}>
+            {addMut.isPending ? <Spinner size={14}/> : '➕ افزودن'}
+          </button>
+        </div>
+        {isLoading ? <SkeletonCard /> : !data?.length ? <div className="empty"><div style={{ fontSize:36,marginBottom:10 }}>📅</div><div>هنوز ورودی‌ای تعریف نشده</div></div> :
+          data.map(i => (
+            <div key={i.code} className="card" style={{ marginBottom:9 }}>
+              <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6 }}>
+                <div>
+                  <div style={{ fontWeight:700,fontSize:13.5 }}>{i.label}</div>
+                  <div style={{ fontSize:10.5,color:'var(--txm)' }}>کد: {i.code} • {i.total} دانشجو</div>
+                </div>
+                <span className={`badge ${i.active?'b-grn':'b-red'}`}>{i.active?'فعال':'غیرفعال'}</span>
+              </div>
+              <div style={{ display:'flex',gap:7 }}>
+                <button className="btn btn-dark" style={{ flex:1,fontSize:11,padding:'6px 4px' }} onClick={() => toggleMut.mutate(i.code)}>
+                  {i.active?'غیرفعال کردن':'فعال کردن'}
+                </button>
+                <button className="btn btn-d" style={{ flex:1,fontSize:11,padding:'6px 4px' }}
+                  onClick={() => { if (confirm(`ورودی «${i.label}» حذف شود؟`)) delMut.mutate(i.code); }}>حذف</button>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+    </>
+  );
+}
+
+/* ── ادمین‌های محتوا ── */
+export function AdminContentAdmins() {
+  const qc = useQueryClient();
+  const toast = useUIStore(s => s.toast);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [q, setQ] = useState('');
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-content-admins'],
+    queryFn: () => api.get('/api/admin/content-admins').then(r => r.data.admins),
+    staleTime: 1000 * 30,
+  });
+
+  const { data: students } = useQuery({
+    queryKey: ['admin-students', q],
+    queryFn: () => api.get(`/api/admin/students${q?`?q=${encodeURIComponent(q)}`:''}`).then(r => r.data.students),
+    enabled: pickerOpen,
+    staleTime: 1000 * 10,
+  });
+
+  function invalidate() { qc.invalidateQueries({ queryKey: ['admin-content-admins'] }); }
+
+  const grantMut = useMutation({
+    mutationFn: (uid) => api.post(`/api/admin/content-admins/${uid}`).then(r => r.data),
+    onSuccess: () => { hapticNotif('success'); toast('✅ دسترسی داده شد','success'); setPickerOpen(false); invalidate(); },
+  });
+
+  const revokeMut = useMutation({
+    mutationFn: (uid) => api.delete(`/api/admin/content-admins/${uid}`).then(r => r.data),
+    onSuccess: () => { toast('↩️ دسترسی لغو شد','info'); invalidate(); },
+  });
+
+  return (
+    <>
+      <Header title="🎓 ادمین‌های محتوا" subtitle={`${data?.length||0} نفر`} />
+      <div className="page fade-up">
+        {!pickerOpen ? (
+          <button className="btn btn-p btn-full" style={{ marginBottom:14 }} onClick={() => setPickerOpen(true)}>➕ دادن دسترسی جدید</button>
+        ) : (
+          <div className="card" style={{ marginBottom:14 }}>
+            <input className="inp" style={{ marginBottom:8 }} placeholder="جستجوی دانشجو..." value={q} onChange={e=>setQ(e.target.value)} autoFocus />
+            <div style={{ maxHeight:240,overflowY:'auto' }}>
+              {students?.map(s => (
+                <button key={s.id} className="menu-row" style={{ width:'100%' }} onClick={() => grantMut.mutate(s.id)}>
+                  <span style={{ flex:1,textAlign:'right' }}>👤 {s.name} <span style={{ color:'var(--txm)',fontSize:11 }}>گروه {s.group}</span></span>
+                </button>
+              ))}
+              {students && !students.length && <div style={{ fontSize:12,color:'var(--txm)',textAlign:'center',padding:10 }}>دانشجویی پیدا نشد</div>}
+            </div>
+            <button className="btn btn-dark btn-full" style={{ marginTop:8 }} onClick={() => setPickerOpen(false)}>لغو</button>
+          </div>
+        )}
+
+        {isLoading ? <SkeletonCard /> : !data?.length ? <div className="empty"><div style={{ fontSize:36,marginBottom:10 }}>🎓</div><div>هنوز ادمین محتوایی وجود ندارد</div></div> :
+          data.map(a => (
+            <div key={a.id} className="card" style={{ marginBottom:9,display:'flex',justifyContent:'space-between',alignItems:'center' }}>
+              <span style={{ fontWeight:600,fontSize:13.5 }}>🎓 {a.name}</span>
+              <button className="btn btn-d" style={{ fontSize:11,padding:'6px 10px' }} onClick={() => revokeMut.mutate(a.id)}>🗑 لغو دسترسی</button>
+            </div>
+          ))
+        }
+      </div>
+    </>
+  );
+}
+
+/* ── بلک‌لیست ── */
+export function AdminBlacklist() {
+  const qc = useQueryClient();
+  const toast = useUIStore(s => s.toast);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-blacklist'],
+    queryFn: () => api.get('/api/admin/blacklist').then(r => r.data.blacklist),
+    staleTime: 1000 * 30,
+  });
+
+  const unblockMut = useMutation({
+    mutationFn: (uid) => api.post(`/api/admin/users/${uid}/unblock`).then(r => r.data),
+    onSuccess: () => { toast('✅ از بلک‌لیست خارج شد','success'); qc.invalidateQueries({ queryKey: ['admin-blacklist'] }); },
+    onError: (e) => toast(e.response?.data?.detail || 'خطا','error'),
+  });
+
+  return (
+    <>
+      <Header title="🚫 بلک‌لیست" subtitle={`${data?.length||0} نفر`} />
+      <div className="page fade-up">
+        {isLoading ? <SkeletonCard /> : !data?.length ? <div className="empty"><div style={{ fontSize:36,marginBottom:10 }}>🚫</div><div>بلک‌لیست خالیه</div></div> :
+          data.map(b => (
+            <div key={b.id} className="card" style={{ marginBottom:9,display:'flex',justifyContent:'space-between',alignItems:'center' }}>
+              <div>
+                <div style={{ fontWeight:600,fontSize:13.5 }}>{b.name || `آیدی ${b.id}`}</div>
+                <div style={{ fontSize:10.5,color:'var(--txm)' }}>بلاک‌شده توسط {b.blocked_by_name || '—'} • {b.blocked_at}</div>
+              </div>
+              <button className="btn btn-p" style={{ fontSize:11,padding:'6px 10px' }} onClick={() => unblockMut.mutate(b.id)}>✅ رفع بلاک</button>
             </div>
           ))
         }
