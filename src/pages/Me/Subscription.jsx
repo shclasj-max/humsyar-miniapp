@@ -1,4 +1,7 @@
-import { useState } from 'react';
+import {
+  useMemo,
+  useState,
+} from 'react';
 
 import {
   useMutation,
@@ -45,15 +48,56 @@ const money = (value) => {
 };
 
 
+const PAYMENT_STATUS = {
+  pending: [
+    'در انتظار بررسی',
+    'b-yel',
+    '⏳',
+  ],
+
+  approved: [
+    'تأییدشده',
+    'b-grn',
+    '✅',
+  ],
+
+  rejected: [
+    'ردشده',
+    'b-red',
+    '❌',
+  ],
+};
+
+
 export default function Subscription() {
   const [
-    selected,
-    setSelected,
+    selectedId,
+    setSelectedId,
   ] = useState(null);
 
   const [
-    requestResult,
-    setRequestResult,
+    discountCode,
+    setDiscountCode,
+  ] = useState('');
+
+  const [
+    discount,
+    setDiscount,
+  ] = useState(null);
+
+  const [
+    receipt,
+    setReceipt,
+  ] = useState(null);
+
+  const [
+    accepted,
+    setAccepted,
+  ] = useState(false);
+
+  const [
+    result,
+    setResult,
   ] = useState(null);
 
   const toast = useUIStore(
@@ -85,61 +129,8 @@ export default function Subscription() {
         ),
 
     staleTime:
-      3 * 60 * 1000,
+      2 * 60 * 1000,
   });
-
-
-  const buyMutation =
-    useMutation({
-      mutationFn: (
-        planId
-      ) =>
-        api.post(
-          '/api/subscription/buy',
-          {
-            plan_id:
-              planId,
-          }
-        ),
-
-      onSuccess: async (
-        response
-      ) => {
-        hapticNotif(
-          'success'
-        );
-
-        setRequestResult(
-          response.data
-        );
-
-        setSelected(null);
-
-        toast(
-          'درخواست خرید با موفقیت ثبت شد ✅',
-          'success'
-        );
-
-        await queryClient
-          .invalidateQueries({
-            queryKey:
-              ['sub-status'],
-          });
-      },
-
-      onError: (error) => {
-        hapticNotif('error');
-
-        toast(
-          error?.response
-            ?.data
-            ?.detail ||
-            'ثبت درخواست خرید انجام نشد',
-
-          'error'
-        );
-      },
-    });
 
 
   const plans =
@@ -150,54 +141,227 @@ export default function Subscription() {
       : [];
 
 
+  const payments =
+    Array.isArray(
+      data?.payments
+    )
+      ? data.payments
+      : [];
+
+
+  const selectedPlan =
+    plans.find(
+      (item) =>
+        item.id === selectedId
+    ) || null;
+
+
+  const finalPrice =
+    discount?.final_price ??
+    selectedPlan?.price ??
+    0;
+
+
+  const free =
+    Boolean(selectedPlan) &&
+    number(finalPrice) === 0;
+
+
   const pending =
     Boolean(
-      data?.has_pending_payment
+      data
+        ?.has_pending_payment
     );
 
 
-  const active =
-    Boolean(
-      data?.active
+  const discountMutation =
+    useMutation({
+      mutationFn: () =>
+        api.post(
+          '/api/subscription/discount',
+
+          {
+            plan_id:
+              selectedId,
+
+            code:
+              discountCode.trim(),
+          }
+        ),
+
+      onSuccess: (
+        response
+      ) => {
+        hapticNotif(
+          'success'
+        );
+
+        setDiscount(
+          response.data
+        );
+
+        setDiscountCode(
+          response.data.code ||
+          discountCode
+            .trim()
+            .toUpperCase()
+        );
+
+        toast(
+          `${
+            response.data.percent
+          }٪ تخفیف اعمال شد ✅`,
+
+          'success'
+        );
+      },
+
+      onError: (error) => {
+        setDiscount(null);
+
+        toast(
+          error?.response
+            ?.data
+            ?.detail ||
+            'کد تخفیف معتبر نیست',
+
+          'error'
+        );
+      },
+    });
+
+
+  const buyMutation =
+    useMutation({
+      mutationFn: () => {
+        const body =
+          new FormData();
+
+        body.append(
+          'plan_id',
+          selectedId
+        );
+
+        body.append(
+          'discount_code',
+          discount?.code ||
+          ''
+        );
+
+        if (receipt) {
+          body.append(
+            'receipt',
+            receipt
+          );
+        }
+
+        return api.post(
+          '/api/subscription/buy',
+
+          body,
+
+          {
+            timeout:
+              120_000,
+          }
+        );
+      },
+
+      onSuccess: async (
+        response
+      ) => {
+        hapticNotif(
+          'success'
+        );
+
+        setResult(
+          response.data
+        );
+
+        setSelectedId(null);
+        setDiscountCode('');
+        setDiscount(null);
+        setReceipt(null);
+        setAccepted(false);
+
+        toast(
+          response.data
+            ?.message ||
+            'درخواست ثبت شد ✅',
+
+          'success'
+        );
+
+        await queryClient
+          .invalidateQueries({
+            queryKey:
+              ['sub-status'],
+          });
+      },
+
+      onError: (error) =>
+        toast(
+          error?.response
+            ?.data
+            ?.detail ||
+            'ثبت رسید انجام نشد',
+
+          'error'
+        ),
+    });
+
+
+  const selectPlan = (plan) => {
+    haptic('light');
+
+    setSelectedId(
+      plan.id
     );
 
-
-  const daysLeft =
-    number(
-      data?.days_left
-    );
-
-
-  const confirmBuy = () => {
-    if (
-      !selected ||
-      pending
-    ) {
-      return;
-    }
-
-    const plan =
-      plans.find(
-        (item) =>
-          item.id === selected
-      );
-
-    const accepted =
-      window.confirm(
-        `درخواست خرید «${
-          plan?.name ||
-          'اشتراک'
-        }» با مبلغ ${
-          money(plan?.price)
-        } ثبت شود؟`
-      );
-
-    if (accepted) {
-      buyMutation.mutate(
-        selected
-      );
-    }
+    setDiscountCode('');
+    setDiscount(null);
+    setReceipt(null);
+    setAccepted(false);
+    setResult(null);
   };
+
+
+  const receiptPreview =
+    useMemo(
+      () =>
+        receipt
+          ? URL.createObjectURL(
+              receipt
+            )
+          : null,
+
+      [receipt]
+    );
+
+
+  const canSubmit =
+    Boolean(selectedPlan) &&
+    accepted &&
+    !pending &&
+    (
+      free ||
+      Boolean(receipt)
+    );
+
+
+  if (isLoading) {
+    return (
+      <>
+        <Header title="اشتراک ویژه" />
+
+        <main className="page">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </main>
+      </>
+    );
+  }
 
 
   return (
@@ -205,23 +369,12 @@ export default function Subscription() {
       <Header
         title="اشتراک ویژه"
         subtitle={
-          'پلن‌ها و دسترسی کامل'
+          'پلن، پرداخت و تاریخچه رسیدها'
         }
       />
 
       <main className="page fade-up">
-        {isLoading ? (
-          <div
-            style={{
-              display: 'grid',
-              gap: 10,
-            }}
-          >
-            <SkeletonCard />
-            <SkeletonCard />
-            <SkeletonCard />
-          </div>
-        ) : isError ? (
+        {isError ? (
           <div className="empty card">
             دریافت اطلاعات اشتراک انجام
             نشد.
@@ -242,8 +395,11 @@ export default function Subscription() {
         ) : (
           <div
             style={{
-              display: 'grid',
-              gap: 14,
+              display:
+                'grid',
+
+              gap:
+                14,
             }}
           >
             <section
@@ -252,64 +408,61 @@ export default function Subscription() {
               }
               style={{
                 padding:
-                  19,
+                  18,
 
                 background:
-                  active
-                    ? 'linear-gradient(145deg,rgba(16,185,129,.16),rgba(16,24,39,.95) 55%,rgba(34,211,238,.07))'
-                    : 'linear-gradient(145deg,rgba(29,78,216,.22),rgba(16,24,39,.95) 55%,rgba(139,92,246,.08))',
+                  data?.active
+                    ? 'linear-gradient(145deg,rgba(16,185,129,.15),rgba(16,24,39,.95))'
+                    : 'linear-gradient(145deg,rgba(29,78,216,.2),rgba(16,24,39,.95) 55%,rgba(139,92,246,.08))',
               }}
             >
               <div
                 style={{
-                  display: 'flex',
+                  display:
+                    'flex',
 
                   alignItems:
                     'center',
 
                   gap:
-                    14,
+                    13,
                 }}
               >
-                <div
+                <span
                   style={{
                     display:
                       'grid',
 
                     width:
-                      62,
+                      58,
 
                     height:
-                      62,
+                      58,
 
                     placeItems:
                       'center',
 
                     borderRadius:
-                      19,
+                      18,
 
                     background:
-                      active
-                        ? 'rgba(16,185,129,.14)'
+                      data?.active
+                        ? 'rgba(16,185,129,.15)'
                         : 'var(--grad-brand)',
 
-                    boxShadow:
-                      active
-                        ? '0 8px 26px rgba(16,185,129,.18)'
-                        : 'var(--shd-glow)',
-
                     fontSize:
-                      29,
+                      28,
                   }}
                 >
-                  {active
+                  {data?.active
                     ? '💎'
                     : '🚀'}
-                </div>
+                </span>
 
                 <div
                   style={{
-                    flex: 1,
+                    flex:
+                      1,
                   }}
                 >
                   <div
@@ -318,37 +471,37 @@ export default function Subscription() {
                         'var(--txm)',
 
                       fontSize:
-                        10.5,
+                        10,
                     }}
                   >
-                    {active
+                    {data?.active
                       ? 'اشتراک فعال شما'
                       : 'ارتقای حساب هامزیار'}
                   </div>
 
-                  <h2
+                  <b
                     style={{
+                      display:
+                        'block',
+
                       color:
-                        active
+                        data?.active
                           ? 'var(--ok)'
                           : 'var(--tx)',
 
                       fontSize:
-                        18,
-
-                      fontWeight:
-                        900,
+                        17,
 
                       marginTop:
                         2,
                     }}
                   >
-                    {active
-                      ? data
-                          ?.plan_name ||
+                    {data?.active
+                      ? data.plan_name ||
                         'اشتراک ویژه'
+
                       : 'دسترسی کامل به امکانات'}
-                  </h2>
+                  </b>
 
                   <div
                     style={{
@@ -356,89 +509,32 @@ export default function Subscription() {
                         'var(--tx2)',
 
                       fontSize:
-                        10.5,
+                        9.5,
 
                       marginTop:
-                        4,
+                        3,
                     }}
                   >
-                    {active
-                      ? `${daysLeft} روز باقی‌مانده ${
-                          data?.expires
-                            ? `• تا ${data.expires}`
-                            : ''
+                    {data?.active
+                      ? `${
+                          number(
+                            data.days_left
+                          )
+                        } روز باقی‌مانده • تا ${
+                          data.expires ||
+                          '—'
                         }`
-                      : 'تمرین، منابع، هوش مصنوعی و قابلیت‌های ویژه'}
+
+                      : 'پلن مناسب را انتخاب و رسید پرداخت را ارسال کنید.'}
                   </div>
                 </div>
 
-                {active && (
+                {data?.active && (
                   <span className="badge b-grn">
                     فعال
                   </span>
                 )}
               </div>
-
-              {active && (
-                <div
-                  style={{
-                    marginTop:
-                      14,
-                  }}
-                >
-                  <div
-                    style={{
-                      display:
-                        'flex',
-
-                      justifyContent:
-                        'space-between',
-
-                      marginBottom:
-                        6,
-
-                      color:
-                        'var(--txm)',
-
-                      fontSize:
-                        9.5,
-                    }}
-                  >
-                    <span>
-                      زمان باقی‌مانده
-                    </span>
-
-                    <span>
-                      {daysLeft} روز
-                    </span>
-                  </div>
-
-                  <div className="pbar">
-                    <div
-                      className="pbar-f"
-                      style={{
-                        width:
-                          `${
-                            Math.min(
-                              100,
-
-                              (
-                                daysLeft /
-                                Math.max(
-                                  daysLeft,
-                                  30
-                                )
-                              ) * 100
-                            )
-                          }%`,
-
-                        background:
-                          'var(--ok)',
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
             </section>
 
 
@@ -449,23 +545,20 @@ export default function Subscription() {
                   display:
                     'flex',
 
-                  alignItems:
-                    'center',
-
                   gap:
-                    11,
+                    10,
 
                   borderColor:
-                    'rgba(245,158,11,.28)',
+                    'rgba(245,158,11,.27)',
 
                   background:
-                    'linear-gradient(145deg,rgba(245,158,11,.09),rgba(16,24,39,.95))',
+                    'rgba(245,158,11,.07)',
                 }}
               >
                 <span
                   style={{
                     fontSize:
-                      25,
+                      24,
                   }}
                 >
                   ⏳
@@ -476,13 +569,10 @@ export default function Subscription() {
                     style={{
                       color:
                         'var(--warn)',
-
-                      fontSize:
-                        12.5,
                     }}
                   >
-                    درخواست شما در انتظار
-                    بررسی است
+                    یک رسید در انتظار بررسی
+                    دارید
                   </b>
 
                   <div
@@ -493,32 +583,29 @@ export default function Subscription() {
                       fontSize:
                         9.5,
 
-                      lineHeight:
-                        1.6,
-
                       marginTop:
                         3,
                     }}
                   >
-                    پس از بررسی رسید توسط
-                    مدیریت، اشتراک به‌صورت
-                    خودکار فعال می‌شود.
+                    تا تعیین وضعیت این رسید،
+                    امکان ارسال رسید جدید
+                    وجود ندارد.
                   </div>
                 </div>
               </section>
             )}
 
 
-            {requestResult && (
+            {result && (
               <section
                 className="card"
                 style={{
                   borderColor:
-                    'rgba(16,185,129,.25)',
+                    'rgba(16,185,129,.27)',
                 }}
               >
                 <div className="sec-title">
-                  ✅ درخواست ثبت شد
+                  ✅ عملیات موفق
                 </div>
 
                 <div
@@ -527,153 +614,30 @@ export default function Subscription() {
                       'var(--tx2)',
 
                     fontSize:
-                      11,
+                      10.5,
 
                     lineHeight:
                       1.8,
                   }}
                 >
-                  {requestResult.message ||
-                    'درخواست خرید برای مدیریت ارسال شد.'}
+                  {result.message}
                 </div>
 
-                <div
-                  style={{
-                    display:
-                      'flex',
+                {result.payment_id && (
+                  <span
+                    className="badge b-gray"
+                    style={{
+                      marginTop:
+                        7,
+                    }}
+                  >
+                    شناسه{' '}
 
-                    flexWrap:
-                      'wrap',
-
-                    gap:
-                      6,
-
-                    marginTop:
-                      9,
-                  }}
-                >
-                  <span className="badge b-acc">
-                    {requestResult
-                      .plan_name}
+                    {result.payment_id}
                   </span>
-
-                  <span className="badge b-grn">
-                    {money(
-                      requestResult.price
-                    )}
-                  </span>
-
-                  {requestResult
-                    .payment_id && (
-                    <span className="badge b-gray">
-                      شناسه{' '}
-
-                      {
-                        requestResult
-                          .payment_id
-                      }
-                    </span>
-                  )}
-                </div>
+                )}
               </section>
             )}
-
-
-            <section>
-              <div className="sec-title">
-                ✨ امکانات اشتراک ویژه
-              </div>
-
-              <div className="grid2">
-                {[
-                  [
-                    '🧪',
-
-                    'تمرین نامحدود',
-
-                    'بانک سؤال و آزمون',
-                  ],
-
-                  [
-                    '🤖',
-
-                    'هوشیار',
-
-                    'دستیار آموزشی',
-                  ],
-
-                  [
-                    '📚',
-
-                    'همه منابع',
-
-                    'جزوه و رفرنس',
-                  ],
-
-                  [
-                    '📊',
-
-                    'تحلیل پیشرفته',
-
-                    'آمار و نقاط ضعف',
-                  ],
-                ].map(
-                  ([
-                    icon,
-                    title,
-                    description,
-                  ]) => (
-                    <div
-                      key={title}
-                      className="card"
-                      style={{
-                        padding:
-                          12,
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize:
-                            21,
-                        }}
-                      >
-                        {icon}
-                      </div>
-
-                      <b
-                        style={{
-                          display:
-                            'block',
-
-                          fontSize:
-                            11.5,
-
-                          marginTop:
-                            5,
-                        }}
-                      >
-                        {title}
-                      </b>
-
-                      <div
-                        style={{
-                          color:
-                            'var(--txm)',
-
-                          fontSize:
-                            9,
-
-                          marginTop:
-                            2,
-                        }}
-                      >
-                        {description}
-                      </div>
-                    </div>
-                  )
-                )}
-              </div>
-            </section>
 
 
             <section>
@@ -681,38 +645,26 @@ export default function Subscription() {
                 💳 انتخاب پلن
               </div>
 
-              {plans.length === 0 ? (
-                <div className="empty card">
-                  در حال حاضر پلن فعالی
-                  ارائه نشده است.
-                </div>
-              ) : (
-                <div
-                  style={{
-                    display:
-                      'grid',
+              <div
+                style={{
+                  display:
+                    'grid',
 
-                    gap:
-                      9,
-                  }}
-                >
-                  {plans.map(
-                    (
-                      plan,
-                      index
-                    ) => {
+                  gap:
+                    9,
+                }}
+              >
+                {plans.length ===
+                0 ? (
+                  <div className="empty card">
+                    پلن فعالی وجود ندارد.
+                  </div>
+                ) : (
+                  plans.map(
+                    (plan) => {
                       const chosen =
-                        selected ===
+                        selectedId ===
                         plan.id;
-
-                      const popular =
-                        plans.length >
-                          1 &&
-                        index ===
-                          Math.floor(
-                            plans.length /
-                              2
-                          );
 
                       return (
                         <button
@@ -721,24 +673,26 @@ export default function Subscription() {
                           className={
                             'card card-tap'
                           }
-                          onClick={() => {
-                            haptic();
-
-                            setSelected(
-                              plan.id
-                            );
-                          }}
                           disabled={
-                            pending ||
-                            buyMutation
-                              .isPending
+                            pending
+                          }
+                          onClick={() =>
+                            selectPlan(
+                              plan
+                            )
                           }
                           style={{
+                            display:
+                              'flex',
+
+                            alignItems:
+                              'center',
+
                             width:
                               '100%',
 
-                            padding:
-                              15,
+                            gap:
+                              11,
 
                             textAlign:
                               'right',
@@ -746,9 +700,7 @@ export default function Subscription() {
                             borderColor:
                               chosen
                                 ? 'var(--acc)'
-                                : popular
-                                  ? 'rgba(139,92,246,.3)'
-                                  : 'var(--bd)',
+                                : 'var(--bd)',
 
                             boxShadow:
                               chosen
@@ -761,6 +713,595 @@ export default function Subscription() {
                                 : undefined,
                           }}
                         >
+                          <span
+                            style={{
+                              display:
+                                'grid',
+
+                              width:
+                                47,
+
+                              height:
+                                47,
+
+                              placeItems:
+                                'center',
+
+                              borderRadius:
+                                15,
+
+                              background:
+                                chosen
+                                  ? 'var(--grad-brand)'
+                                  : 'var(--elev)',
+
+                              fontSize:
+                                21,
+                            }}
+                          >
+                            {chosen
+                              ? '✓'
+                              : '💠'}
+                          </span>
+
+                          <span
+                            style={{
+                              flex:
+                                1,
+                            }}
+                          >
+                            <b>
+                              {plan.name ||
+                                'پلن اشتراک'}
+                            </b>
+
+                            <span
+                              style={{
+                                display:
+                                  'block',
+
+                                color:
+                                  'var(--txm)',
+
+                                fontSize:
+                                  9.5,
+
+                                marginTop:
+                                  3,
+                              }}
+                            >
+                              {number(
+                                plan.days
+                              )}{' '}
+
+                              روز دسترسی
+                            </span>
+                          </span>
+
+                          <b
+                            style={{
+                              color:
+                                chosen
+                                  ? 'var(--acc2)'
+                                  : 'var(--tx)',
+
+                              fontSize:
+                                12.5,
+                            }}
+                          >
+                            {money(
+                              plan.price
+                            )}
+                          </b>
+                        </button>
+                      );
+                    }
+                  )
+                )}
+              </div>
+            </section>
+
+
+            {selectedPlan &&
+              !pending && (
+              <section
+                className={
+                  'card card-glow'
+                }
+                style={{
+                  display:
+                    'grid',
+
+                  gap:
+                    10,
+                }}
+              >
+                <div className="sec-title">
+                  🧾 تکمیل پرداخت
+                </div>
+
+                <div
+                  style={{
+                    padding:
+                      '10px 11px',
+
+                    background:
+                      'rgba(100,116,139,.08)',
+
+                    borderRadius:
+                      12,
+                  }}
+                >
+                  <div
+                    style={{
+                      display:
+                        'flex',
+
+                      justifyContent:
+                        'space-between',
+
+                      fontSize:
+                        10.5,
+                    }}
+                  >
+                    <span>
+                      پلن
+                    </span>
+
+                    <b>
+                      {selectedPlan.name}
+                    </b>
+                  </div>
+
+                  <div
+                    style={{
+                      display:
+                        'flex',
+
+                      justifyContent:
+                        'space-between',
+
+                      marginTop:
+                        7,
+
+                      fontSize:
+                        10.5,
+                    }}
+                  >
+                    <span>
+                      مبلغ
+                    </span>
+
+                    <b>
+                      {discount ? (
+                        <>
+                          <s
+                            style={{
+                              color:
+                                'var(--txm)',
+                            }}
+                          >
+                            {money(
+                              selectedPlan
+                                .price
+                            )}
+                          </s>
+
+                          {' '}
+
+                          <span
+                            style={{
+                              color:
+                                'var(--ok)',
+                            }}
+                          >
+                            {money(
+                              finalPrice
+                            )}
+                          </span>
+                        </>
+                      ) : (
+                        money(
+                          selectedPlan
+                            .price
+                        )
+                      )}
+                    </b>
+                  </div>
+                </div>
+
+
+                <div
+                  style={{
+                    display:
+                      'flex',
+
+                    gap:
+                      7,
+                  }}
+                >
+                  <input
+                    className="inp"
+                    value={
+                      discountCode
+                    }
+                    maxLength={40}
+                    onChange={(event) => {
+                      setDiscountCode(
+                        event.target
+                          .value
+                          .toUpperCase()
+                      );
+
+                      setDiscount(null);
+                    }}
+                    placeholder={
+                      'کد تخفیف (اختیاری)'
+                    }
+                  />
+
+                  <button
+                    className={
+                      'btn btn-dark'
+                    }
+                    disabled={
+                      !discountCode
+                        .trim() ||
+                      discountMutation
+                        .isPending
+                    }
+                    onClick={() =>
+                      discountMutation
+                        .mutate()
+                    }
+                  >
+                    {discountMutation
+                      .isPending ? (
+                      <Spinner
+                        size={14}
+                      />
+                    ) : (
+                      'اعمال'
+                    )}
+                  </button>
+                </div>
+
+
+                {discount && (
+                  <div
+                    className="badge b-grn"
+                    style={{
+                      justifyContent:
+                        'center',
+
+                      padding:
+                        7,
+                    }}
+                  >
+                    {discount.percent}٪
+                    تخفیف؛ مبلغ نهایی{' '}
+
+                    {money(
+                      discount.final_price
+                    )}
+                  </div>
+                )}
+
+
+                {!free && (
+                  <>
+                    <div
+                      style={{
+                        padding:
+                          '11px',
+
+                        textAlign:
+                          'center',
+
+                        background:
+                          'rgba(59,130,246,.08)',
+
+                        border:
+                          '1px dashed var(--bdg)',
+
+                        borderRadius:
+                          13,
+                      }}
+                    >
+                      <div
+                        style={{
+                          color:
+                            'var(--txm)',
+
+                          fontSize:
+                            9.5,
+                        }}
+                      >
+                        واریز به شماره کارت
+                      </div>
+
+                      <div
+                        style={{
+                          direction:
+                            'ltr',
+
+                          color:
+                            'var(--acc2)',
+
+                          fontSize:
+                            16,
+
+                          fontWeight:
+                            900,
+
+                          letterSpacing:
+                            1.5,
+
+                          marginTop:
+                            4,
+                        }}
+                      >
+                        {data?.payment
+                          ?.card_number ||
+                          '—'}
+                      </div>
+
+                      <div
+                        style={{
+                          color:
+                            'var(--tx2)',
+
+                          fontSize:
+                            10,
+
+                          marginTop:
+                            3,
+                        }}
+                      >
+                        به نام{' '}
+
+                        {data?.payment
+                          ?.card_owner ||
+                          '—'}
+                      </div>
+                    </div>
+
+                    <label
+                      style={{
+                        color:
+                          'var(--txm)',
+
+                        fontSize:
+                          10,
+                      }}
+                    >
+                      تصویر رسید؛ حداکثر
+                      ۱۰ مگابایت
+                    </label>
+
+                    <input
+                      className="inp"
+                      type="file"
+                      accept="image/*"
+                      onChange={(event) => {
+                        const file =
+                          event.target
+                            .files?.[0] ||
+                          null;
+
+                        if (
+                          file &&
+                          file.size >
+                            10 *
+                            1024 *
+                            1024
+                        ) {
+                          toast(
+                            'حجم رسید بیشتر از ۱۰ مگابایت است',
+                            'error'
+                          );
+
+                          event.target.value =
+                            '';
+
+                          return;
+                        }
+
+                        setReceipt(file);
+                      }}
+                    />
+
+                    {receiptPreview && (
+                      <img
+                        src={
+                          receiptPreview
+                        }
+                        alt={
+                          'پیش‌نمایش رسید'
+                        }
+                        style={{
+                          width:
+                            '100%',
+
+                          maxHeight:
+                            230,
+
+                          objectFit:
+                            'contain',
+
+                          background:
+                            'var(--elev)',
+
+                          border:
+                            '1px solid var(--bd)',
+
+                          borderRadius:
+                            13,
+                        }}
+                      />
+                    )}
+                  </>
+                )}
+
+
+                {free && (
+                  <div
+                    style={{
+                      padding:
+                        12,
+
+                      color:
+                        'var(--ok)',
+
+                      textAlign:
+                        'center',
+
+                      background:
+                        'rgba(16,185,129,.1)',
+
+                      borderRadius:
+                        13,
+                    }}
+                  >
+                    🎁 این پلن با کد تخفیف
+                    رایگان است و نیازی به
+                    رسید ندارد.
+                  </div>
+                )}
+
+
+                <label className="menu-row">
+                  <span
+                    style={{
+                      flex:
+                        1,
+                    }}
+                  >
+                    <b>
+                      قوانین استفاده را
+                      خواندم و قبول دارم
+                    </b>
+
+                    <span
+                      style={{
+                        display:
+                          'block',
+
+                        color:
+                          'var(--txm)',
+
+                        fontSize:
+                          9,
+                      }}
+                    >
+                      محتوا فقط برای استفاده
+                      شخصی است.
+                    </span>
+                  </span>
+
+                  <span className="toggle-wrap">
+                    <input
+                      type="checkbox"
+                      checked={
+                        accepted
+                      }
+                      onChange={(
+                        event
+                      ) =>
+                        setAccepted(
+                          event.target
+                            .checked
+                        )
+                      }
+                    />
+
+                    <span className="toggle-sl" />
+                  </span>
+                </label>
+
+
+                <button
+                  className={
+                    'btn btn-p btn-full'
+                  }
+                  disabled={
+                    !canSubmit ||
+                    buyMutation
+                      .isPending
+                  }
+                  onClick={() => {
+                    const acceptedBuy =
+                      window.confirm(
+                        free
+                          ? 'اشتراک رایگان فعال شود؟'
+                          : 'رسید برای بررسی ارسال شود؟'
+                      );
+
+                    if (
+                      acceptedBuy
+                    ) {
+                      buyMutation
+                        .mutate();
+                    }
+                  }}
+                >
+                  {buyMutation
+                    .isPending ? (
+                    <Spinner size={16} />
+                  ) : free ? (
+                    '🎁 فعال‌سازی رایگان'
+                  ) : (
+                    '📤 ارسال رسید'
+                  )}
+                </button>
+              </section>
+            )}
+
+
+            <section>
+              <div className="sec-title">
+                🕘 تاریخچه پرداخت‌ها
+              </div>
+
+              {payments.length ===
+                0 ? (
+                <div className="empty card">
+                  هنوز پرداختی ثبت نشده است.
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display:
+                      'grid',
+
+                    gap:
+                      8,
+                  }}
+                >
+                  {payments.map(
+                    (item) => {
+                      const [
+                        label,
+                        badge,
+                        icon,
+                      ] = (
+                        PAYMENT_STATUS[
+                          item.status
+                        ] || [
+                          item
+                            .status_label,
+
+                          'b-gray',
+
+                          '📌',
+                        ]
+                      );
+
+                      return (
+                        <article
+                          key={item.id}
+                          className="card"
+                        >
                           <div
                             style={{
                               display:
@@ -770,7 +1311,7 @@ export default function Subscription() {
                                 'center',
 
                               gap:
-                                11,
+                                10,
                             }}
                           >
                             <span
@@ -779,164 +1320,110 @@ export default function Subscription() {
                                   'grid',
 
                                 width:
-                                  46,
+                                  42,
 
                                 height:
-                                  46,
+                                  42,
 
                                 placeItems:
                                   'center',
 
                                 borderRadius:
-                                  14,
+                                  13,
 
                                 background:
-                                  chosen
-                                    ? 'var(--grad-brand)'
-                                    : 'var(--elev)',
+                                  'rgba(100,116,139,.1)',
 
                                 fontSize:
-                                  21,
+                                  19,
                               }}
                             >
-                              {chosen
-                                ? '✓'
-                                : '💠'}
+                              {icon}
                             </span>
 
-                            <span
+                            <div
                               style={{
                                 flex:
                                   1,
                               }}
                             >
-                              <span
+                              <b>
+                                {item
+                                  .plan_name ||
+                                  'اشتراک'}
+                              </b>
+
+                              <div
                                 style={{
-                                  display:
-                                    'flex',
-
-                                  alignItems:
-                                    'center',
-
-                                  gap:
-                                    6,
-                                }}
-                              >
-                                <b
-                                  style={{
-                                    fontSize:
-                                      13.5,
-                                  }}
-                                >
-                                  {plan.name ||
-                                    'پلن اشتراک'}
-                                </b>
-
-                                {popular && (
-                                  <span className="badge b-pur">
-                                    پیشنهادی
-                                  </span>
-                                )}
-                              </span>
-
-                              <span
-                                style={{
-                                  display:
-                                    'block',
-
                                   color:
                                     'var(--txm)',
 
                                   fontSize:
-                                    9.5,
+                                    9,
 
                                   marginTop:
                                     3,
                                 }}
                               >
-                                {number(
-                                  plan.days
-                                )}{' '}
+                                {money(
+                                  item
+                                    .final_price
+                                )}
 
-                                روز دسترسی کامل
-                              </span>
-                            </span>
+                                {' • '}
+
+                                {item
+                                  .submitted_at ||
+                                  '—'}
+                              </div>
+                            </div>
 
                             <span
-                              style={{
-                                color:
-                                  chosen
-                                    ? 'var(--acc2)'
-                                    : 'var(--tx)',
-
-                                fontSize:
-                                  13,
-
-                                fontWeight:
-                                  900,
-                              }}
+                              className={`badge ${badge}`}
                             >
-                              {money(
-                                plan.price
-                              )}
+                              {label}
                             </span>
                           </div>
-                        </button>
+
+                          {item.review_note && (
+                            <div
+                              style={{
+                                marginTop:
+                                  8,
+
+                                padding:
+                                  '8px 9px',
+
+                                color:
+                                  item.status ===
+                                  'rejected'
+                                    ? 'var(--err)'
+                                    : 'var(--tx2)',
+
+                                background:
+                                  'rgba(100,116,139,.08)',
+
+                                borderRadius:
+                                  10,
+
+                                fontSize:
+                                  9.5,
+                              }}
+                            >
+                              یادداشت مدیریت:{' '}
+
+                              {
+                                item.review_note
+                              }
+                            </div>
+                          )}
+                        </article>
                       );
                     }
                   )}
                 </div>
               )}
             </section>
-
-
-            <button
-              className={
-                'btn btn-p btn-full'
-              }
-              disabled={
-                !selected ||
-                pending ||
-                buyMutation.isPending
-              }
-              onClick={
-                confirmBuy
-              }
-            >
-              {buyMutation.isPending ? (
-                <Spinner size={16} />
-              ) : pending ? (
-                'درخواست در انتظار بررسی است'
-              ) : selected ? (
-                'ثبت درخواست خرید'
-              ) : (
-                'یک پلن انتخاب کنید'
-              )}
-            </button>
-
-
-            <div
-              style={{
-                padding:
-                  '0 10px',
-
-                color:
-                  'var(--txm)',
-
-                fontSize:
-                  9.5,
-
-                lineHeight:
-                  1.8,
-
-                textAlign:
-                  'center',
-              }}
-            >
-              🔒 فعال‌سازی اشتراک پس از
-              تأیید پرداخت توسط مدیریت
-              انجام می‌شود.
-            </div>
           </div>
         )}
       </main>
