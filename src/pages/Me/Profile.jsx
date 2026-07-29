@@ -1,233 +1,146 @@
 import { useState } from 'react';
+
 import {
-  useQuery,
   useMutation,
+  useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
+
 import api from '../../lib/api';
 import Header from '../../components/layout/Header';
+
 import {
   SkeletonCard,
   Spinner,
 } from '../../components/shared/Loading';
+
 import {
   haptic,
   hapticNotif,
 } from '../../lib/telegram';
-import { useUIStore } from '../../stores/uiStore';
-import { useAuthStore } from '../../stores/authStore';
 
-const toNumber = (value) => {
-  const number = Number(value);
-  return Number.isFinite(number)
-    ? Math.max(0, number)
+import {
+  useUIStore,
+} from '../../stores/uiStore';
+
+import {
+  useAuthStore,
+} from '../../stores/authStore';
+
+
+const number = (value) => {
+  const parsed = Number(value);
+
+  return Number.isFinite(parsed)
+    ? Math.max(0, parsed)
     : 0;
 };
 
-const toPercent = (value) =>
-  Math.min(100, toNumber(value));
 
-const errorMessage = (
+const percent = (value) =>
+  Math.min(
+    100,
+    number(value)
+  );
+
+
+const errorText = (
   error,
-  fallback = 'انجام عملیات با خطا مواجه شد'
+  fallback
 ) => {
-  const detail = error?.response?.data?.detail;
+  const detail =
+    error?.response?.data?.detail;
 
-  return typeof detail === 'string' && detail
+  return typeof detail === 'string'
     ? detail
     : fallback;
 };
 
-function WeekChart({ data = [] }) {
-  const rows = Array.isArray(data)
-    ? data
-    : [];
 
-  if (rows.length === 0) {
-    return null;
-  }
-
-  const values = rows.map((item) =>
-    toNumber(item?.count)
-  );
-
-  const max = Math.max(...values, 1);
-
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'flex-end',
-        gap: 4,
-        height: 50,
-      }}
-    >
-      {rows.map((item, index) => {
-        const count = values[index];
-
-        return (
-          <div
-            key={`${item?.date || 'day'}-${index}`}
-            style={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 2,
-            }}
-          >
-            <div
-              style={{
-                width: '100%',
-                borderRadius: 3,
-                background:
-                  count > 0
-                    ? 'var(--acc)'
-                    : 'var(--ovr)',
-                height: `${Math.max(
-                  (count / max) * 42,
-                  count > 0 ? 5 : 3
-                )}px`,
-                transition: 'height .5s',
-              }}
-            />
-
-            <div
-              style={{
-                fontSize: 8,
-                color: 'var(--txm)',
-              }}
-            >
-              {String(
-                item?.date || ''
-              ).slice(-2)}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function PickerSheet({
+function Picker({
   title,
-  options = [],
+  options,
   current,
+  loading,
+  pending,
   onSelect,
   onClose,
-  loading = false,
-  pending = false,
 }) {
-  const safeOptions = Array.isArray(options)
-    ? options
-    : [];
-
   return (
     <div
+      className="more-sheet"
       onClick={onClose}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,.65)',
-        zIndex: 200,
-        display: 'flex',
-        alignItems: 'flex-end',
-        justifyContent: 'center',
-      }}
+      role="presentation"
     >
       <div
+        className={
+          'more-sheet__panel ' +
+          'glass fade-up'
+        }
+        role="dialog"
+        aria-modal="true"
         onClick={(event) =>
           event.stopPropagation()
         }
-        className="fade-up"
-        style={{
-          width: '100%',
-          maxWidth: 480,
-          background: 'var(--surf)',
-          borderRadius: '20px 20px 0 0',
-          padding:
-            '18px 14px calc(18px + env(safe-area-inset-bottom))',
-        }}
       >
-        <div
-          style={{
-            width: 34,
-            height: 4,
-            background: 'var(--bd)',
-            borderRadius: 999,
-            margin: '0 auto 14px',
-          }}
-        />
+        <div className="more-sheet__handle" />
 
-        <div
-          style={{
-            fontWeight: 700,
-            fontSize: 15,
-            marginBottom: 12,
-          }}
-        >
+        <div className="more-sheet__title">
           {title}
         </div>
 
         {loading ? (
           <div
             style={{
-              display: 'flex',
-              justifyContent: 'center',
-              padding: 20,
+              display: 'grid',
+              placeItems: 'center',
+              padding: 24,
             }}
           >
-            <Spinner size={22} />
+            <Spinner />
           </div>
-        ) : safeOptions.length === 0 ? (
+        ) : options.length === 0 ? (
           <div className="empty">
-            گزینه‌ای برای انتخاب وجود ندارد.
+            گزینه‌ای موجود نیست.
           </div>
         ) : (
-          safeOptions.map((option) => (
+          options.map((item) => (
             <button
-              key={option.value}
+              type="button"
+              key={item.value}
+              className="more-sheet__item"
+              disabled={pending}
               onClick={() => {
-                haptic();
-
-                if (option.value === current) {
+                if (
+                  item.value === current
+                ) {
                   onClose();
                 } else {
-                  onSelect(option.value);
+                  onSelect(
+                    item.value
+                  );
                 }
               }}
-              disabled={pending}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '13px 6px',
-                background: 'none',
-                border: 'none',
-                cursor: pending
-                  ? 'default'
-                  : 'pointer',
-                textAlign: 'right',
-                borderBottom:
-                  '1px solid var(--bd)',
-                color:
-                  current === option.value
-                    ? 'var(--acc)'
-                    : 'var(--tx)',
-                fontWeight:
-                  current === option.value
-                    ? 700
-                    : 400,
-                fontFamily: 'var(--font)',
-                fontSize: 13.5,
-                opacity: pending ? 0.6 : 1,
-              }}
             >
-              {option.label}
+              <span className="more-sheet__item-icon">
+                {item.icon || '📌'}
+              </span>
 
-              {current === option.value && (
-                <span>✓</span>
+              <span className="more-sheet__item-text">
+                <span className="more-sheet__item-title">
+                  {item.label}
+                </span>
+              </span>
+
+              {item.value ===
+              current ? (
+                <span className="badge b-grn">
+                  انتخاب فعلی
+                </span>
+              ) : (
+                <span className="more-sheet__arrow">
+                  ←
+                </span>
               )}
             </button>
           ))
@@ -237,341 +150,576 @@ function PickerSheet({
   );
 }
 
+
+function WeekChart({
+  rows = [],
+}) {
+  const safeRows =
+    Array.isArray(rows)
+      ? rows
+      : [];
+
+  const values =
+    safeRows.map(
+      (item) =>
+        number(item?.count)
+    );
+
+  const max = Math.max(
+    ...values,
+    1
+  );
+
+  if (!safeRows.length) {
+    return null;
+  }
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'flex-end',
+        height: 70,
+        gap: 6,
+      }}
+    >
+      {safeRows.map(
+        (item, index) => {
+          const value =
+            values[index];
+
+          return (
+            <div
+              key={`${
+                item?.date
+              }-${index}`}
+              style={{
+                flex: 1,
+
+                display:
+                  'flex',
+
+                height:
+                  '100%',
+
+                flexDirection:
+                  'column',
+
+                alignItems:
+                  'center',
+
+                justifyContent:
+                  'flex-end',
+
+                gap: 4,
+              }}
+            >
+              <div
+                style={{
+                  width:
+                    '100%',
+
+                  minHeight:
+                    4,
+
+                  height:
+                    `${Math.max(
+                      4,
+
+                      (
+                        value /
+                        max
+                      ) * 44
+                    )}px`,
+
+                  borderRadius:
+                    '6px 6px 2px 2px',
+
+                  background:
+                    value
+                      ? 'var(--grad-brand)'
+                      : 'var(--ovr)',
+                }}
+              />
+
+              <span
+                style={{
+                  color:
+                    'var(--txm)',
+
+                  fontSize:
+                    8,
+                }}
+              >
+                {String(
+                  item?.date ||
+                  ''
+                ).slice(-2)}
+              </span>
+            </div>
+          );
+        }
+      )}
+    </div>
+  );
+}
+
+
 export default function Profile() {
-  const [editName, setEditName] =
-    useState(false);
-
-  const [nameValue, setNameValue] =
-    useState('');
+  const [
+    editField,
+    setEditField,
+  ] = useState(null);
 
   const [
-    editStudentId,
-    setEditStudentId,
-  ] = useState(false);
-
-  const [
-    studentIdValue,
-    setStudentIdValue,
+    fieldValue,
+    setFieldValue,
   ] = useState('');
 
-  const [showGroup, setShowGroup] =
-    useState(false);
-
-  const [showIntake, setShowIntake] =
-    useState(false);
+  const [
+    picker,
+    setPicker,
+  ] = useState(null);
 
   const toast = useUIStore(
     (state) => state.toast
   );
 
-  const refreshAuthUser = useAuthStore(
-    (state) => state.refresh
-  );
+  const refreshAuth =
+    useAuthStore(
+      (state) =>
+        state.refresh
+    );
 
-  const queryClient = useQueryClient();
+  const queryClient =
+    useQueryClient();
+
 
   const {
     data,
     isLoading,
     isError,
     refetch,
-    isRefetching,
   } = useQuery({
-    queryKey: ['profile'],
+    queryKey: [
+      'profile',
+    ],
+
     queryFn: () =>
       api
         .get('/api/profile')
-        .then((response) => response.data),
-    staleTime: 1000 * 60 * 3,
+        .then(
+          (response) =>
+            response.data
+        ),
+
+    staleTime:
+      3 * 60 * 1000,
   });
 
-  const { data: rankData } = useQuery({
-    queryKey: ['rank'],
-    queryFn: () =>
-      api
-        .get('/api/profile/rank')
-        .then((response) => response.data),
-    staleTime: 1000 * 60 * 5,
-  });
 
   const {
-    data: intakes,
-    isLoading: intakesLoading,
+    data: rank,
   } = useQuery({
-    queryKey: ['intakes'],
+    queryKey: [
+      'rank',
+    ],
+
     queryFn: () =>
       api
-        .get('/api/profile/intakes')
+        .get(
+          '/api/profile/rank'
+        )
         .then(
           (response) =>
-            response.data?.intakes || []
+            response.data
         ),
-    staleTime: 1000 * 60 * 30,
-    enabled: showIntake,
+
+    staleTime:
+      5 * 60 * 1000,
   });
 
-  const { data: badges } = useQuery({
-    queryKey: ['badges'],
+
+  const {
+    data: badges = [],
+  } = useQuery({
+    queryKey: [
+      'badges',
+    ],
+
     queryFn: () =>
       api
-        .get('/api/profile/badges')
+        .get(
+          '/api/profile/badges'
+        )
         .then(
           (response) =>
-            response.data?.badges || []
+            response.data
+              ?.badges || []
         ),
-    staleTime: 1000 * 60 * 10,
+
+    staleTime:
+      10 * 60 * 1000,
   });
 
-  const refreshProfile = async () => {
+
+  const {
+    data: intakes = [],
+
+    isLoading:
+      intakesLoading,
+  } = useQuery({
+    queryKey: [
+      'intakes',
+    ],
+
+    queryFn: () =>
+      api
+        .get(
+          '/api/profile/intakes'
+        )
+        .then(
+          (response) =>
+            response.data
+              ?.intakes || []
+        ),
+
+    enabled:
+      picker === 'intake',
+
+    staleTime:
+      30 * 60 * 1000,
+  });
+
+
+  const refreshAll = async () => {
     await Promise.all([
-      queryClient.invalidateQueries({
-        queryKey: ['profile'],
-      }),
-      queryClient.invalidateQueries({
-        queryKey: ['dashboard'],
-      }),
-      queryClient.invalidateQueries({
-        queryKey: ['rank'],
-      }),
-      queryClient.invalidateQueries({
-        queryKey: ['badges'],
-      }),
-      refreshAuthUser(),
+      queryClient
+        .invalidateQueries({
+          queryKey:
+            ['profile'],
+        }),
+
+      queryClient
+        .invalidateQueries({
+          queryKey:
+            ['dashboard'],
+        }),
+
+      queryClient
+        .invalidateQueries({
+          queryKey:
+            ['rank'],
+        }),
+
+      queryClient
+        .invalidateQueries({
+          queryKey:
+            ['badges'],
+        }),
+
+      queryClient
+        .invalidateQueries({
+          queryKey:
+            ['schedule'],
+        }),
+
+      refreshAuth(),
     ]);
   };
 
-  const updateName = useMutation({
-    mutationFn: (name) =>
-      api
-        .patch('/api/profile/name', {
-          name,
-        })
-        .then((response) => response.data),
 
-    onSuccess: async () => {
-      hapticNotif('success');
-      toast('نام ذخیره شد ✅', 'success');
-      setEditName(false);
-      await refreshProfile();
-    },
+  const updateMutation =
+    useMutation({
+      mutationFn: ({
+        field,
+        value,
+      }) => {
+        const endpoint = {
+          name:
+            'name',
 
-    onError: (error) => {
-      hapticNotif('error');
-      toast(
-        errorMessage(
-          error,
-          'نام ذخیره نشد'
-        ),
-        'error'
-      );
-    },
-  });
+          student_id:
+            'student-id',
 
-  const updateStudentId = useMutation({
-    mutationFn: (studentId) =>
-      api
-        .patch('/api/profile/student-id', {
-          student_id: studentId,
-        })
-        .then((response) => response.data),
+          group:
+            'group',
 
-    onSuccess: async () => {
-      hapticNotif('success');
-      toast(
-        'شماره دانشجویی ذخیره شد ✅',
-        'success'
-      );
-      setEditStudentId(false);
-      await refreshProfile();
-    },
+          intake:
+            'intake',
+        }[field];
 
-    onError: (error) => {
-      hapticNotif('error');
-      toast(
-        errorMessage(
-          error,
-          'شماره دانشجویی ذخیره نشد'
-        ),
-        'error'
-      );
-    },
-  });
+        return api.patch(
+          `/api/profile/${endpoint}`,
 
-  const updateGroup = useMutation({
-    mutationFn: (group) =>
-      api
-        .patch('/api/profile/group', {
-          group,
-        })
-        .then((response) => response.data),
+          {
+            [field]:
+              value,
+          }
+        );
+      },
 
-    onSuccess: async () => {
-      hapticNotif('success');
-      toast(
-        'گروه تغییر کرد ✅',
-        'success'
-      );
-      setShowGroup(false);
-      await refreshProfile();
-    },
+      onSuccess:
+        async () => {
+          hapticNotif(
+            'success'
+          );
 
-    onError: (error) => {
-      hapticNotif('error');
-      toast(
-        errorMessage(
-          error,
-          'گروه تغییر نکرد'
-        ),
-        'error'
-      );
-    },
-  });
+          toast(
+            'اطلاعات با موفقیت ذخیره شد ✅',
+            'success'
+          );
 
-  const updateIntake = useMutation({
-    mutationFn: (intake) =>
-      api
-        .patch('/api/profile/intake', {
-          intake,
-        })
-        .then((response) => response.data),
+          setEditField(null);
+          setPicker(null);
 
-    onSuccess: async () => {
-      hapticNotif('success');
-      toast(
-        'ورودی تغییر کرد ✅',
-        'success'
-      );
-      setShowIntake(false);
-      await refreshProfile();
-    },
+          await refreshAll();
+        },
 
-    onError: (error) => {
-      hapticNotif('error');
-      toast(
-        errorMessage(
-          error,
-          'ورودی تغییر نکرد'
-        ),
-        'error'
-      );
-    },
-  });
+      onError: (error) => {
+        hapticNotif('error');
 
-  const user = data?.user || null;
-  const stats = data?.stats || {};
+        toast(
+          errorText(
+            error,
+            'ذخیره اطلاعات انجام نشد'
+          ),
+          'error'
+        );
+      },
+    });
 
-  const weakTopics = Array.isArray(
-    stats.weak_topics
-  )
-    ? stats.weak_topics
-    : [];
 
-  const badgeItems = Array.isArray(badges)
-    ? badges
-    : [];
+  const user =
+    data?.user || {};
 
-  const intakeOptions = (
-    Array.isArray(intakes) ? intakes : []
-  ).map((item) => ({
-    value: item.code,
-    label: item.label || item.code,
-  }));
+  const stats =
+    data?.stats || {};
+
+  const badgeList =
+    Array.isArray(badges)
+      ? badges
+      : [];
+
+  const weak =
+    Array.isArray(
+      stats.weak_topics
+    )
+      ? stats.weak_topics
+      : [];
+
+  const readiness =
+    percent(
+      stats.percentage
+    );
+
+
+  const startEdit = (
+    field,
+    value
+  ) => {
+    haptic();
+
+    setEditField(field);
+
+    setFieldValue(
+      value || ''
+    );
+  };
+
+
+  const validField =
+    editField === 'name'
+      ? fieldValue
+          .trim()
+          .length >= 3
+
+      : editField ===
+          'student_id'
+
+        ? /^\d{3,20}$/.test(
+            fieldValue.trim()
+          )
+
+        : false;
+
+
+  const submitEdit = (
+    event
+  ) => {
+    event.preventDefault();
+
+    if (validField) {
+      updateMutation.mutate({
+        field:
+          editField,
+
+        value:
+          fieldValue.trim(),
+      });
+    }
+  };
+
 
   return (
     <>
-      <Header title="پروفایل" />
+      <Header
+        title="پروفایل من"
+        subtitle={
+          'اطلاعات تحصیلی و پیشرفت'
+        }
+      />
 
-      {showGroup && (
-        <PickerSheet
-          title="انتخاب گروه"
+
+      {picker ===
+        'group' && (
+        <Picker
+          title={
+            'انتخاب گروه درسی'
+          }
+          current={
+            user.group
+          }
+          pending={
+            updateMutation
+              .isPending
+          }
+          onClose={() => {
+            if (
+              !updateMutation
+                .isPending
+            ) {
+              setPicker(null);
+            }
+          }}
+          onSelect={(value) =>
+            updateMutation.mutate({
+              field:
+                'group',
+
+              value,
+            })
+          }
           options={[
             {
               value: '1',
               label: 'گروه ۱',
+              icon: '1️⃣',
             },
+
             {
               value: '2',
               label: 'گروه ۲',
+              icon: '2️⃣',
             },
           ]}
-          current={user?.group}
-          onSelect={(value) =>
-            updateGroup.mutate(value)
-          }
-          onClose={() =>
-            !updateGroup.isPending &&
-            setShowGroup(false)
-          }
-          pending={updateGroup.isPending}
         />
       )}
 
-      {showIntake && (
-        <PickerSheet
-          title="انتخاب ورودی"
-          options={intakeOptions}
-          current={user?.intake}
+
+      {picker ===
+        'intake' && (
+        <Picker
+          title={
+            'انتخاب ورودی'
+          }
+          current={
+            user.intake
+          }
+          loading={
+            intakesLoading
+          }
+          pending={
+            updateMutation
+              .isPending
+          }
+          onClose={() => {
+            if (
+              !updateMutation
+                .isPending
+            ) {
+              setPicker(null);
+            }
+          }}
           onSelect={(value) =>
-            updateIntake.mutate(value)
+            updateMutation.mutate({
+              field:
+                'intake',
+
+              value,
+            })
           }
-          onClose={() =>
-            !updateIntake.isPending &&
-            setShowIntake(false)
+          options={
+            (
+              Array.isArray(
+                intakes
+              )
+                ? intakes
+                : []
+            ).map(
+              (item) => ({
+                value:
+                  item.code,
+
+                label:
+                  item.label ||
+                  item.code,
+
+                icon:
+                  '📅',
+              })
+            )
           }
-          loading={intakesLoading}
-          pending={updateIntake.isPending}
         />
       )}
 
-      <div className="page fade-up">
+
+      <main className="page fade-up">
         {isLoading ? (
           <div
             style={{
-              display: 'flex',
-              flexDirection: 'column',
+              display: 'grid',
               gap: 10,
             }}
           >
             <SkeletonCard />
             <SkeletonCard />
+            <SkeletonCard />
           </div>
         ) : isError ? (
-          <div className="empty">
-            <div
-              style={{
-                fontSize: 40,
-                marginBottom: 10,
-              }}
-            >
-              🌐
-            </div>
-
-            <div>
-              دریافت اطلاعات پروفایل با مشکل مواجه شد.
-            </div>
+          <div className="empty card">
+            دریافت پروفایل انجام نشد.
 
             <button
               className="btn btn-p"
-              style={{ marginTop: 14 }}
-              onClick={() => refetch()}
-              disabled={isRefetching}
+              style={{
+                marginTop: 12,
+              }}
+              onClick={() =>
+                refetch()
+              }
             >
-              {isRefetching ? (
-                <Spinner size={16} />
-              ) : (
-                'تلاش دوباره'
-              )}
+              تلاش دوباره
             </button>
           </div>
-        ) : user ? (
+        ) : (
           <div
             style={{
-              display: 'flex',
-              flexDirection: 'column',
+              display: 'grid',
               gap: 13,
             }}
           >
-            <div className="card card-glow">
+            <section
+              className={
+                'card card-glow'
+              }
+              style={{
+                padding: 17,
+
+                background:
+                  'linear-gradient(145deg,rgba(29,78,216,.22),rgba(16,24,39,.95) 52%,rgba(34,211,238,.08))',
+              }}
+            >
               <div
                 style={{
                   display: 'flex',
@@ -582,337 +730,411 @@ export default function Profile() {
                 <div
                   className="avatar"
                   style={{
-                    width: 52,
-                    height: 52,
-                    fontSize: 22,
+                    width: 60,
+                    height: 60,
+                    fontSize: 24,
                   }}
                 >
-                  {user.name?.[0] || '؟'}
+                  {user.name?.[0] ||
+                    'ه'}
                 </div>
 
-                <div style={{ flex: 1 }}>
-                  <div
+                <div
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                  }}
+                >
+                  <h2
                     style={{
-                      fontWeight: 800,
-                      fontSize: 17,
+                      overflow:
+                        'hidden',
+
+                      fontSize:
+                        17.5,
+
+                      fontWeight:
+                        900,
+
+                      textOverflow:
+                        'ellipsis',
+
+                      whiteSpace:
+                        'nowrap',
                     }}
                   >
                     {user.name ||
                       'کاربر هامزیار'}
-                  </div>
+                  </h2>
 
                   <button
-                    onClick={() => {
-                      haptic();
-                      setStudentIdValue(
-                        user.student_id || ''
-                      );
-                      setEditStudentId(true);
-                    }}
+                    type="button"
+                    onClick={() =>
+                      startEdit(
+                        'student_id',
+                        user.student_id
+                      )
+                    }
                     style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: 'var(--txm)',
-                      fontSize: 11,
-                      padding: 0,
-                      fontFamily: 'var(--font)',
+                      display: 'block',
+
+                      padding:
+                        0,
+
+                      marginTop:
+                        3,
+
+                      color:
+                        'var(--txm)',
+
+                      background:
+                        'none',
+
+                      border:
+                        0,
+
+                      fontSize:
+                        10.5,
+
+                      cursor:
+                        'pointer',
                     }}
                   >
                     شماره دانشجویی:{' '}
-                    {user.student_id || '—'} ✏️
+
+                    {user.student_id ||
+                      'ثبت نشده'}{' '}
+
+                    ✎
                   </button>
 
                   <div
                     style={{
                       display: 'flex',
-                      gap: 5,
-                      marginTop: 6,
-                      flexWrap: 'wrap',
+
+                      flexWrap:
+                        'wrap',
+
+                      gap:
+                        5,
+
+                      marginTop:
+                        7,
                     }}
                   >
                     <button
-                      onClick={() => {
-                        haptic();
-                        setShowIntake(true);
-                      }}
-                      className="badge b-acc"
+                      type="button"
+                      className={
+                        'badge b-acc'
+                      }
+                      onClick={() =>
+                        setPicker(
+                          'intake'
+                        )
+                      }
                       style={{
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontFamily:
-                          'var(--font)',
+                        border:
+                          0,
+
+                        cursor:
+                          'pointer',
                       }}
                     >
                       ورودی{' '}
-                      {user.intake || '—'} ✏️
+
+                      {user.intake ||
+                        '—'}{' '}
+
+                      ✎
                     </button>
 
                     <button
-                      onClick={() => {
-                        haptic();
-                        setShowGroup(true);
-                      }}
-                      className="badge b-acc"
+                      type="button"
+                      className={
+                        'badge b-acc'
+                      }
+                      onClick={() =>
+                        setPicker(
+                          'group'
+                        )
+                      }
                       style={{
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontFamily:
-                          'var(--font)',
+                        border:
+                          0,
+
+                        cursor:
+                          'pointer',
                       }}
                     >
-                      گروه {user.group || '—'} ✏️
+                      گروه{' '}
+
+                      {user.group ||
+                        '—'}{' '}
+
+                      ✎
                     </button>
                   </div>
                 </div>
 
                 <button
-                  onClick={() => {
-                    haptic();
-                    setNameValue(
-                      user.name || ''
-                    );
-                    setEditName(true);
-                  }}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: 18,
-                  }}
+                  type="button"
                   aria-label="ویرایش نام"
+                  onClick={() =>
+                    startEdit(
+                      'name',
+                      user.name
+                    )
+                  }
+                  style={{
+                    width: 37,
+                    height: 37,
+
+                    borderRadius:
+                      12,
+
+                    color:
+                      'var(--tx)',
+
+                    background:
+                      'var(--elev)',
+
+                    border:
+                      '1px solid var(--bd)',
+
+                    cursor:
+                      'pointer',
+                  }}
                 >
-                  ✏️
+                  ✎
                 </button>
               </div>
 
-              {editName && (
+              {editField && (
                 <form
-                  onSubmit={(event) => {
-                    event.preventDefault();
-
-                    if (
-                      nameValue.trim().length >= 3
-                    ) {
-                      updateName.mutate(
-                        nameValue
-                      );
-                    }
-                  }}
+                  onSubmit={
+                    submitEdit
+                  }
                   style={{
-                    marginTop: 14,
                     display: 'flex',
-                    gap: 8,
+                    gap: 7,
+                    marginTop: 14,
                   }}
                 >
                   <input
                     className="inp"
-                    value={nameValue}
-                    onChange={(event) =>
-                      setNameValue(
-                        event.target.value
+                    value={
+                      fieldValue
+                    }
+                    maxLength={
+                      editField ===
+                      'name'
+                        ? 50
+                        : 20
+                    }
+                    inputMode={
+                      editField ===
+                      'student_id'
+                        ? 'numeric'
+                        : 'text'
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setFieldValue(
+                        editField ===
+                        'student_id'
+                          ? event
+                              .target
+                              .value
+                              .replace(
+                                /\D/g,
+                                ''
+                              )
+                          : event
+                              .target
+                              .value
                       )
                     }
-                    placeholder="نام جدید"
-                    maxLength={50}
-                    style={{ flex: 1 }}
+                    placeholder={
+                      editField ===
+                      'name'
+                        ? 'نام و نام خانوادگی'
+                        : 'شماره دانشجویی'
+                    }
                     autoFocus
                   />
 
                   <button
-                    className="btn btn-p"
+                    className={
+                      'btn btn-p'
+                    }
                     type="submit"
                     disabled={
-                      updateName.isPending ||
-                      nameValue.trim().length < 3
+                      !validField ||
+                      updateMutation
+                        .isPending
                     }
                   >
-                    {updateName.isPending ? (
-                      <Spinner size={14} />
+                    {updateMutation
+                      .isPending ? (
+                      <Spinner
+                        size={14}
+                      />
                     ) : (
                       'ذخیره'
                     )}
                   </button>
 
                   <button
-                    className="btn btn-dark"
+                    className={
+                      'btn btn-dark'
+                    }
                     type="button"
                     onClick={() =>
-                      setEditName(false)
-                    }
-                    disabled={
-                      updateName.isPending
+                      setEditField(
+                        null
+                      )
                     }
                   >
                     لغو
                   </button>
                 </form>
               )}
+            </section>
 
-              {editStudentId && (
-                <form
-                  onSubmit={(event) => {
-                    event.preventDefault();
 
-                    if (
-                      /^\d{3,20}$/.test(
-                        studentIdValue.trim()
-                      )
-                    ) {
-                      updateStudentId.mutate(
-                        studentIdValue
-                      );
-                    }
-                  }}
-                  style={{
-                    marginTop: 14,
-                    display: 'flex',
-                    gap: 8,
-                  }}
-                >
-                  <input
-                    className="inp"
-                    value={studentIdValue}
-                    onChange={(event) =>
-                      setStudentIdValue(
-                        event.target.value.replace(
-                          /\D/g,
-                          ''
-                        )
-                      )
-                    }
-                    placeholder="شماره دانشجویی"
-                    inputMode="numeric"
-                    minLength={3}
-                    maxLength={20}
-                    style={{ flex: 1 }}
-                    autoFocus
-                  />
-
-                  <button
-                    className="btn btn-p"
-                    type="submit"
-                    disabled={
-                      updateStudentId.isPending ||
-                      !/^\d{3,20}$/.test(
-                        studentIdValue.trim()
-                      )
-                    }
-                  >
-                    {updateStudentId.isPending ? (
-                      <Spinner size={14} />
-                    ) : (
-                      'ذخیره'
-                    )}
-                  </button>
-
-                  <button
-                    className="btn btn-dark"
-                    type="button"
-                    onClick={() =>
-                      setEditStudentId(false)
-                    }
-                    disabled={
-                      updateStudentId.isPending
-                    }
-                  >
-                    لغو
-                  </button>
-                </form>
-              )}
-            </div>
-
-            {rankData?.rank && (
-              <div
+            {rank?.rank && (
+              <section
                 className="card"
                 style={{
-                  background:
-                    'linear-gradient(135deg,rgba(245,158,11,.08),rgba(59,130,246,.06))',
-                  borderColor:
-                    'rgba(245,158,11,.25)',
                   display: 'flex',
-                  alignItems: 'center',
-                  gap: 13,
+
+                  alignItems:
+                    'center',
+
+                  gap: 11,
+
+                  borderColor:
+                    'rgba(245,158,11,.24)',
+
+                  background:
+                    'linear-gradient(145deg,rgba(245,158,11,.09),rgba(16,24,39,.95))',
                 }}
               >
-                <div style={{ fontSize: 28 }}>
+                <span
+                  style={{
+                    fontSize: 29,
+                  }}
+                >
                   🏅
-                </div>
+                </span>
 
                 <div>
-                  <div
+                  <b
                     style={{
-                      fontWeight: 800,
-                      fontSize: 16,
-                      color: 'var(--warn)',
+                      color:
+                        'var(--warn)',
+
+                      fontSize:
+                        14,
                     }}
                   >
                     رتبه{' '}
-                    {toNumber(rankData.rank)} از{' '}
-                    {toNumber(
-                      rankData.total_users
+
+                    {number(
+                      rank.rank
+                    )}{' '}
+
+                    از{' '}
+
+                    {number(
+                      rank.total_users
                     )}
-                  </div>
+                  </b>
 
                   <div
                     style={{
-                      fontSize: 12,
-                      color: 'var(--txm)',
+                      color:
+                        'var(--txm)',
+
+                      fontSize:
+                        10,
+
+                      marginTop:
+                        2,
                     }}
                   >
                     بهتر از{' '}
-                    {toPercent(
-                      rankData.percentile
+
+                    {percent(
+                      rank.percentile
                     )}
                     ٪ دانشجویان
                   </div>
                 </div>
-              </div>
+              </section>
             )}
 
-            <div className="card">
+
+            <section className="card">
               <div className="sec-title">
-                📊 آمار
+                📊 عملکرد تحصیلی
               </div>
 
               <div
+                className="grid2"
                 style={{
-                  display: 'flex',
-                  justifyContent:
-                    'space-around',
-                  marginBottom: 13,
+                  marginBottom:
+                    14,
                 }}
               >
                 {[
                   [
                     '🧪',
-                    toNumber(
-                      stats.total_answers
+
+                    number(
+                      stats
+                        .total_answers
                     ),
-                    'سوال',
-                    'var(--acc)',
+
+                    'سؤال',
+
+                    '#70A7FF',
                   ],
+
                   [
                     '✅',
-                    toNumber(
-                      stats.correct_answers
+
+                    number(
+                      stats
+                        .correct_answers
                     ),
+
                     'صحیح',
-                    'var(--ok)',
+
+                    '#34D399',
                   ],
+
                   [
                     '📥',
-                    toNumber(stats.downloads),
+
+                    number(
+                      stats.downloads
+                    ),
+
                     'دانلود',
-                    'var(--info)',
+
+                    '#22D3EE',
                   ],
+
                   [
                     '📈',
-                    `${toPercent(
-                      stats.percentage
-                    )}٪`,
+
+                    `${readiness}٪`,
+
                     'موفقیت',
-                    'var(--warn)',
+
+                    '#FCD34D',
                   ],
                 ].map(
                   ([
@@ -924,23 +1146,35 @@ export default function Profile() {
                     <div
                       key={label}
                       style={{
-                        textAlign: 'center',
+                        padding:
+                          10,
+
+                        textAlign:
+                          'center',
+
+                        background:
+                          'rgba(100,116,139,.07)',
+
+                        borderRadius:
+                          13,
                       }}
                     >
-                      <div
-                        style={{
-                          fontSize: 18,
-                        }}
-                      >
+                      <div>
                         {icon}
                       </div>
 
                       <div
                         style={{
-                          fontSize: 17,
-                          fontWeight: 800,
                           color,
-                          margin: '2px 0',
+
+                          fontSize:
+                            17,
+
+                          fontWeight:
+                            900,
+
+                          marginTop:
+                            2,
                         }}
                       >
                         {value}
@@ -948,8 +1182,11 @@ export default function Profile() {
 
                       <div
                         style={{
-                          fontSize: 9.5,
-                          color: 'var(--txm)',
+                          color:
+                            'var(--txm)',
+
+                          fontSize:
+                            9,
                         }}
                       >
                         {label}
@@ -962,166 +1199,224 @@ export default function Profile() {
               {stats.level && (
                 <div
                   style={{
-                    background: `${
-                      stats.level.color ||
-                      '#60A5FA'
-                    }15`,
-                    border: `1px solid ${
-                      stats.level.color ||
-                      '#60A5FA'
-                    }40`,
-                    borderRadius:
-                      'var(--r-md)',
-                    padding: '8px 12px',
-                    marginBottom: 12,
                     display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
+
+                    alignItems:
+                      'center',
+
+                    gap:
+                      8,
+
+                    padding:
+                      '9px 11px',
+
+                    marginBottom:
+                      12,
+
+                    color:
+                      stats
+                        .level
+                        .color ||
+                      'var(--acc)',
+
+                    background:
+                      `${
+                        stats
+                          .level
+                          .color ||
+                        '#3B82F6'
+                      }15`,
+
+                    borderRadius:
+                      12,
                   }}
                 >
                   <span
                     style={{
-                      fontSize: 20,
+                      fontSize:
+                        20,
                     }}
                   >
-                    {stats.level.icon || '📈'}
+                    {stats
+                      .level
+                      .icon ||
+                      '📈'}
                   </span>
 
-                  <div
-                    style={{
-                      fontWeight: 700,
-                      color:
-                        stats.level.color ||
-                        '#60A5FA',
-                      fontSize: 14,
-                    }}
-                  >
-                    {stats.level.label ||
+                  <b>
+                    {stats
+                      .level
+                      .label ||
                       'سطح کاربر'}
-                  </div>
+                  </b>
 
-                  <div
+                  <span
                     style={{
-                      marginRight: 'auto',
-                      fontSize: 11,
-                      color: 'var(--txm)',
+                      marginRight:
+                        'auto',
+
+                      color:
+                        'var(--txm)',
+
+                      fontSize:
+                        9,
                     }}
                   >
-                    سطح کاربری
-                  </div>
+                    سطح فعلی
+                  </span>
                 </div>
               )}
 
               <WeekChart
-                data={stats.weekly_chart}
+                rows={
+                  stats.weekly_chart
+                }
               />
 
-              {weakTopics.length > 0 && (
+              {weak.length >
+                0 && (
                 <>
                   <div className="divider" />
 
                   <div
                     style={{
-                      color: 'var(--txm)',
-                      fontSize: 12,
-                      marginBottom: 7,
+                      color:
+                        'var(--txm)',
+
+                      fontSize:
+                        10.5,
+
+                      marginBottom:
+                        7,
                     }}
                   >
-                    ⚡ نقاط ضعف
+                    ⚡ مباحث نیازمند تمرین
                   </div>
 
                   <div
                     style={{
-                      display: 'flex',
-                      gap: 5,
-                      flexWrap: 'wrap',
+                      display:
+                        'flex',
+
+                      flexWrap:
+                        'wrap',
+
+                      gap:
+                        5,
                     }}
                   >
-                    {weakTopics.map(
-                      (topic) => (
+                    {weak.map(
+                      (item) => (
                         <span
-                          key={topic}
-                          className="badge b-red"
+                          key={item}
+                          className={
+                            'badge b-red'
+                          }
                         >
-                          {topic}
+                          {item}
                         </span>
                       )
                     )}
                   </div>
                 </>
               )}
-            </div>
+            </section>
 
-            {badgeItems.length > 0 && (
-              <div className="card">
+
+            {badgeList.length >
+              0 && (
+              <section className="card">
                 <div className="sec-title">
-                  🏅 بج‌های پیشرفت
+                  🏆 نشان‌های پیشرفت
                 </div>
 
                 <div
                   style={{
-                    display: 'flex',
-                    gap: 10,
-                    flexWrap: 'wrap',
+                    display: 'grid',
+
+                    gridTemplateColumns:
+                      'repeat(4,minmax(0,1fr))',
+
+                    gap:
+                      9,
                   }}
                 >
-                  {badgeItems.map((badge) => (
-                    <div
-                      key={badge.id}
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: 4,
-                        opacity: badge.earned
-                          ? 1
-                          : 0.3,
-                      }}
-                    >
+                  {badgeList.map(
+                    (badge) => (
                       <div
+                        key={badge.id}
                         style={{
-                          width: 44,
-                          height: 44,
-                          borderRadius: '50%',
-                          background: badge.earned
-                            ? 'rgba(59,130,246,.14)'
-                            : 'rgba(71,85,105,.1)',
-                          border: `2px solid ${
-                            badge.earned
-                              ? 'rgba(59,130,246,.35)'
-                              : 'var(--bd)'
-                          }`,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent:
+                          textAlign:
                             'center',
-                          fontSize: 20,
-                        }}
-                      >
-                        {badge.icon}
-                      </div>
 
-                      <div
-                        style={{
-                          fontSize: 9,
-                          color: 'var(--tx2)',
-                          textAlign: 'center',
+                          opacity:
+                            badge.earned
+                              ? 1
+                              : .3,
                         }}
                       >
-                        {badge.title}
+                        <div
+                          style={{
+                            display:
+                              'grid',
+
+                            width:
+                              46,
+
+                            height:
+                              46,
+
+                            placeItems:
+                              'center',
+
+                            margin:
+                              '0 auto',
+
+                            background:
+                              badge.earned
+                                ? 'var(--acc-soft)'
+                                : 'var(--elev)',
+
+                            border:
+                              `1px solid ${
+                                badge.earned
+                                  ? 'var(--bdg)'
+                                  : 'var(--bd)'
+                              }`,
+
+                            borderRadius:
+                              '50%',
+
+                            fontSize:
+                              21,
+                          }}
+                        >
+                          {badge.icon}
+                        </div>
+
+                        <div
+                          style={{
+                            color:
+                              'var(--tx2)',
+
+                            fontSize:
+                              8.5,
+
+                            marginTop:
+                              5,
+                          }}
+                        >
+                          {badge.title}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  )}
                 </div>
-              </div>
+              </section>
             )}
           </div>
-        ) : (
-          <div className="empty">
-            اطلاعات پروفایل در دسترس نیست.
-          </div>
         )}
-      </div>
+      </main>
     </>
   );
 }
