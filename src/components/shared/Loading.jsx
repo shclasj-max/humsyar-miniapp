@@ -2,7 +2,7 @@ export function LoadingScreen() {
   return (
     <div style={{ display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:'100dvh',gap:16,background:'var(--bg)' }}>
       <div style={{ fontSize:52 }}>🏥</div>
-      <div style={{ color:'var(--tx2)',fontSize:16,fontWeight:700 }}>همیار</div>
+      <div style={{ color:'var(--tx2)',fontSize:16,fontWeight:700 }}>هامزیار</div>
       <Spinner size={28} />
     </div>
   );
