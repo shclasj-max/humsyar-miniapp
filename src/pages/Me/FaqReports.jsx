@@ -1,163 +1,1242 @@
-// ═══ FAQ ═══
 import { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+
+import {
+  useSearchParams,
+} from 'react-router-dom';
+
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
+
 import api from '../../lib/api';
 import Header from '../../components/layout/Header';
-import { SkeletonCard } from '../../components/shared/Loading';
-import { haptic } from '../../lib/telegram';
-import { useUIStore } from '../../stores/uiStore';
+
+import {
+  SkeletonCard,
+  Spinner,
+} from '../../components/shared/Loading';
+
+import {
+  hapticNotif,
+} from '../../lib/telegram';
+
+import {
+  useUIStore,
+} from '../../stores/uiStore';
+
 
 export function Faq() {
-  const [search, setSearch] = useState('');
-  const [openId, setOpenId] = useState(null);
+  const [
+    query,
+    setQuery,
+  ] = useState('');
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['faq'],
-    queryFn: () => api.get('/api/faq').then(r => r.data),
-    staleTime: 1000 * 60 * 15,
-    enabled: search.length < 2,
+  const [
+    openId,
+    setOpenId,
+  ] = useState(null);
+
+
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: [
+      'faq',
+    ],
+
+    queryFn: () =>
+      api
+        .get('/api/faq')
+        .then(
+          (response) =>
+            response.data
+              ?.categories || []
+        ),
+
+    staleTime:
+      10 * 60 * 1000,
   });
 
-  const { data: searchData, isLoading: loadingSearch } = useQuery({
-    queryKey: ['faq-search', search],
-    queryFn: () => api.get(`/api/faq/search?q=${encodeURIComponent(search)}`).then(r => r.data.results),
-    staleTime: 1000 * 30,
-    enabled: search.length >= 2,
+
+  const {
+    data:
+      searchResults = [],
+
+    isFetching,
+  } = useQuery({
+    queryKey: [
+      'faq-search',
+      query,
+    ],
+
+    queryFn: () =>
+      api
+        .get(
+          '/api/faq/search',
+
+          {
+            params: {
+              q: query.trim(),
+            },
+          }
+        )
+        .then(
+          (response) =>
+            response.data
+              ?.results || []
+        ),
+
+    enabled:
+      query.trim().length >= 2,
   });
 
-  function toggle(id) { haptic(); setOpenId(prev => prev === id ? null : id); }
+
+  const categories =
+    Array.isArray(data)
+      ? data
+      : [];
+
+
+  const results =
+    Array.isArray(
+      searchResults
+    )
+      ? searchResults
+      : [];
+
+
+  const searching =
+    query.trim().length >= 2;
+
+
+  const Item = ({
+    item,
+    category,
+  }) => {
+    const id =
+      `${category}-${item.id}`;
+
+    const open =
+      openId === id;
+
+    return (
+      <button
+        type="button"
+        className={
+          'card card-tap'
+        }
+        onClick={() =>
+          setOpenId(
+            open
+              ? null
+              : id
+          )
+        }
+        style={{
+          width: '100%',
+          padding: 13,
+          textAlign: 'right',
+
+          borderColor:
+            open
+              ? 'var(--bdg)'
+              : 'var(--bd)',
+        }}
+      >
+        <span
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 9,
+          }}
+        >
+          <span
+            style={{
+              display: 'grid',
+
+              width: 34,
+              height: 34,
+
+              placeItems:
+                'center',
+
+              borderRadius:
+                11,
+
+              background:
+                'var(--acc-soft)',
+
+              color:
+                'var(--acc2)',
+
+              fontWeight:
+                900,
+            }}
+          >
+            ؟
+          </span>
+
+          <b
+            style={{
+              flex: 1,
+
+              fontSize:
+                12.5,
+
+              lineHeight:
+                1.7,
+            }}
+          >
+            {item.question}
+          </b>
+
+          <span
+            style={{
+              color:
+                'var(--txm)',
+
+              transform:
+                open
+                  ? 'rotate(90deg)'
+                  : 'none',
+
+              transition:
+                'transform .2s',
+            }}
+          >
+            ←
+          </span>
+        </span>
+
+        {open && (
+          <span
+            style={{
+              display:
+                'block',
+
+              padding:
+                '11px 43px 2px 0',
+
+              color:
+                'var(--tx2)',
+
+              fontSize:
+                10.8,
+
+              lineHeight:
+                1.9,
+            }}
+          >
+            {item.answer}
+          </span>
+        )}
+      </button>
+    );
+  };
+
 
   return (
     <>
-      <Header title="❓ سوالات متداول" />
-      <div className="page fade-up">
-        <input className="inp" placeholder="🔍 جستجو در سوالات..." value={search} onChange={e => setSearch(e.target.value)} style={{ marginBottom:13 }} />
+      <Header
+        title="سؤالات متداول"
+        subtitle={
+          'پاسخ سریع به پرسش‌ها'
+        }
+      />
 
-        {search.length >= 2 ? (
-          loadingSearch ? <SkeletonCard /> : !searchData?.length ? (
-            <div className="empty"><div style={{ fontSize:36,marginBottom:10 }}>🔍</div><div>نتیجه‌ای پیدا نشد</div></div>
-          ) : searchData.map((item, i) => (
-            <div key={i} className="card" style={{ marginBottom:8,padding:0,overflow:'hidden' }}>
-              <button onClick={() => toggle(i)} style={{ width:'100%',display:'flex',alignItems:'center',gap:9,padding:'12px 13px',background:'none',border:'none',cursor:'pointer',textAlign:'right' }}>
-                <span style={{ fontSize:15 }}>❓</span>
-                <div style={{ flex:1,fontWeight:600,fontSize:13,color:'var(--tx)',lineHeight:1.4 }}>{item.question}</div>
-                <span style={{ color:'var(--txm)',fontSize:15,transition:'transform .2s',transform:openId===i?'rotate(180deg)':'none' }}>▾</span>
-              </button>
-              {openId===i && <div style={{ padding:'0 13px 13px 38px',fontSize:12.5,color:'var(--tx2)',lineHeight:1.8,borderTop:'1px solid var(--bd)',paddingTop:10 }}>{item.answer}</div>}
+      <main className="page fade-up">
+        <section
+          className={
+            'card card-glow'
+          }
+          style={{
+            padding:
+              17,
+
+            marginBottom:
+              14,
+
+            background:
+              'linear-gradient(145deg,rgba(139,92,246,.14),rgba(16,24,39,.95) 55%,rgba(59,130,246,.1))',
+          }}
+        >
+          <div
+            style={{
+              display:
+                'flex',
+
+              alignItems:
+                'center',
+
+              gap:
+                12,
+            }}
+          >
+            <span
+              style={{
+                display:
+                  'grid',
+
+                width:
+                  50,
+
+                height:
+                  50,
+
+                placeItems:
+                  'center',
+
+                borderRadius:
+                  16,
+
+                background:
+                  'linear-gradient(135deg,#7C3AED,#3B82F6)',
+
+                fontSize:
+                  24,
+              }}
+            >
+              💡
+            </span>
+
+            <div>
+              <b
+                style={{
+                  fontSize:
+                    16,
+                }}
+              >
+                چطور می‌تونیم راهنمایی
+                کنیم؟
+              </b>
+
+              <div
+                style={{
+                  color:
+                    'var(--txm)',
+
+                  fontSize:
+                    10,
+
+                  marginTop:
+                    3,
+                }}
+              >
+                بین سؤال‌های رایج جست‌وجو
+                کنید.
+              </div>
             </div>
-          ))
-        ) : isLoading ? <SkeletonCard /> : (
-          data?.categories?.map(cat => (
-            <div key={cat.name} style={{ marginBottom:18 }}>
-              <div className="sec-title">{cat.name}</div>
-              {cat.items.map((item, i) => {
-                const uid = cat.name + i;
-                return (
-                  <div key={i} className="card" style={{ marginBottom:8,padding:0,overflow:'hidden' }}>
-                    <button onClick={() => toggle(uid)} style={{ width:'100%',display:'flex',alignItems:'center',gap:9,padding:'12px 13px',background:'none',border:'none',cursor:'pointer',textAlign:'right' }}>
-                      <span style={{ fontSize:15 }}>❓</span>
-                      <div style={{ flex:1,fontWeight:600,fontSize:13,color:'var(--tx)',lineHeight:1.4 }}>{item.question}</div>
-                      <span style={{ color:'var(--txm)',fontSize:15,transition:'transform .2s',transform:openId===uid?'rotate(180deg)':'none' }}>▾</span>
-                    </button>
-                    {openId===uid && <div style={{ padding:'0 13px 13px 38px',fontSize:12.5,color:'var(--tx2)',lineHeight:1.8,borderTop:'1px solid var(--bd)',paddingTop:10 }}>{item.answer}</div>}
+          </div>
+
+          <div
+            style={{
+              position:
+                'relative',
+
+              marginTop:
+                13,
+            }}
+          >
+            <input
+              className="inp"
+              value={query}
+              onChange={(event) =>
+                setQuery(
+                  event.target.value
+                )
+              }
+              placeholder={
+                'جست‌وجوی سؤال یا پاسخ...'
+              }
+              style={{
+                paddingLeft:
+                  38,
+              }}
+            />
+
+            {isFetching && (
+              <span
+                style={{
+                  position:
+                    'absolute',
+
+                  left:
+                    12,
+
+                  top:
+                    12,
+                }}
+              >
+                <Spinner size={16} />
+              </span>
+            )}
+          </div>
+        </section>
+
+
+        {isLoading ? (
+          <>
+            <SkeletonCard />
+            <SkeletonCard />
+          </>
+        ) : isError ? (
+          <div className="empty card">
+            دریافت راهنما انجام نشد.
+
+            <button
+              className="btn btn-p"
+              style={{
+                marginTop:
+                  12,
+              }}
+              onClick={() =>
+                refetch()
+              }
+            >
+              تلاش دوباره
+            </button>
+          </div>
+        ) : searching ? (
+          <section
+            style={{
+              display:
+                'grid',
+
+              gap:
+                8,
+            }}
+          >
+            <div className="sec-title">
+              نتایج جست‌وجو (
+              {results.length})
+            </div>
+
+            {results.length ? (
+              results.map(
+                (item) => (
+                  <Item
+                    key={item.id}
+                    item={item}
+
+                    category={
+                      item.category ||
+                      'result'
+                    }
+                  />
+                )
+              )
+            ) : (
+              !isFetching && (
+                <div className="empty card">
+                  نتیجه‌ای پیدا نشد.
+                </div>
+              )
+            )}
+          </section>
+        ) : (
+          <div
+            style={{
+              display:
+                'grid',
+
+              gap:
+                17,
+            }}
+          >
+            {categories.map(
+              (category) => (
+                <section
+                  key={
+                    category.name
+                  }
+                >
+                  <div className="sec-title">
+                    {category.name}
                   </div>
-                );
-              })}
-            </div>
-          ))
+
+                  <div
+                    style={{
+                      display:
+                        'grid',
+
+                      gap:
+                        8,
+                    }}
+                  >
+                    {(
+                      Array.isArray(
+                        category.items
+                      )
+                        ? category.items
+                        : []
+                    ).map(
+                      (item) => (
+                        <Item
+                          key={item.id}
+                          item={item}
+                          category={
+                            category.name
+                          }
+                        />
+                      )
+                    )}
+                  </div>
+                </section>
+              )
+            )}
+          </div>
         )}
-      </div>
+      </main>
     </>
   );
 }
 
-// ═══ Reports ═══
+
+const STATUS = {
+  new: [
+    'در انتظار',
+    'b-yel',
+    '🕘',
+  ],
+
+  reviewing: [
+    'در حال بررسی',
+    'b-acc',
+    '🔎',
+  ],
+
+  resolved: [
+    'برطرف شد',
+    'b-grn',
+    '✅',
+  ],
+
+  rejected: [
+    'رد شد',
+    'b-red',
+    '❌',
+  ],
+};
+
+
 export function Reports() {
-  const [params] = typeof window !== 'undefined'
-    ? [new URLSearchParams(window.location.search)]
-    : [new URLSearchParams()];
-  const initType = params.get('type') || null;
-  const initId   = params.get('id')   || null;
-  const [view, setView]   = useState(initType && initId ? 'form' : 'list');
-  const [reason, setReason] = useState('');
-  const [note, setNote]     = useState('');
-  const toast = useUIStore(s => s.toast);
+  const [
+    params,
+  ] = useSearchParams();
 
-  const { data: reasonsData } = useQuery({
-    queryKey: ['report-reasons'],
-    queryFn: () => api.get('/api/reports/reasons').then(r => r.data.reasons),
-    staleTime: Infinity,
+  const [
+    tab,
+    setTab,
+  ] = useState('new');
+
+  const [
+    form,
+    setForm,
+  ] = useState({
+    target_type:
+      params.get('type') ===
+      'question'
+        ? 'question'
+        : 'resource',
+
+    target_id:
+      params.get('id') ||
+      '',
+
+    reason:
+      '',
+
+    note:
+      '',
   });
 
-  const { data: myReports, isLoading } = useQuery({
-    queryKey: ['my-reports'],
-    queryFn: () => api.get('/api/reports/my').then(r => r.data.reports),
-    staleTime: 1000 * 30,
-    enabled: view === 'list',
+  const toast = useUIStore(
+    (state) => state.toast
+  );
+
+  const queryClient =
+    useQueryClient();
+
+
+  const {
+    data:
+      reasons = [],
+  } = useQuery({
+    queryKey: [
+      'report-reasons',
+    ],
+
+    queryFn: () =>
+      api
+        .get(
+          '/api/reports/reasons'
+        )
+        .then(
+          (response) =>
+            response.data
+              ?.reasons || []
+        ),
+
+    staleTime:
+      30 * 60 * 1000,
   });
 
-  const submitMut = useMutation({
-    mutationFn: () => api.post('/api/reports', { target_type: initType||'question', target_id: initId||'', reason, note }).then(r => r.data),
-    onSuccess: (data) => { toast(data.message,'success',4000); setView('list'); },
-    onError: (err) => toast(err.response?.data?.detail||'خطا','error'),
+
+  const {
+    data:
+      history = [],
+
+    isLoading:
+      historyLoading,
+
+    isError:
+      historyError,
+  } = useQuery({
+    queryKey: [
+      'my-reports',
+    ],
+
+    queryFn: () =>
+      api
+        .get(
+          '/api/reports/my'
+        )
+        .then(
+          (response) =>
+            response.data
+              ?.reports || []
+        ),
+
+    enabled:
+      tab === 'history',
   });
 
-  const STATUS_MAP = { new:['در انتظار','b-yel'], reviewing:['در بررسی','b-acc'], resolved:['برطرف شد','b-grn'], rejected:['رد شد','b-red'] };
+
+  const createMutation =
+    useMutation({
+      mutationFn: () =>
+        api.post(
+          '/api/reports',
+
+          {
+            ...form,
+
+            target_id:
+              form.target_id
+                .trim(),
+
+            note:
+              form.note.trim(),
+          }
+        ),
+
+      onSuccess: async (
+        response
+      ) => {
+        hapticNotif(
+          'success'
+        );
+
+        toast(
+          response.data
+            ?.message ||
+            'گزارش ثبت شد ✅',
+
+          'success'
+        );
+
+        setForm({
+          target_type:
+            'resource',
+
+          target_id:
+            '',
+
+          reason:
+            '',
+
+          note:
+            '',
+        });
+
+        setTab(
+          'history'
+        );
+
+        await queryClient
+          .invalidateQueries({
+            queryKey:
+              ['my-reports'],
+          });
+      },
+
+      onError: (error) =>
+        toast(
+          error?.response
+            ?.data
+            ?.detail ||
+            'ثبت گزارش انجام نشد',
+
+          'error'
+        ),
+    });
+
+
+  const reasonList =
+    Array.isArray(reasons)
+      ? reasons
+      : [];
+
+
+  const reports =
+    Array.isArray(history)
+      ? history
+      : [];
+
+
+  const valid =
+    form.target_id.trim() &&
+    form.reason;
+
 
   return (
     <>
-      <Header title="🚩 گزارش ایراد محتوا"
-        right={<button className="btn btn-dark" style={{ fontSize:11,padding:'5px 10px' }} onClick={() => setView(v => v==='form'?'list':'form')}>{view==='form'?'📋 سابقه':'+ گزارش جدید'}</button>}
+      <Header
+        title="گزارش ایراد"
+        subtitle={
+          'به بهبود محتوای هامزیار کمک کنید'
+        }
       />
-      <div className="page fade-up">
-        {view === 'form' ? (
-          <div className="card card-glow">
-            <div className="sec-title">🚩 ثبت گزارش</div>
-            <div style={{ fontSize:12,color:'var(--txm)',marginBottom:13,lineHeight:1.7 }}>
-              {initType==='question'?'در این سوال مشکلی دیدی؟':'این فایل مشکل داره؟'} گزارش بده تا بررسی شود.
+
+      <main className="page fade-up">
+        <section
+          className={
+            'card card-glow'
+          }
+          style={{
+            padding:
+              17,
+
+            marginBottom:
+              14,
+
+            background:
+              'linear-gradient(145deg,rgba(239,68,68,.12),rgba(16,24,39,.95) 55%,rgba(245,158,11,.07))',
+          }}
+        >
+          <div
+            style={{
+              display:
+                'flex',
+
+              alignItems:
+                'center',
+
+              gap:
+                12,
+            }}
+          >
+            <span
+              style={{
+                display:
+                  'grid',
+
+                width:
+                  50,
+
+                height:
+                  50,
+
+                placeItems:
+                  'center',
+
+                borderRadius:
+                  16,
+
+                background:
+                  'rgba(239,68,68,.14)',
+
+                fontSize:
+                  24,
+              }}
+            >
+              🚩
+            </span>
+
+            <div>
+              <b
+                style={{
+                  fontSize:
+                    16,
+                }}
+              >
+                گزارش دقیق، محتوای بهتر
+              </b>
+
+              <div
+                style={{
+                  color:
+                    'var(--txm)',
+
+                  fontSize:
+                    10,
+
+                  lineHeight:
+                    1.6,
+
+                  marginTop:
+                    3,
+                }}
+              >
+                گزارش شما توسط مدیر محتوا
+                بررسی و نتیجه ثبت می‌شود.
+              </div>
             </div>
-            <div style={{ marginBottom:13 }}>
-              <div style={{ fontSize:11,color:'var(--txm)',marginBottom:7 }}>دلیل گزارش</div>
-              {!reasonsData ? <div className="skeleton" style={{ height:120,borderRadius:'var(--r-md)' }} /> : (
-                <div style={{ display:'flex',flexDirection:'column',gap:5 }}>
-                  {reasonsData.map(r => (
-                    <button key={r.key} onClick={() => { haptic(); setReason(r.key); }}
-                      style={{ textAlign:'right',padding:'9px 12px',borderRadius:'var(--r-md)',border:`1px solid ${reason===r.key?'var(--acc)':'var(--bd)'}`,background:reason===r.key?'var(--acc-glow)':'var(--elev)',color:reason===r.key?'var(--acc)':'var(--tx)',fontFamily:'var(--font)',fontSize:13,cursor:'pointer' }}>
-                      {r.label}
+          </div>
+        </section>
+
+
+        <div className="tab-bar">
+          <button
+            className="tab-btn"
+            onClick={() =>
+              setTab('new')
+            }
+            style={{
+              color:
+                tab === 'new'
+                  ? '#fff'
+                  : 'var(--tx2)',
+
+              background:
+                tab === 'new'
+                  ? 'var(--grad-brand)'
+                  : 'transparent',
+            }}
+          >
+            ＋ گزارش جدید
+          </button>
+
+          <button
+            className="tab-btn"
+            onClick={() =>
+              setTab('history')
+            }
+            style={{
+              color:
+                tab === 'history'
+                  ? '#fff'
+                  : 'var(--tx2)',
+
+              background:
+                tab === 'history'
+                  ? 'var(--grad-brand)'
+                  : 'transparent',
+            }}
+          >
+            🕘 پیگیری گزارش‌ها
+          </button>
+        </div>
+
+
+        {tab === 'new' ? (
+          <>
+            <section
+              className="card"
+              style={{
+                display:
+                  'grid',
+
+                gap:
+                  10,
+              }}
+            >
+              <label
+                style={{
+                  color:
+                    'var(--txm)',
+
+                  fontSize:
+                    10,
+                }}
+              >
+                نوع محتوا
+              </label>
+
+              <div className="grid2">
+                <button
+                  type="button"
+                  className={`btn ${
+                    form.target_type ===
+                    'question'
+                      ? 'btn-p'
+                      : 'btn-dark'
+                  }`}
+                  onClick={() =>
+                    setForm({
+                      ...form,
+
+                      target_type:
+                        'question',
+                    })
+                  }
+                >
+                  🧪 سؤال
+                </button>
+
+                <button
+                  type="button"
+                  className={`btn ${
+                    form.target_type ===
+                    'resource'
+                      ? 'btn-p'
+                      : 'btn-dark'
+                  }`}
+                  onClick={() =>
+                    setForm({
+                      ...form,
+
+                      target_type:
+                        'resource',
+                    })
+                  }
+                >
+                  📎 فایل یا منبع
+                </button>
+              </div>
+
+              <label
+                style={{
+                  color:
+                    'var(--txm)',
+
+                  fontSize:
+                    10,
+                }}
+              >
+                شناسه{' '}
+
+                {form.target_type ===
+                'question'
+                  ? 'سؤال'
+                  : 'فایل'}
+              </label>
+
+              <input
+                className="inp"
+                value={
+                  form.target_id
+                }
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+
+                    target_id:
+                      event.target
+                        .value,
+                  })
+                }
+                placeholder={
+                  'شناسه محتوا را وارد کنید'
+                }
+              />
+
+              <label
+                style={{
+                  color:
+                    'var(--txm)',
+
+                  fontSize:
+                    10,
+                }}
+              >
+                دلیل گزارش
+              </label>
+
+              <div
+                style={{
+                  display:
+                    'flex',
+
+                  flexWrap:
+                    'wrap',
+
+                  gap:
+                    6,
+                }}
+              >
+                {reasonList.map(
+                  (item) => (
+                    <button
+                      type="button"
+                      key={item.key}
+                      className={`badge ${
+                        form.reason ===
+                        item.key
+                          ? 'b-red'
+                          : 'b-gray'
+                      }`}
+                      onClick={() =>
+                        setForm({
+                          ...form,
+
+                          reason:
+                            item.key,
+                        })
+                      }
+                      style={{
+                        padding:
+                          '7px 10px',
+
+                        border:
+                          form.reason ===
+                          item.key
+                            ? '1px solid rgba(239,68,68,.3)'
+                            : '1px solid transparent',
+
+                        cursor:
+                          'pointer',
+                      }}
+                    >
+                      {item.label}
                     </button>
-                  ))}
-                </div>
+                  )
+                )}
+              </div>
+
+              <label
+                style={{
+                  color:
+                    'var(--txm)',
+
+                  fontSize:
+                    10,
+                }}
+              >
+                توضیح بیشتر (اختیاری)
+              </label>
+
+              <textarea
+                className="inp"
+                rows={4}
+                maxLength={1000}
+                value={
+                  form.note
+                }
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+
+                    note:
+                      event.target
+                        .value,
+                  })
+                }
+                placeholder={
+                  'مشکل را دقیق‌تر توضیح دهید...'
+                }
+              />
+            </section>
+
+            <button
+              className={
+                'btn btn-d btn-full'
+              }
+              style={{
+                marginTop:
+                  12,
+              }}
+              disabled={
+                !valid ||
+                createMutation
+                  .isPending
+              }
+              onClick={() =>
+                createMutation.mutate()
+              }
+            >
+              {createMutation
+                .isPending ? (
+                <Spinner size={15} />
+              ) : (
+                '🚩 ثبت گزارش'
               )}
-            </div>
-            <div style={{ marginBottom:16 }}>
-              <div style={{ fontSize:11,color:'var(--txm)',marginBottom:5 }}>توضیح اضافه (اختیاری)</div>
-              <textarea className="inp" rows={3} value={note} onChange={e=>setNote(e.target.value)} placeholder="جزئیات بیشتر..." style={{ resize:'vertical',lineHeight:1.6 }} />
-            </div>
-            <button className="btn btn-p btn-full" disabled={!reason||submitMut.isPending} onClick={() => submitMut.mutate()}>
-              {submitMut.isPending ? '...' : '📨 ثبت گزارش'}
             </button>
+          </>
+        ) : historyLoading ? (
+          <>
+            <SkeletonCard />
+            <SkeletonCard />
+          </>
+        ) : historyError ? (
+          <div className="empty card">
+            دریافت گزارش‌ها انجام نشد.
+          </div>
+        ) : reports.length === 0 ? (
+          <div className="empty card">
+            هنوز گزارشی ثبت نکرده‌اید.
           </div>
         ) : (
-          isLoading ? <SkeletonCard /> : !myReports?.length ? (
-            <div className="empty"><div style={{ fontSize:40,marginBottom:10 }}>🚩</div><div>هنوز گزارشی ثبت نکرده‌اید</div></div>
-          ) : myReports.map(r => {
-            const [label, cls] = STATUS_MAP[r.status]||['نامشخص','b-gray'];
-            return (
-              <div key={r.id} className="card" style={{ marginBottom:9 }}>
-                <div style={{ display:'flex',alignItems:'flex-start',gap:10 }}>
-                  <span style={{ fontSize:20,marginTop:2 }}>🚩</span>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontWeight:600,fontSize:13 }}>{r.reason}</div>
-                    <div style={{ fontSize:11,color:'var(--txm)',marginTop:2 }}>{r.target_type==='question'?'سوال':'فایل'} • {r.created_at}</div>
-                    {r.note && <div style={{ fontSize:12,color:'var(--tx2)',marginTop:4 }}>{r.note}</div>}
-                  </div>
-                  <span className={`badge ${cls}`}>{label}</span>
-                </div>
-              </div>
-            );
-          })
+          <section
+            style={{
+              display:
+                'grid',
+
+              gap:
+                9,
+            }}
+          >
+            {reports.map(
+              (item) => {
+                const [
+                  label,
+                  badge,
+                  icon,
+                ] = (
+                  STATUS[
+                    item.status
+                  ] || [
+                    item
+                      .status_label ||
+                      'نامشخص',
+
+                    'b-gray',
+
+                    '📌',
+                  ]
+                );
+
+                return (
+                  <article
+                    key={item.id}
+                    className="card"
+                  >
+                    <div
+                      style={{
+                        display:
+                          'flex',
+
+                        alignItems:
+                          'flex-start',
+
+                        gap:
+                          10,
+                      }}
+                    >
+                      <span
+                        style={{
+                          display:
+                            'grid',
+
+                          width:
+                            42,
+
+                          height:
+                            42,
+
+                          placeItems:
+                            'center',
+
+                          borderRadius:
+                            13,
+
+                          background:
+                            'rgba(100,116,139,.1)',
+
+                          fontSize:
+                            19,
+                        }}
+                      >
+                        {icon}
+                      </span>
+
+                      <div
+                        style={{
+                          flex:
+                            1,
+                        }}
+                      >
+                        <b
+                          style={{
+                            fontSize:
+                              12.5,
+                          }}
+                        >
+                          {item.target_type ===
+                          'question'
+                            ? 'گزارش سؤال'
+                            : 'گزارش منبع'}
+
+                          {' #'}
+
+                          {item.id}
+                        </b>
+
+                        <div
+                          style={{
+                            color:
+                              'var(--txm)',
+
+                            fontSize:
+                              9.5,
+
+                            marginTop:
+                              3,
+                          }}
+                        >
+                          {item.reason}
+
+                          {' • '}
+
+                          {item.created_at ||
+                            '—'}
+                        </div>
+                      </div>
+
+                      <span
+                        className={`badge ${badge}`}
+                      >
+                        {label}
+                      </span>
+                    </div>
+
+                    {item.note && (
+                      <div
+                        style={{
+                          marginTop:
+                            9,
+
+                          padding:
+                            '8px 10px',
+
+                          color:
+                            'var(--tx2)',
+
+                          background:
+                            'rgba(100,116,139,.08)',
+
+                          borderRadius:
+                            11,
+
+                          fontSize:
+                            10.5,
+                        }}
+                      >
+                        «{item.note}»
+                      </div>
+                    )}
+                  </article>
+                );
+              }
+            )}
+          </section>
         )}
-      </div>
+      </main>
     </>
   );
 }
