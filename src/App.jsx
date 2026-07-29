@@ -34,7 +34,12 @@ import Schedule from './pages/Schedule';
 import Grades from './pages/Grades';
 
 
-/* صفحات یادگیری */
+/* هوشیار */
+
+import AiChat from './pages/Ai/AiChat';
+
+
+/* یادگیری */
 
 import Questions from './pages/Learn/Questions';
 import ExamCenter from './pages/Learn/ExamCenter';
@@ -46,7 +51,7 @@ import Resources from './pages/Learn/Resources';
 import References from './pages/Learn/References';
 
 
-/* صفحات حساب کاربری */
+/* حساب کاربری */
 
 import Me from './pages/Me';
 import Profile from './pages/Me/Profile';
@@ -99,7 +104,7 @@ import {
 } from './pages/Admin/ContentAdmin';
 
 
-/* مدیریت کتابخانه محتوا */
+/* مدیریت کتابخانه */
 
 import {
   BasicScienceAdmin,
@@ -244,6 +249,16 @@ export default function App() {
         />
 
 
+        {/* هوشیار */}
+
+        <Route
+          path="/ai"
+          element={
+            <AiChat />
+          }
+        />
+
+
         {/* صفحات یادگیری */}
 
         <Route
@@ -289,7 +304,7 @@ export default function App() {
         />
 
 
-        {/* صفحات حساب کاربری */}
+        {/* حساب کاربری */}
 
         <Route
           path="/me"
@@ -341,7 +356,7 @@ export default function App() {
         />
 
 
-        {/* خانه پنل مدیریت */}
+        {/* خانهٔ مدیریت */}
 
         <Route
           path="/admin"
@@ -353,7 +368,7 @@ export default function App() {
         />
 
 
-        {/* مدیریت کاربران */}
+        {/* کاربران */}
 
         <Route
           path="/admin/users"
@@ -401,7 +416,7 @@ export default function App() {
         />
 
 
-        {/* تیکت‌ها و ارتباطات مدیریتی */}
+        {/* عملیات مدیریتی */}
 
         <Route
           path="/admin/tickets"
@@ -440,7 +455,7 @@ export default function App() {
         />
 
 
-        {/* خانه مدیریت محتوا */}
+        {/* خانهٔ مدیریت محتوا */}
 
         <Route
           path="/admin/content"
@@ -533,7 +548,7 @@ export default function App() {
         />
 
 
-        {/* مسیرهای قدیمی سازگار */}
+        {/* مسیرهای قدیمی */}
 
         <Route
           path="/questions"
@@ -560,6 +575,16 @@ export default function App() {
           element={
             <Navigate
               to="/learn/references"
+              replace
+            />
+          }
+        />
+
+        <Route
+          path="/hoshyar"
+          element={
+            <Navigate
+              to="/ai"
               replace
             />
           }
