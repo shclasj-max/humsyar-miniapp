@@ -1,552 +1,2831 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
+
 import api from '../../lib/api';
 import Header from '../../components/layout/Header';
-import { SkeletonCard, Spinner } from '../../components/shared/Loading';
-import { haptic, hapticNotif } from '../../lib/telegram';
-import { useUIStore } from '../../stores/uiStore';
 
-const CONTENT_TYPE_LABELS = {
-  video: '🎥 ویدیو کلاس', ppt: '📊 پاورپوینت', pdf: '📄 جزوه PDF',
-  note: '📝 نکات', test: '🧪 تست', voice: '🎙 ویس استاد',
+import {
+  SkeletonCard,
+  Spinner,
+} from '../../components/shared/Loading';
+
+import {
+  hapticNotif,
+} from '../../lib/telegram';
+
+import {
+  useUIStore,
+} from '../../stores/uiStore';
+
+
+const errorText = (
+  error,
+  fallback
+) => {
+  const detail =
+    error?.response?.data?.detail;
+
+  return typeof detail === 'string'
+    ? detail
+    : fallback;
 };
 
-function EmptyState({ icon, text }) {
-  return <div className="empty"><div style={{ fontSize:36,marginBottom:10 }}>{icon}</div><div>{text}</div></div>;
-}
 
-function ErrorState({ error, onRetry }) {
-  const msg = error?.response?.data?.detail || error?.message || 'خطای ناشناخته';
+const number = (value) =>
+  Math.max(
+    0,
+    Number(value) || 0
+  );
+
+
+function Empty({
+  children,
+}) {
   return (
-    <div className="empty" style={{ color:'var(--err)' }}>
-      <div style={{ fontSize:36,marginBottom:10 }}>⚠️</div>
-      <div>خطا در دریافت اطلاعات</div>
-      <div style={{ fontSize:11,color:'var(--txm)',marginTop:6 }}>{String(msg)}</div>
-      {onRetry && <button className="btn btn-p" style={{ marginTop:12 }} onClick={onRetry}>🔄 تلاش دوباره</button>}
+    <div className="empty card">
+      {children}
     </div>
   );
 }
 
-function AddForm({ fields, onSubmit, submitting, submitLabel = '➕ افزودن' }) {
-  const [values, setValues] = useState(() => Object.fromEntries(fields.map(f => [f.key, f.default ?? ''])));
-  const set = (k, v) => setValues(s => ({ ...s, [k]: v }));
-  const canSubmit = fields.every(f => !f.required || String(values[f.key] ?? '').trim());
+
+function DeleteButton({
+  pending,
+  onClick,
+}) {
   return (
-    <div className="card" style={{ marginBottom:14 }}>
-      <div className="sec-title">➕ افزودن جدید</div>
-      {fields.map(f => (
-        <div key={f.key} style={{ marginBottom:9 }}>
-          {f.label && <div style={{ fontSize:11,color:'var(--txm)',marginBottom:4 }}>{f.label}</div>}
-          {f.type === 'select' ? (
-            <select className="inp" value={values[f.key]} onChange={e => set(f.key, e.target.value)}>
-              {f.options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          ) : f.type === 'file' ? (
-            <input className="inp" type="file" accept={f.accept} onChange={e => set(f.key, e.target.files?.[0] || null)} />
-          ) : (
-            <input className="inp" type={f.type || 'text'} placeholder={f.placeholder || ''} value={values[f.key]} onChange={e => set(f.key, e.target.value)} />
-          )}
-        </div>
-      ))}
-      <button className="btn btn-p btn-full" disabled={!canSubmit || submitting} onClick={() => onSubmit(values, () => setValues(Object.fromEntries(fields.map(f => [f.key, f.default ?? '']))))}>
-        {submitting ? <Spinner size={14} /> : submitLabel}
-      </button>
-    </div>
+    <button
+      type="button"
+      className="btn btn-d"
+      style={{
+        minHeight: 33,
+        padding: '5px 9px',
+      }}
+      disabled={pending}
+      onClick={onClick}
+    >
+      🗑
+    </button>
   );
 }
 
-function ListRow({ title, subtitle, badge, onClick, onDelete }) {
-  return (
-    <div className="card" style={{ marginBottom:9,display:'flex',alignItems:'center',gap:8 }}>
-      <button onClick={onClick} style={{ flex:1,textAlign:'right',background:'none',border:'none',cursor:onClick?'pointer':'default',padding:0 }}>
-        <div style={{ fontWeight:700,fontSize:13.5 }}>{title}</div>
-        {subtitle && <div style={{ fontSize:10.5,color:'var(--txm)',marginTop:2 }}>{subtitle}</div>}
-      </button>
-      {badge}
-      {onClick && <span style={{ color:'var(--txm)' }}>←</span>}
-      {onDelete && <button className="btn btn-d" style={{ fontSize:11,padding:'6px 9px' }} onClick={onDelete}>🗑</button>}
-    </div>
-  );
-}
 
-/* ═══════════════════════════════════════════
-   🧬 مدیریت علوم پایه
-   ═══════════════════════════════════════════ */
+/* مدیریت علوم پایه */
+
 export function BasicScienceAdmin() {
-  const toast = useUIStore(s => s.toast);
-  const qc = useQueryClient();
-  const [term, setTerm] = useState(null);
-  const [lesson, setLesson] = useState(null);   // {id,name}
-  const [session, setSession] = useState(null); // {id,topic}
+  const [
+    term,
+    setTerm,
+  ] = useState('ترم ۱');
 
-  const level = session ? 'content' : lesson ? 'sessions' : term ? 'lessons' : 'terms';
+  const [
+    lesson,
+    setLesson,
+  ] = useState(null);
 
-  const { data: terms, isLoading: loadingTerms, isError: errTerms, error: errTermsObj, refetch: refetchTerms } = useQuery({
-    queryKey:['bs-terms'], queryFn:() => api.get('/api/content/basic-science/terms').then(r=>r.data.terms),
-    retry: 1,
-  });
+  const [
+    session,
+    setSession,
+  ] = useState(null);
 
-  const { data: lessons, isLoading: loadingLessons, isError: errLessons, error: errLessonsObj, refetch: refetchLessons } = useQuery({
-    queryKey: ['bs-lessons', term], queryFn: () => api.get(`/api/content/basic-science/lessons?term=${encodeURIComponent(term)}`).then(r=>r.data.lessons),
-    enabled: level==='lessons', retry: 1,
-  });
-  const { data: sessions, isLoading: loadingSessions, isError: errSessions, error: errSessionsObj, refetch: refetchSessions } = useQuery({
-    queryKey: ['bs-sessions', lesson?.id], queryFn: () => api.get(`/api/content/basic-science/lessons/${lesson.id}/sessions`).then(r=>r.data.sessions),
-    enabled: level==='sessions', retry: 1,
-  });
-  const { data: contents, isLoading: loadingContent, isError: errContent, error: errContentObj, refetch: refetchContent } = useQuery({
-    queryKey: ['bs-content', session?.id], queryFn: () => api.get(`/api/content/basic-science/sessions/${session.id}/content`).then(r=>r.data.content),
-    enabled: level==='content', retry: 1,
+  const [
+    lessonForm,
+    setLessonForm,
+  ] = useState({
+    name: '',
+    teacher: '',
   });
 
-  const addLesson = useMutation({
-    mutationFn: (v) => api.post('/api/content/basic-science/lessons', { term, name:v.name, teacher:v.teacher }).then(r=>r.data),
-    onSuccess: (_, __, ctx) => { hapticNotif('success'); toast('✅ اضافه شد','success'); qc.invalidateQueries({queryKey:['bs-lessons',term]}); },
-    onError: (e) => toast(e.response?.data?.detail || 'خطا','error'),
-  });
-  const delLesson = useMutation({
-    mutationFn: (id) => api.delete(`/api/content/basic-science/lessons/${id}`).then(r=>r.data),
-    onSuccess: () => { toast('🗑 حذف شد','info'); qc.invalidateQueries({queryKey:['bs-lessons',term]}); },
-  });
-  const addSession = useMutation({
-    mutationFn: (v) => api.post(`/api/content/basic-science/lessons/${lesson.id}/sessions`, { number:Number(v.number), topic:v.topic, teacher:v.teacher }).then(r=>r.data),
-    onSuccess: () => { hapticNotif('success'); toast('✅ اضافه شد','success'); qc.invalidateQueries({queryKey:['bs-sessions',lesson.id]}); },
-  });
-  const delSession = useMutation({
-    mutationFn: (id) => api.delete(`/api/content/basic-science/sessions/${id}`).then(r=>r.data),
-    onSuccess: () => { toast('🗑 حذف شد','info'); qc.invalidateQueries({queryKey:['bs-sessions',lesson.id]}); },
-  });
-  const addContent = useMutation({
-    mutationFn: (v) => {
-      const fd = new FormData();
-      fd.append('ctype', v.ctype); fd.append('description', v.description); fd.append('extra_info', v.extra_info); fd.append('file', v.file);
-      return api.post(`/api/content/basic-science/sessions/${session.id}/content`, fd).then(r=>r.data);
-    },
-    onSuccess: () => { hapticNotif('success'); toast('✅ فایل آپلود شد','success'); qc.invalidateQueries({queryKey:['bs-content',session.id]}); },
-    onError: (e) => toast(e.response?.data?.detail || 'خطا در آپلود','error'),
-  });
-  const delContent = useMutation({
-    mutationFn: (id) => api.delete(`/api/content/basic-science/content/${id}`).then(r=>r.data),
-    onSuccess: () => { toast('🗑 حذف شد','info'); qc.invalidateQueries({queryKey:['bs-content',session.id]}); },
+  const [
+    sessionForm,
+    setSessionForm,
+  ] = useState({
+    number: 1,
+    topic: '',
+    teacher: '',
   });
 
-  const titles = { terms:'🧬 علوم پایه', lessons:term, sessions:lesson?.name, content:`جلسه ${session?.number}` };
-  const backFns = {
-    terms: undefined,
-    lessons: () => setTerm(null),
-    sessions: () => setLesson(null),
-    content: () => setSession(null),
+  const [
+    upload,
+    setUpload,
+  ] = useState({
+    type: 'pdf',
+    description: '',
+    extra_info: '',
+    file: null,
+  });
+
+  const toast = useUIStore(
+    (state) => state.toast
+  );
+
+  const queryClient =
+    useQueryClient();
+
+
+  const {
+    data: terms = [
+      'ترم ۱',
+      'ترم ۲',
+      'ترم ۳',
+      'ترم ۴',
+      'ترم ۵',
+    ],
+  } = useQuery({
+    queryKey: [
+      'bs-admin-terms',
+    ],
+
+    queryFn: () =>
+      api
+        .get(
+          '/api/content/basic-science/terms'
+        )
+        .then(
+          (response) =>
+            response.data
+              ?.terms || []
+        ),
+  });
+
+
+  const {
+    data: lessons = [],
+    isLoading: lessonsLoading,
+  } = useQuery({
+    queryKey: [
+      'bs-admin-lessons',
+      term,
+    ],
+
+    queryFn: () =>
+      api
+        .get(
+          '/api/content/basic-science/lessons',
+
+          {
+            params: {
+              term,
+            },
+          }
+        )
+        .then(
+          (response) =>
+            response.data
+              ?.lessons || []
+        ),
+  });
+
+
+  const {
+    data: sessions = [],
+    isLoading: sessionsLoading,
+  } = useQuery({
+    queryKey: [
+      'bs-admin-sessions',
+      lesson?.id,
+    ],
+
+    queryFn: () =>
+      api
+        .get(
+          `/api/content/basic-science/lessons/${lesson.id}/sessions`
+        )
+        .then(
+          (response) =>
+            response.data
+              ?.sessions || []
+        ),
+
+    enabled:
+      Boolean(lesson?.id),
+  });
+
+
+  const {
+    data: content = [],
+    isLoading: contentLoading,
+  } = useQuery({
+    queryKey: [
+      'bs-admin-content',
+      session?.id,
+    ],
+
+    queryFn: () =>
+      api
+        .get(
+          `/api/content/basic-science/sessions/${session.id}/content`
+        )
+        .then(
+          (response) =>
+            response.data
+              ?.content || []
+        ),
+
+    enabled:
+      Boolean(session?.id),
+  });
+
+
+  const refresh = async () => {
+    await Promise.all([
+      queryClient
+        .invalidateQueries({
+          queryKey: [
+            'bs-admin-lessons',
+          ],
+        }),
+
+      queryClient
+        .invalidateQueries({
+          queryKey: [
+            'bs-admin-sessions',
+          ],
+        }),
+
+      queryClient
+        .invalidateQueries({
+          queryKey: [
+            'bs-admin-content',
+          ],
+        }),
+    ]);
   };
 
+
+  const mutation = useMutation({
+    mutationFn: async ({
+      type,
+      id,
+    }) => {
+      if (
+        type === 'lesson-add'
+      ) {
+        return api.post(
+          '/api/content/basic-science/lessons',
+
+          {
+            term,
+
+            ...lessonForm,
+          }
+        );
+      }
+
+      if (
+        type === 'lesson-delete'
+      ) {
+        return api.delete(
+          `/api/content/basic-science/lessons/${id}`
+        );
+      }
+
+      if (
+        type === 'session-add'
+      ) {
+        return api.post(
+          `/api/content/basic-science/lessons/${lesson.id}/sessions`,
+
+          {
+            ...sessionForm,
+
+            number:
+              Number(
+                sessionForm.number
+              ),
+          }
+        );
+      }
+
+      if (
+        type === 'session-delete'
+      ) {
+        return api.delete(
+          `/api/content/basic-science/sessions/${id}`
+        );
+      }
+
+      if (
+        type === 'content-delete'
+      ) {
+        return api.delete(
+          `/api/content/basic-science/content/${id}`
+        );
+      }
+
+      const body =
+        new FormData();
+
+      body.append(
+        'ctype',
+        upload.type
+      );
+
+      body.append(
+        'description',
+        upload.description
+      );
+
+      body.append(
+        'extra_info',
+        upload.extra_info
+      );
+
+      body.append(
+        'file',
+        upload.file
+      );
+
+      return api.post(
+        `/api/content/basic-science/sessions/${session.id}/content`,
+
+        body
+      );
+    },
+
+    onSuccess: async (
+      _,
+      variables
+    ) => {
+      hapticNotif(
+        'success'
+      );
+
+      toast(
+        'عملیات با موفقیت انجام شد ✅',
+        'success'
+      );
+
+      if (
+        variables.type ===
+        'lesson-add'
+      ) {
+        setLessonForm({
+          name: '',
+          teacher: '',
+        });
+      }
+
+      if (
+        variables.type ===
+        'session-add'
+      ) {
+        setSessionForm({
+          number: 1,
+          topic: '',
+          teacher: '',
+        });
+      }
+
+      if (
+        variables.type ===
+        'upload'
+      ) {
+        setUpload({
+          type: 'pdf',
+          description: '',
+          extra_info: '',
+          file: null,
+        });
+      }
+
+      await refresh();
+    },
+
+    onError: (error) =>
+      toast(
+        errorText(
+          error,
+          'عملیات انجام نشد'
+        ),
+        'error'
+      ),
+  });
+
+
+  const goBack = () => {
+    if (session) {
+      setSession(null);
+
+    } else if (lesson) {
+      setLesson(null);
+    }
+  };
+
+
+  const title =
+    session
+      ? session.topic
+
+      : lesson
+        ? lesson.name
+
+        : 'مدیریت علوم پایه';
+
+
+  const typeIcon = {
+    video: '🎬',
+    ppt: '📊',
+    pdf: '📄',
+    note: '📝',
+    test: '🧪',
+    voice: '🎧',
+  };
+
+
   return (
     <>
-      <Header title={titles[level]} onBack={backFns[level]} />
-      <div className="page fade-up">
-        {level === 'terms' && (
-          loadingTerms ? <SkeletonCard /> :
-          errTerms ? <ErrorState error={errTermsObj} onRetry={refetchTerms} /> :
-          terms.map(t => (
-            <ListRow key={t} title={t} onClick={() => { haptic(); setTerm(t); }} />
-          ))
-        )}
+      <Header
+        title={
+          title ||
+          'علوم پایه'
+        }
+        subtitle={
+          session
+            ? 'محتوای جلسه'
 
-        {level === 'lessons' && (
+            : lesson
+              ? 'جلسات درس'
+
+              : 'درس‌ها و محتوای آموزشی'
+        }
+        back={
+          Boolean(lesson)
+        }
+        onBack={
+          lesson
+            ? goBack
+            : undefined
+        }
+      />
+
+      <main className="page fade-up">
+        {!lesson && (
           <>
-            <AddForm submitting={addLesson.isPending}
-              fields={[{key:'name',label:'نام درس',placeholder:'مثلاً فیزیولوژی',required:true},{key:'teacher',label:'استاد (اختیاری)'}]}
-              onSubmit={(v,reset) => addLesson.mutate(v, { onSuccess: reset })} />
-            {loadingLessons ? <SkeletonCard /> :
-             errLessons ? <ErrorState error={errLessonsObj} onRetry={refetchLessons} /> :
-             !lessons?.length ? <EmptyState icon="📚" text="هنوز درسی اضافه نشده" /> :
-              lessons.map(l => (
-                <ListRow key={l.id} title={l.name} subtitle={l.teacher||'—'}
-                  onClick={() => { haptic(); setLesson(l); }}
-                  onDelete={() => { if (confirm(`درس «${l.name}» و همه‌ی جلساتش حذف بشه؟`)) delLesson.mutate(l.id); }} />
-              ))}
+            <section
+              className={
+                'card card-glow'
+              }
+              style={{
+                marginBottom:
+                  13,
+              }}
+            >
+              <div className="sec-title">
+                🔬 کتابخانه علوم پایه
+              </div>
+
+              <div className="tab-bar">
+                {terms.map(
+                  (item) => (
+                    <button
+                      key={item}
+                      className="tab-btn"
+                      onClick={() =>
+                        setTerm(item)
+                      }
+                      style={{
+                        color:
+                          term === item
+                            ? '#fff'
+                            : 'var(--tx2)',
+
+                        background:
+                          term === item
+                            ? 'var(--grad-brand)'
+                            : 'transparent',
+                      }}
+                    >
+                      {item}
+                    </button>
+                  )
+                )}
+              </div>
+
+              <div className="grid2">
+                <input
+                  className="inp"
+                  value={
+                    lessonForm.name
+                  }
+                  onChange={(event) =>
+                    setLessonForm({
+                      ...lessonForm,
+
+                      name:
+                        event.target
+                          .value,
+                    })
+                  }
+                  placeholder="نام درس"
+                />
+
+                <input
+                  className="inp"
+                  value={
+                    lessonForm.teacher
+                  }
+                  onChange={(event) =>
+                    setLessonForm({
+                      ...lessonForm,
+
+                      teacher:
+                        event.target
+                          .value,
+                    })
+                  }
+                  placeholder="استاد"
+                />
+              </div>
+
+              <button
+                className={
+                  'btn btn-p btn-full'
+                }
+                style={{
+                  marginTop:
+                    9,
+                }}
+                disabled={
+                  !lessonForm
+                    .name
+                    .trim() ||
+                  mutation.isPending
+                }
+                onClick={() =>
+                  mutation.mutate({
+                    type:
+                      'lesson-add',
+                  })
+                }
+              >
+                ＋ افزودن درس
+              </button>
+            </section>
+
+
+            {lessonsLoading ? (
+              <SkeletonCard />
+            ) : lessons.length ===
+              0 ? (
+              <Empty>
+                درسی در این ترم ثبت نشده
+                است.
+              </Empty>
+            ) : (
+              <section
+                style={{
+                  display:
+                    'grid',
+
+                  gap:
+                    8,
+                }}
+              >
+                {lessons.map(
+                  (item) => (
+                    <article
+                      key={item.id}
+                      className="card"
+                    >
+                      <div
+                        style={{
+                          display:
+                            'flex',
+
+                          alignItems:
+                            'center',
+
+                          gap:
+                            10,
+                        }}
+                      >
+                        <span
+                          style={{
+                            display:
+                              'grid',
+
+                            width:
+                              43,
+
+                            height:
+                              43,
+
+                            placeItems:
+                              'center',
+
+                            borderRadius:
+                              14,
+
+                            background:
+                              'rgba(16,185,129,.12)',
+
+                            fontSize:
+                              20,
+                          }}
+                        >
+                          📗
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setLesson(
+                              item
+                            )
+                          }
+                          style={{
+                            flex:
+                              1,
+
+                            color:
+                              'var(--tx)',
+
+                            textAlign:
+                              'right',
+
+                            background:
+                              'none',
+
+                            border:
+                              0,
+
+                            cursor:
+                              'pointer',
+                          }}
+                        >
+                          <b>
+                            {item.name}
+                          </b>
+
+                          <span
+                            style={{
+                              display:
+                                'block',
+
+                              color:
+                                'var(--txm)',
+
+                              fontSize:
+                                9,
+
+                              marginTop:
+                                3,
+                            }}
+                          >
+                            {item.teacher ||
+                              'بدون استاد'}
+                          </span>
+                        </button>
+
+                        <DeleteButton
+                          pending={
+                            mutation
+                              .isPending
+                          }
+                          onClick={() => {
+                            const accepted =
+                              window.confirm(
+                                'درس و زیرمجموعه‌های آن حذف شود؟'
+                              );
+
+                            if (accepted) {
+                              mutation
+                                .mutate({
+                                  type:
+                                    'lesson-delete',
+
+                                  id:
+                                    item.id,
+                                });
+                            }
+                          }}
+                        />
+                      </div>
+                    </article>
+                  )
+                )}
+              </section>
+            )}
           </>
         )}
 
-        {level === 'sessions' && (
+
+        {lesson &&
+          !session && (
           <>
-            <AddForm submitting={addSession.isPending}
-              fields={[{key:'number',label:'شماره جلسه',type:'number',required:true},{key:'topic',label:'موضوع',required:true},{key:'teacher',label:'استاد (اختیاری)'}]}
-              onSubmit={(v,reset) => addSession.mutate(v, { onSuccess: reset })} />
-            {loadingSessions ? <SkeletonCard /> :
-             errSessions ? <ErrorState error={errSessionsObj} onRetry={refetchSessions} /> :
-             !sessions?.length ? <EmptyState icon="📌" text="هنوز جلسه‌ای اضافه نشده" /> :
-              sessions.map(s => (
-                <ListRow key={s.id} title={`جلسه ${s.number} — ${s.topic}`} subtitle={s.teacher||'—'}
-                  onClick={() => { haptic(); setSession(s); }}
-                  onDelete={() => { if (confirm('این جلسه و فایل‌هاش حذف بشه؟')) delSession.mutate(s.id); }} />
-              ))}
+            <section
+              className={
+                'card card-glow'
+              }
+              style={{
+                display:
+                  'grid',
+
+                gap:
+                  9,
+
+                marginBottom:
+                  13,
+              }}
+            >
+              <div className="sec-title">
+                ＋ جلسه جدید
+              </div>
+
+              <div className="grid2">
+                <input
+                  className="inp"
+                  type="number"
+                  min="1"
+                  value={
+                    sessionForm.number
+                  }
+                  onChange={(event) =>
+                    setSessionForm({
+                      ...sessionForm,
+
+                      number:
+                        event.target
+                          .value,
+                    })
+                  }
+                  placeholder="شماره"
+                />
+
+                <input
+                  className="inp"
+                  value={
+                    sessionForm.topic
+                  }
+                  onChange={(event) =>
+                    setSessionForm({
+                      ...sessionForm,
+
+                      topic:
+                        event.target
+                          .value,
+                    })
+                  }
+                  placeholder="موضوع جلسه"
+                />
+              </div>
+
+              <input
+                className="inp"
+                value={
+                  sessionForm.teacher
+                }
+                onChange={(event) =>
+                  setSessionForm({
+                    ...sessionForm,
+
+                    teacher:
+                      event.target
+                        .value,
+                  })
+                }
+                placeholder="استاد جلسه"
+              />
+
+              <button
+                className={
+                  'btn btn-p btn-full'
+                }
+                disabled={
+                  !sessionForm
+                    .topic
+                    .trim() ||
+                  mutation.isPending
+                }
+                onClick={() =>
+                  mutation.mutate({
+                    type:
+                      'session-add',
+                  })
+                }
+              >
+                افزودن جلسه
+              </button>
+            </section>
+
+
+            {sessionsLoading ? (
+              <SkeletonCard />
+            ) : sessions.length ===
+              0 ? (
+              <Empty>
+                جلسه‌ای ثبت نشده است.
+              </Empty>
+            ) : (
+              <section
+                style={{
+                  display:
+                    'grid',
+
+                  gap:
+                    8,
+                }}
+              >
+                {sessions.map(
+                  (item) => (
+                    <article
+                      key={item.id}
+                      className="card"
+                    >
+                      <div
+                        style={{
+                          display:
+                            'flex',
+
+                          alignItems:
+                            'center',
+
+                          gap:
+                            10,
+                        }}
+                      >
+                        <span
+                          style={{
+                            display:
+                              'grid',
+
+                            width:
+                              42,
+
+                            height:
+                              42,
+
+                            placeItems:
+                              'center',
+
+                            borderRadius:
+                              13,
+
+                            background:
+                              'var(--acc-soft)',
+
+                            color:
+                              'var(--acc2)',
+
+                            fontWeight:
+                              900,
+                          }}
+                        >
+                          {item.number}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSession(
+                              item
+                            )
+                          }
+                          style={{
+                            flex:
+                              1,
+
+                            color:
+                              'var(--tx)',
+
+                            textAlign:
+                              'right',
+
+                            background:
+                              'none',
+
+                            border:
+                              0,
+
+                            cursor:
+                              'pointer',
+                          }}
+                        >
+                          <b>
+                            {item.topic}
+                          </b>
+
+                          <span
+                            style={{
+                              display:
+                                'block',
+
+                              color:
+                                'var(--txm)',
+
+                              fontSize:
+                                9,
+                            }}
+                          >
+                            {item.teacher ||
+                              'بدون استاد'}
+                          </span>
+                        </button>
+
+                        <DeleteButton
+                          pending={
+                            mutation
+                              .isPending
+                          }
+                          onClick={() => {
+                            const accepted =
+                              window.confirm(
+                                'جلسه حذف شود؟'
+                              );
+
+                            if (accepted) {
+                              mutation
+                                .mutate({
+                                  type:
+                                    'session-delete',
+
+                                  id:
+                                    item.id,
+                                });
+                            }
+                          }}
+                        />
+                      </div>
+                    </article>
+                  )
+                )}
+              </section>
+            )}
           </>
         )}
 
-        {level === 'content' && (
+
+        {session && (
           <>
-            <AddForm submitting={addContent.isPending} submitLabel="📤 آپلود فایل"
-              fields={[
-                {key:'ctype',label:'نوع محتوا',type:'select',default:'pdf',options:Object.entries(CONTENT_TYPE_LABELS).map(([value,label])=>({value,label}))},
-                {key:'description',label:'توضیح (اختیاری)'},
-                {key:'extra_info',label:'اطلاعات اضافه (اختیاری)'},
-                {key:'file',label:'فایل',type:'file',required:true},
-              ]}
-              onSubmit={(v,reset) => { if(!v.file){toast('فایل رو انتخاب کن','error');return;} addContent.mutate(v, { onSuccess: reset }); }} />
-            {loadingContent ? <SkeletonCard /> :
-             errContent ? <ErrorState error={errContentObj} onRetry={refetchContent} /> :
-             !contents?.length ? <EmptyState icon="📎" text="هنوز فایلی آپلود نشده" /> :
-              contents.map(c => (
-                <ListRow key={c.id} title={CONTENT_TYPE_LABELS[c.type]||c.type} subtitle={`${c.description||'—'} • 📥 ${c.downloads} دانلود`}
-                  onDelete={() => { if (confirm('این فایل حذف بشه؟')) delContent.mutate(c.id); }} />
-              ))}
+            <section
+              className={
+                'card card-glow'
+              }
+              style={{
+                display:
+                  'grid',
+
+                gap:
+                  9,
+
+                marginBottom:
+                  13,
+              }}
+            >
+              <div className="sec-title">
+                📤 افزودن محتوا
+              </div>
+
+              <select
+                className="inp"
+                value={
+                  upload.type
+                }
+                onChange={(event) =>
+                  setUpload({
+                    ...upload,
+
+                    type:
+                      event.target
+                        .value,
+                  })
+                }
+              >
+                {Object.entries(
+                  typeIcon
+                ).map(
+                  ([
+                    key,
+                    icon,
+                  ]) => (
+                    <option
+                      key={key}
+                      value={key}
+                    >
+                      {icon} {key}
+                    </option>
+                  )
+                )}
+              </select>
+
+              <input
+                className="inp"
+                value={
+                  upload.description
+                }
+                onChange={(event) =>
+                  setUpload({
+                    ...upload,
+
+                    description:
+                      event.target
+                        .value,
+                  })
+                }
+                placeholder="توضیحات"
+              />
+
+              <input
+                className="inp"
+                value={
+                  upload.extra_info
+                }
+                onChange={(event) =>
+                  setUpload({
+                    ...upload,
+
+                    extra_info:
+                      event.target
+                        .value,
+                  })
+                }
+                placeholder="اطلاعات تکمیلی"
+              />
+
+              <input
+                className="inp"
+                type="file"
+                onChange={(event) =>
+                  setUpload({
+                    ...upload,
+
+                    file:
+                      event.target
+                        .files?.[0] ||
+                      null,
+                  })
+                }
+              />
+
+              <button
+                className={
+                  'btn btn-p btn-full'
+                }
+                disabled={
+                  !upload.file ||
+                  mutation.isPending
+                }
+                onClick={() =>
+                  mutation.mutate({
+                    type:
+                      'upload',
+                  })
+                }
+              >
+                {mutation.isPending ? (
+                  <Spinner size={14} />
+                ) : (
+                  'آپلود فایل'
+                )}
+              </button>
+            </section>
+
+
+            {contentLoading ? (
+              <SkeletonCard />
+            ) : content.length ===
+              0 ? (
+              <Empty>
+                محتوایی ثبت نشده است.
+              </Empty>
+            ) : (
+              <section
+                style={{
+                  display:
+                    'grid',
+
+                  gap:
+                    8,
+                }}
+              >
+                {content.map(
+                  (item) => (
+                    <article
+                      key={item.id}
+                      className="card"
+                    >
+                      <div
+                        style={{
+                          display:
+                            'flex',
+
+                          alignItems:
+                            'center',
+
+                          gap:
+                            10,
+                        }}
+                      >
+                        <span
+                          style={{
+                            display:
+                              'grid',
+
+                            width:
+                              43,
+
+                            height:
+                              43,
+
+                            placeItems:
+                              'center',
+
+                            borderRadius:
+                              14,
+
+                            background:
+                              'rgba(139,92,246,.13)',
+
+                            fontSize:
+                              20,
+                          }}
+                        >
+                          {typeIcon[
+                            item.type
+                          ] || '📎'}
+                        </span>
+
+                        <div
+                          style={{
+                            flex:
+                              1,
+                          }}
+                        >
+                          <b>
+                            {item.description ||
+                              item.type}
+                          </b>
+
+                          <div
+                            style={{
+                              color:
+                                'var(--txm)',
+
+                              fontSize:
+                                9,
+
+                              marginTop:
+                                3,
+                            }}
+                          >
+                            {item.extra_info ||
+                              ''}
+
+                            {' • '}
+
+                            {number(
+                              item.downloads
+                            )}{' '}
+
+                            دانلود
+                          </div>
+                        </div>
+
+                        <DeleteButton
+                          pending={
+                            mutation
+                              .isPending
+                          }
+                          onClick={() => {
+                            const accepted =
+                              window.confirm(
+                                'محتوا حذف شود؟'
+                              );
+
+                            if (accepted) {
+                              mutation
+                                .mutate({
+                                  type:
+                                    'content-delete',
+
+                                  id:
+                                    item.id,
+                                });
+                            }
+                          }}
+                        />
+                      </div>
+                    </article>
+                  )
+                )}
+              </section>
+            )}
           </>
         )}
-      </div>
+      </main>
     </>
   );
 }
 
-/* ═══════════════════════════════════════════
-   📖 مدیریت رفرنس‌ها
-   ═══════════════════════════════════════════ */
+
+/* مدیریت رفرنس‌ها */
+
 export function ReferencesAdmin() {
-  const toast = useUIStore(s => s.toast);
-  const qc = useQueryClient();
-  const [subject, setSubject] = useState(null);
-  const [book, setBook] = useState(null);
+  const [
+    subject,
+    setSubject,
+  ] = useState(null);
 
-  const level = book ? 'files' : subject ? 'books' : 'subjects';
+  const [
+    book,
+    setBook,
+  ] = useState(null);
 
-  const { data: subjects, isLoading: loadingSubjects } = useQuery({
-    queryKey:['ref-subjects'], queryFn:() => api.get('/api/content/references/subjects').then(r=>r.data.subjects),
-    enabled: level==='subjects',
-  });
-  const { data: books, isLoading: loadingBooks } = useQuery({
-    queryKey:['ref-books', subject?.id], queryFn:() => api.get(`/api/content/references/subjects/${subject.id}/books`).then(r=>r.data.books),
-    enabled: level==='books',
-  });
-  const { data: files, isLoading: loadingFiles } = useQuery({
-    queryKey:['ref-files', book?.id], queryFn:() => api.get(`/api/content/references/books/${book.id}/files`).then(r=>r.data.files),
-    enabled: level==='files',
+  const [
+    name,
+    setName,
+  ] = useState('');
+
+  const [
+    upload,
+    setUpload,
+  ] = useState({
+    lang: 'fa',
+    volume: 1,
+    description: '',
+    file: null,
   });
 
-  const addSubject = useMutation({
-    mutationFn: (v) => api.post('/api/content/references/subjects', { name:v.name }).then(r=>r.data),
-    onSuccess: () => { hapticNotif('success'); toast('✅ اضافه شد','success'); qc.invalidateQueries({queryKey:['ref-subjects']}); },
-    onError: (e) => toast(e.response?.data?.detail||'خطا','error'),
+  const toast = useUIStore(
+    (state) => state.toast
+  );
+
+  const queryClient =
+    useQueryClient();
+
+
+  const {
+    data: subjects = [],
+    isLoading,
+  } = useQuery({
+    queryKey: [
+      'ref-admin-subjects',
+    ],
+
+    queryFn: () =>
+      api
+        .get(
+          '/api/content/references/subjects'
+        )
+        .then(
+          (response) =>
+            response.data
+              ?.subjects || []
+        ),
   });
-  const delSubject = useMutation({
-    mutationFn: (id) => api.delete(`/api/content/references/subjects/${id}`).then(r=>r.data),
-    onSuccess: () => { toast('🗑 حذف شد','info'); qc.invalidateQueries({queryKey:['ref-subjects']}); },
+
+
+  const {
+    data: books = [],
+  } = useQuery({
+    queryKey: [
+      'ref-admin-books',
+      subject?.id,
+    ],
+
+    queryFn: () =>
+      api
+        .get(
+          `/api/content/references/subjects/${subject.id}/books`
+        )
+        .then(
+          (response) =>
+            response.data
+              ?.books || []
+        ),
+
+    enabled:
+      Boolean(subject?.id),
   });
-  const addBook = useMutation({
-    mutationFn: (v) => api.post(`/api/content/references/subjects/${subject.id}/books`, { name:v.name }).then(r=>r.data),
-    onSuccess: () => { hapticNotif('success'); toast('✅ اضافه شد','success'); qc.invalidateQueries({queryKey:['ref-books',subject.id]}); },
+
+
+  const {
+    data: files = [],
+  } = useQuery({
+    queryKey: [
+      'ref-admin-files',
+      book?.id,
+    ],
+
+    queryFn: () =>
+      api
+        .get(
+          `/api/content/references/books/${book.id}/files`
+        )
+        .then(
+          (response) =>
+            response.data
+              ?.files || []
+        ),
+
+    enabled:
+      Boolean(book?.id),
   });
-  const delBook = useMutation({
-    mutationFn: (id) => api.delete(`/api/content/references/books/${id}`).then(r=>r.data),
-    onSuccess: () => { toast('🗑 حذف شد','info'); qc.invalidateQueries({queryKey:['ref-books',subject.id]}); },
-  });
-  const addFile = useMutation({
-    mutationFn: (v) => {
-      const fd = new FormData();
-      fd.append('lang', v.lang); fd.append('volume', v.volume||1); fd.append('description', v.description); fd.append('file', v.file);
-      return api.post(`/api/content/references/books/${book.id}/files`, fd).then(r=>r.data);
+
+
+  const refresh = async () => {
+    await Promise.all([
+      queryClient
+        .invalidateQueries({
+          queryKey: [
+            'ref-admin-subjects',
+          ],
+        }),
+
+      queryClient
+        .invalidateQueries({
+          queryKey: [
+            'ref-admin-books',
+          ],
+        }),
+
+      queryClient
+        .invalidateQueries({
+          queryKey: [
+            'ref-admin-files',
+          ],
+        }),
+    ]);
+  };
+
+
+  const mutation = useMutation({
+    mutationFn: async ({
+      type,
+      id,
+    }) => {
+      if (
+        type === 'subject-add'
+      ) {
+        return api.post(
+          '/api/content/references/subjects',
+
+          {
+            name:
+              name.trim(),
+          }
+        );
+      }
+
+      if (
+        type === 'subject-delete'
+      ) {
+        return api.delete(
+          `/api/content/references/subjects/${id}`
+        );
+      }
+
+      if (
+        type === 'book-add'
+      ) {
+        return api.post(
+          `/api/content/references/subjects/${subject.id}/books`,
+
+          {
+            name:
+              name.trim(),
+          }
+        );
+      }
+
+      if (
+        type === 'book-delete'
+      ) {
+        return api.delete(
+          `/api/content/references/books/${id}`
+        );
+      }
+
+      if (
+        type === 'file-delete'
+      ) {
+        return api.delete(
+          `/api/content/references/files/${id}`
+        );
+      }
+
+      const body =
+        new FormData();
+
+      body.append(
+        'lang',
+        upload.lang
+      );
+
+      body.append(
+        'volume',
+        String(upload.volume)
+      );
+
+      body.append(
+        'description',
+        upload.description
+      );
+
+      body.append(
+        'file',
+        upload.file
+      );
+
+      return api.post(
+        `/api/content/references/books/${book.id}/files`,
+
+        body
+      );
     },
-    onSuccess: () => { hapticNotif('success'); toast('✅ فایل آپلود شد','success'); qc.invalidateQueries({queryKey:['ref-files',book.id]}); },
-    onError: (e) => toast(e.response?.data?.detail||'خطا در آپلود','error'),
-  });
-  const delFile = useMutation({
-    mutationFn: (id) => api.delete(`/api/content/references/files/${id}`).then(r=>r.data),
-    onSuccess: () => { toast('🗑 حذف شد','info'); qc.invalidateQueries({queryKey:['ref-files',book.id]}); },
+
+    onSuccess: async () => {
+      toast(
+        'عملیات انجام شد ✅',
+        'success'
+      );
+
+      setName('');
+
+      setUpload({
+        lang: 'fa',
+        volume: 1,
+        description: '',
+        file: null,
+      });
+
+      await refresh();
+    },
+
+    onError: (error) =>
+      toast(
+        errorText(
+          error,
+          'عملیات انجام نشد'
+        ),
+        'error'
+      ),
   });
 
-  const titles = { subjects:'📖 رفرنس‌ها', books:subject?.name, files:book?.name };
-  const backFns = { subjects: undefined, books: () => setSubject(null), files: () => setBook(null) };
+
+  const back = () => {
+    if (book) {
+      setBook(null);
+
+    } else if (subject) {
+      setSubject(null);
+    }
+  };
+
 
   return (
     <>
-      <Header title={titles[level]} onBack={backFns[level]} />
-      <div className="page fade-up">
-        {level === 'subjects' && (
-          <>
-            <AddForm submitting={addSubject.isPending} fields={[{key:'name',label:'نام موضوع',placeholder:'مثلاً آناتومی',required:true}]}
-              onSubmit={(v,reset) => addSubject.mutate(v, { onSuccess: reset })} />
-            {loadingSubjects ? <SkeletonCard /> : !subjects?.length ? <EmptyState icon="📖" text="هنوز موضوعی اضافه نشده" /> :
-              subjects.map(s => (
-                <ListRow key={s.id} title={s.name} onClick={() => { haptic(); setSubject(s); }}
-                  onDelete={() => { if (confirm(`موضوع «${s.name}» حذف بشه؟`)) delSubject.mutate(s.id); }} />
-              ))}
-          </>
-        )}
+      <Header
+        title={
+          book?.name ||
+          subject?.name ||
+          'مدیریت رفرنس‌ها'
+        }
+        back={
+          Boolean(subject)
+        }
+        onBack={
+          subject
+            ? back
+            : undefined
+        }
+      />
 
-        {level === 'books' && (
-          <>
-            <AddForm submitting={addBook.isPending} fields={[{key:'name',label:'نام کتاب',required:true}]}
-              onSubmit={(v,reset) => addBook.mutate(v, { onSuccess: reset })} />
-            {loadingBooks ? <SkeletonCard /> : !books?.length ? <EmptyState icon="📕" text="هنوز کتابی اضافه نشده" /> :
-              books.map(b => (
-                <ListRow key={b.id} title={b.name} onClick={() => { haptic(); setBook(b); }}
-                  onDelete={() => { if (confirm(`کتاب «${b.name}» حذف بشه؟`)) delBook.mutate(b.id); }} />
-              ))}
-          </>
-        )}
+      <main className="page fade-up">
+        <section
+          className={
+            'card card-glow'
+          }
+          style={{
+            marginBottom:
+              13,
+          }}
+        >
+          <div className="sec-title">
+            {book
+              ? '📤 افزودن جلد'
 
-        {level === 'files' && (
-          <>
-            <AddForm submitting={addFile.isPending} submitLabel="📤 آپلود جلد"
-              fields={[
-                {key:'lang',label:'زبان',type:'select',default:'fa',options:[{value:'fa',label:'🇮🇷 فارسی'},{value:'en',label:'🌐 لاتین'}]},
-                {key:'volume',label:'جلد',type:'number',default:1},
-                {key:'description',label:'توضیح (اختیاری)'},
-                {key:'file',label:'فایل',type:'file',required:true},
-              ]}
-              onSubmit={(v,reset) => { if(!v.file){toast('فایل رو انتخاب کن','error');return;} addFile.mutate(v, { onSuccess: reset }); }} />
-            {loadingFiles ? <SkeletonCard /> : !files?.length ? <EmptyState icon="📄" text="هنوز فایلی آپلود نشده" /> :
-              files.map(f => (
-                <ListRow key={f.id} title={`${f.lang==='fa'?'🇮🇷 فارسی':'🌐 لاتین'} — جلد ${f.volume}`} subtitle={`${f.description||'—'} • 📥 ${f.downloads} دانلود`}
-                  onDelete={() => { if (confirm('این فایل حذف بشه؟')) delFile.mutate(f.id); }} />
-              ))}
-          </>
-        )}
-      </div>
-    </>
-  );
-}
+              : subject
+                ? '＋ افزودن کتاب'
 
-/* ═══════════════════════════════════════════
-   🧪 بانک سوال — فایل‌ها
-   ═══════════════════════════════════════════ */
-export function QbankAdmin() {
-  const toast = useUIStore(s => s.toast);
-  const qc = useQueryClient();
+                : '＋ افزودن موضوع'}
+          </div>
 
-  const { data: files, isLoading } = useQuery({
-    queryKey: ['qbank-files'], queryFn: () => api.get('/api/content/qbank/files').then(r=>r.data.files),
-  });
+          {book ? (
+            <div
+              style={{
+                display:
+                  'grid',
 
-  const addFile = useMutation({
-    mutationFn: (v) => {
-      const fd = new FormData();
-      fd.append('lesson', v.lesson); fd.append('topic', v.topic); fd.append('description', v.description); fd.append('file', v.file);
-      return api.post('/api/content/qbank/files', fd).then(r=>r.data);
-    },
-    onSuccess: () => { hapticNotif('success'); toast('✅ فایل آپلود شد','success'); qc.invalidateQueries({queryKey:['qbank-files']}); },
-    onError: (e) => toast(e.response?.data?.detail||'خطا در آپلود','error'),
-  });
-  const delFile = useMutation({
-    mutationFn: (id) => api.delete(`/api/content/qbank/files/${id}`).then(r=>r.data),
-    onSuccess: () => { toast('🗑 حذف شد','info'); qc.invalidateQueries({queryKey:['qbank-files']}); },
-  });
+                gap:
+                  8,
+              }}
+            >
+              <div className="grid2">
+                <select
+                  className="inp"
+                  value={
+                    upload.lang
+                  }
+                  onChange={(event) =>
+                    setUpload({
+                      ...upload,
 
-  return (
-    <>
-      <Header title="🧪 فایل‌های بانک سوال" subtitle={files?`${files.length} فایل`:''} />
-      <div className="page fade-up">
-        <AddForm submitting={addFile.isPending} submitLabel="📤 آپلود فایل"
-          fields={[
-            {key:'lesson',label:'درس',placeholder:'مثلاً فیزیولوژی',required:true},
-            {key:'topic',label:'موضوع',placeholder:'مثلاً کلیه',required:true},
-            {key:'description',label:'توضیح (اختیاری)'},
-            {key:'file',label:'فایل',type:'file',required:true},
-          ]}
-          onSubmit={(v,reset) => { if(!v.file){toast('فایل رو انتخاب کن','error');return;} addFile.mutate(v, { onSuccess: reset }); }} />
-        {isLoading ? <SkeletonCard /> : !files?.length ? <EmptyState icon="🧪" text="هنوز فایلی آپلود نشده" /> :
-          files.map(f => (
-            <ListRow key={f.id} title={`${f.lesson} — ${f.topic}`} subtitle={`${f.description||'—'} • 📥 ${f.downloads} دانلود • ${f.upload_date}`}
-              onDelete={() => { if (confirm('این فایل حذف بشه؟')) delFile.mutate(f.id); }} />
-          ))}
-      </div>
-    </>
-  );
-}
+                      lang:
+                        event.target
+                          .value,
+                    })
+                  }
+                >
+                  <option value="fa">
+                    فارسی
+                  </option>
 
-/* ═══════════════════════════════════════════
-   📊 مدیریت نمرات
-   ═══════════════════════════════════════════ */
-export function GradesAdmin() {
-  const toast = useUIStore(s => s.toast);
-  const qc = useQueryClient();
-  const [view, setView] = useState('list'); // list | bulk
-  const [bulkForm, setBulkForm] = useState({ lesson:'', exam_title:'', exam_date:'' });
-  const [nameQuery, setNameQuery] = useState('');
-  const [entries, setEntries] = useState([]); // [{user_id,name,score}]
-  const [editing, setEditing] = useState(null); // {id, score}
+                  <option value="en">
+                    انگلیسی
+                  </option>
+                </select>
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['grades-recent'], queryFn: () => api.get('/api/content/grades/recent?limit=50').then(r=>r.data),
-    enabled: view === 'list',
-  });
+                <input
+                  className="inp"
+                  type="number"
+                  min="1"
+                  value={
+                    upload.volume
+                  }
+                  onChange={(event) =>
+                    setUpload({
+                      ...upload,
 
-  const { data: foundStudents } = useQuery({
-    queryKey: ['grade-find-student', nameQuery],
-    queryFn: () => api.get(`/api/content/grades/find-student?name=${encodeURIComponent(nameQuery)}`).then(r=>r.data.students),
-    enabled: view==='bulk' && nameQuery.trim().length > 1,
-  });
+                      volume:
+                        event.target
+                          .value,
+                    })
+                  }
+                  placeholder="جلد"
+                />
+              </div>
 
-  const bulkMut = useMutation({
-    mutationFn: () => api.post('/api/content/grades/bulk', {
-      entries: entries.map(e => ({ user_id: e.user_id, score: Number(e.score) })),
-      lesson: bulkForm.lesson, exam_title: bulkForm.exam_title, exam_date: bulkForm.exam_date,
-    }).then(r=>r.data),
-    onSuccess: (d) => { hapticNotif('success'); toast(`✅ ${d.updated} نمره ثبت شد`,'success'); setView('list'); setEntries([]); setBulkForm({lesson:'',exam_title:'',exam_date:''}); qc.invalidateQueries({queryKey:['grades-recent']}); },
-    onError: (e) => toast(e.response?.data?.detail||'خطا','error'),
-  });
+              <input
+                className="inp"
+                value={
+                  upload.description
+                }
+                onChange={(event) =>
+                  setUpload({
+                    ...upload,
 
-  const editMut = useMutation({
-    mutationFn: () => api.patch(`/api/content/grades/${editing.id}`, { score: Number(editing.score) }).then(r=>r.data),
-    onSuccess: () => { hapticNotif('success'); toast('✅ ویرایش شد','success'); setEditing(null); qc.invalidateQueries({queryKey:['grades-recent']}); },
-  });
+                    description:
+                      event.target
+                        .value,
+                  })
+                }
+                placeholder="توضیحات"
+              />
 
-  const delMut = useMutation({
-    mutationFn: (id) => api.delete(`/api/content/grades/${id}`).then(r=>r.data),
-    onSuccess: () => { toast('🗑 حذف شد','info'); qc.invalidateQueries({queryKey:['grades-recent']}); },
-  });
+              <input
+                className="inp"
+                type="file"
+                onChange={(event) =>
+                  setUpload({
+                    ...upload,
 
-  function addStudentToEntries(s) {
-    if (entries.some(e => e.user_id === s.id)) { toast('قبلاً اضافه شده','info'); return; }
-    setEntries(prev => [...prev, { user_id: s.id, name: s.name, score: '' }]);
-    setNameQuery('');
-    haptic();
-  }
+                    file:
+                      event.target
+                        .files?.[0] ||
+                      null,
+                  })
+                }
+              />
 
-  if (view === 'bulk') return (
-    <>
-      <Header title="📊 ثبت نمره دسته‌ای" onBack={() => setView('list')} />
-      <div className="page fade-up">
-        <div className="card" style={{ marginBottom:14 }}>
-          <div className="sec-title">📝 اطلاعات امتحان</div>
-          <div style={{ fontSize:11,color:'var(--txm)',marginBottom:4 }}>درس</div>
-          <input className="inp" style={{ marginBottom:9 }} value={bulkForm.lesson} onChange={e=>setBulkForm(f=>({...f,lesson:e.target.value}))} placeholder="فیزیولوژی ۱" />
-          <div style={{ fontSize:11,color:'var(--txm)',marginBottom:4 }}>عنوان امتحان</div>
-          <input className="inp" style={{ marginBottom:9 }} value={bulkForm.exam_title} onChange={e=>setBulkForm(f=>({...f,exam_title:e.target.value}))} placeholder="میان‌ترم" />
-          <div style={{ fontSize:11,color:'var(--txm)',marginBottom:4 }}>تاریخ (YYYY-MM-DD)</div>
-          <input className="inp" value={bulkForm.exam_date} onChange={e=>setBulkForm(f=>({...f,exam_date:e.target.value}))} placeholder="2025-09-01" />
-        </div>
-
-        <div className="card" style={{ marginBottom:14 }}>
-          <div className="sec-title">👤 افزودن دانشجو</div>
-          <input className="inp" placeholder="نام، شماره دانشجویی، یوزرنیم یا آیدی عددی..." value={nameQuery} onChange={e=>setNameQuery(e.target.value)} />
-          {foundStudents?.length > 0 && (
-            <div style={{ marginTop:8,maxHeight:180,overflowY:'auto' }}>
-              {foundStudents.map(s => (
-                <button key={s.id} className="menu-row" style={{ width:'100%' }} onClick={() => addStudentToEntries(s)}>
-                  <span style={{ flex:1,textAlign:'right' }}>👤 {s.name} <span style={{ color:'var(--txm)',fontSize:11 }}>{s.student_id && `${s.student_id} • `}گروه {s.group}</span></span>
-                </button>
-              ))}
+              <button
+                className="btn btn-p"
+                disabled={
+                  !upload.file ||
+                  mutation.isPending
+                }
+                onClick={() =>
+                  mutation.mutate({
+                    type:
+                      'file-add',
+                  })
+                }
+              >
+                آپلود جلد
+              </button>
             </div>
+          ) : (
+            <div
+              style={{
+                display:
+                  'flex',
+
+                gap:
+                  7,
+              }}
+            >
+              <input
+                className="inp"
+                value={name}
+                onChange={(event) =>
+                  setName(
+                    event.target.value
+                  )
+                }
+                placeholder={
+                  subject
+                    ? 'نام کتاب'
+                    : 'نام درس یا موضوع'
+                }
+              />
+
+              <button
+                className="btn btn-p"
+                disabled={
+                  !name.trim() ||
+                  mutation.isPending
+                }
+                onClick={() =>
+                  mutation.mutate({
+                    type:
+                      subject
+                        ? 'book-add'
+                        : 'subject-add',
+                  })
+                }
+              >
+                افزودن
+              </button>
+            </div>
+          )}
+        </section>
+
+
+        {!subject ? (
+          isLoading ? (
+            <SkeletonCard />
+          ) : (
+            <section
+              style={{
+                display:
+                  'grid',
+
+                gap:
+                  8,
+              }}
+            >
+              {subjects.map((item) => (
+                <article
+                  key={item.id}
+                  className="card"
+                >
+                  <div
+                    style={{
+                      display:
+                        'flex',
+
+                      alignItems:
+                        'center',
+
+                      gap:
+                        10,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize:
+                          22,
+                      }}
+                    >
+                      🩺
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSubject(
+                          item
+                        )
+                      }
+                      style={{
+                        flex:
+                          1,
+
+                        textAlign:
+                          'right',
+
+                        background:
+                          'none',
+
+                        border:
+                          0,
+
+                        color:
+                          'var(--tx)',
+                      }}
+                    >
+                      <b>
+                        {item.name}
+                      </b>
+                    </button>
+
+                    <DeleteButton
+                      pending={
+                        mutation
+                          .isPending
+                      }
+                      onClick={() => {
+                        const accepted =
+                          window.confirm(
+                            'موضوع حذف شود؟'
+                          );
+
+                        if (accepted) {
+                          mutation
+                            .mutate({
+                              type:
+                                'subject-delete',
+
+                              id:
+                                item.id,
+                            });
+                        }
+                      }}
+                    />
+                  </div>
+                </article>
+              ))}
+            </section>
+          )
+        ) : !book ? (
+          <section
+            style={{
+              display:
+                'grid',
+
+              gap:
+                8,
+            }}
+          >
+            {books.length ? (
+              books.map((item) => (
+                <article
+                  key={item.id}
+                  className="card"
+                >
+                  <div
+                    style={{
+                      display:
+                        'flex',
+
+                      alignItems:
+                        'center',
+
+                      gap:
+                        10,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize:
+                          22,
+                      }}
+                    >
+                      📕
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setBook(item)
+                      }
+                      style={{
+                        flex:
+                          1,
+
+                        textAlign:
+                          'right',
+
+                        background:
+                          'none',
+
+                        border:
+                          0,
+
+                        color:
+                          'var(--tx)',
+                      }}
+                    >
+                      <b>
+                        {item.name}
+                      </b>
+                    </button>
+
+                    <DeleteButton
+                      pending={
+                        mutation
+                          .isPending
+                      }
+                      onClick={() => {
+                        const accepted =
+                          window.confirm(
+                            'کتاب حذف شود؟'
+                          );
+
+                        if (accepted) {
+                          mutation
+                            .mutate({
+                              type:
+                                'book-delete',
+
+                              id:
+                                item.id,
+                            });
+                        }
+                      }}
+                    />
+                  </div>
+                </article>
+              ))
+            ) : (
+              <Empty>
+                کتابی ثبت نشده است.
+              </Empty>
+            )}
+          </section>
+        ) : (
+          <section
+            style={{
+              display:
+                'grid',
+
+              gap:
+                8,
+            }}
+          >
+            {files.length ? (
+              files.map((item) => (
+                <article
+                  key={item.id}
+                  className="card"
+                >
+                  <div
+                    style={{
+                      display:
+                        'flex',
+
+                      alignItems:
+                        'center',
+
+                      gap:
+                        10,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize:
+                          22,
+                      }}
+                    >
+                      {item.lang ===
+                      'fa'
+                        ? '🇮🇷'
+                        : '🇬🇧'}
+                    </span>
+
+                    <div
+                      style={{
+                        flex:
+                          1,
+                      }}
+                    >
+                      <b>
+                        جلد {item.volume}
+                      </b>
+
+                      <div
+                        style={{
+                          color:
+                            'var(--txm)',
+
+                          fontSize:
+                            9,
+                        }}
+                      >
+                        {item.description}
+
+                        {' • '}
+
+                        {number(
+                          item.downloads
+                        )}{' '}
+
+                        دانلود
+                      </div>
+                    </div>
+
+                    <DeleteButton
+                      pending={
+                        mutation
+                          .isPending
+                      }
+                      onClick={() => {
+                        const accepted =
+                          window.confirm(
+                            'فایل حذف شود؟'
+                          );
+
+                        if (accepted) {
+                          mutation
+                            .mutate({
+                              type:
+                                'file-delete',
+
+                              id:
+                                item.id,
+                            });
+                        }
+                      }}
+                    />
+                  </div>
+                </article>
+              ))
+            ) : (
+              <Empty>
+                فایلی ثبت نشده است.
+              </Empty>
+            )}
+          </section>
+        )}
+      </main>
+    </>
+  );
+}
+
+
+/* بانک فایل سؤال */
+
+export function QbankAdmin() {
+  const [
+    form,
+    setForm,
+  ] = useState({
+    lesson: '',
+    topic: '',
+    description: '',
+    file: null,
+  });
+
+  const toast = useUIStore(
+    (state) => state.toast
+  );
+
+  const queryClient =
+    useQueryClient();
+
+
+  const {
+    data = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: [
+      'qbank-admin',
+    ],
+
+    queryFn: () =>
+      api
+        .get(
+          '/api/content/qbank/files'
+        )
+        .then(
+          (response) =>
+            response.data
+              ?.files || []
+        ),
+  });
+
+
+  const refresh = () =>
+    queryClient.invalidateQueries({
+      queryKey: [
+        'qbank-admin',
+      ],
+    });
+
+
+  const mutation = useMutation({
+    mutationFn: async ({
+      type,
+      id,
+    }) => {
+      if (type === 'delete') {
+        return api.delete(
+          `/api/content/qbank/files/${id}`
+        );
+      }
+
+      const body =
+        new FormData();
+
+      body.append(
+        'lesson',
+        form.lesson.trim()
+      );
+
+      body.append(
+        'topic',
+        form.topic.trim()
+      );
+
+      body.append(
+        'description',
+        form.description.trim()
+      );
+
+      body.append(
+        'file',
+        form.file
+      );
+
+      return api.post(
+        '/api/content/qbank/files',
+        body
+      );
+    },
+
+    onSuccess: async () => {
+      toast(
+        'عملیات انجام شد ✅',
+        'success'
+      );
+
+      setForm({
+        lesson: '',
+        topic: '',
+        description: '',
+        file: null,
+      });
+
+      await refresh();
+    },
+
+    onError: (error) =>
+      toast(
+        errorText(
+          error,
+          'عملیات انجام نشد'
+        ),
+        'error'
+      ),
+  });
+
+
+  const files =
+    Array.isArray(data)
+      ? data
+      : [];
+
+
+  return (
+    <>
+      <Header
+        title="بانک فایل سؤال"
+        subtitle={`${files.length} فایل`}
+      />
+
+      <main className="page fade-up">
+        <section
+          className={
+            'card card-glow'
+          }
+          style={{
+            display:
+              'grid',
+
+            gap:
+              8,
+
+            marginBottom:
+              13,
+          }}
+        >
+          <div className="sec-title">
+            📤 فایل جدید
+          </div>
+
+          <div className="grid2">
+            <input
+              className="inp"
+              value={form.lesson}
+              onChange={(event) =>
+                setForm({
+                  ...form,
+
+                  lesson:
+                    event.target.value,
+                })
+              }
+              placeholder="درس"
+            />
+
+            <input
+              className="inp"
+              value={form.topic}
+              onChange={(event) =>
+                setForm({
+                  ...form,
+
+                  topic:
+                    event.target.value,
+                })
+              }
+              placeholder="مبحث"
+            />
+          </div>
+
+          <input
+            className="inp"
+            value={
+              form.description
+            }
+            onChange={(event) =>
+              setForm({
+                ...form,
+
+                description:
+                  event.target.value,
+              })
+            }
+            placeholder="توضیحات"
+          />
+
+          <input
+            className="inp"
+            type="file"
+            onChange={(event) =>
+              setForm({
+                ...form,
+
+                file:
+                  event.target
+                    .files?.[0] ||
+                  null,
+              })
+            }
+          />
+
+          <button
+            className="btn btn-p"
+            disabled={
+              !form.lesson.trim() ||
+              !form.topic.trim() ||
+              !form.file ||
+              mutation.isPending
+            }
+            onClick={() =>
+              mutation.mutate({
+                type:
+                  'add',
+              })
+            }
+          >
+            {mutation.isPending ? (
+              <Spinner size={14} />
+            ) : (
+              'آپلود فایل'
+            )}
+          </button>
+        </section>
+
+
+        {isLoading ? (
+          <SkeletonCard />
+        ) : isError ? (
+          <Empty>
+            دریافت فایل‌ها انجام نشد.
+
+            <button
+              className="btn btn-p"
+              style={{
+                marginTop:
+                  12,
+              }}
+              onClick={() =>
+                refetch()
+              }
+            >
+              تلاش دوباره
+            </button>
+          </Empty>
+        ) : files.length === 0 ? (
+          <Empty>
+            فایلی ثبت نشده است.
+          </Empty>
+        ) : (
+          <section
+            style={{
+              display:
+                'grid',
+
+              gap:
+                8,
+            }}
+          >
+            {files.map((item) => (
+              <article
+                key={item.id}
+                className="card"
+              >
+                <div
+                  style={{
+                    display:
+                      'flex',
+
+                    alignItems:
+                      'center',
+
+                    gap:
+                      10,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize:
+                        22,
+                    }}
+                  >
+                    {item.file_type ===
+                    'video'
+                      ? '🎬'
+
+                      : item.file_type ===
+                          'voice'
+                        ? '🎧'
+
+                        : '📄'}
+                  </span>
+
+                  <div
+                    style={{
+                      flex:
+                        1,
+                    }}
+                  >
+                    <b>
+                      {item.lesson}
+                      {' — '}
+                      {item.topic}
+                    </b>
+
+                    <div
+                      style={{
+                        color:
+                          'var(--txm)',
+
+                        fontSize:
+                          9,
+
+                        marginTop:
+                          3,
+                      }}
+                    >
+                      {item.description ||
+                        'بدون توضیح'}
+
+                      {' • '}
+
+                      {number(
+                        item.downloads
+                      )}{' '}
+
+                      دانلود
+
+                      {' • '}
+
+                      {item.upload_date ||
+                        '—'}
+                    </div>
+                  </div>
+
+                  <DeleteButton
+                    pending={
+                      mutation.isPending
+                    }
+                    onClick={() => {
+                      const accepted =
+                        window.confirm(
+                          'فایل حذف شود؟'
+                        );
+
+                      if (accepted) {
+                        mutation.mutate({
+                          type:
+                            'delete',
+
+                          id:
+                            item.id,
+                        });
+                      }
+                    }}
+                  />
+                </div>
+              </article>
+            ))}
+          </section>
+        )}
+      </main>
+    </>
+  );
+}
+
+
+/* گزارش‌های محتوا */
+
+export function ContentReportsAdmin() {
+  const [
+    status,
+    setStatus,
+  ] = useState('new');
+
+  const toast = useUIStore(
+    (state) => state.toast
+  );
+
+  const queryClient =
+    useQueryClient();
+
+
+  const {
+    data: stats,
+  } = useQuery({
+    queryKey: [
+      'content-report-stats',
+    ],
+
+    queryFn: () =>
+      api
+        .get(
+          '/api/content/reports/stats'
+        )
+        .then(
+          (response) =>
+            response.data
+        ),
+  });
+
+
+  const {
+    data = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: [
+      'content-reports',
+      status,
+    ],
+
+    queryFn: () =>
+      api
+        .get(
+          '/api/content/reports',
+
+          {
+            params: {
+              status,
+            },
+          }
+        )
+        .then(
+          (response) =>
+            response.data
+              ?.reports || []
+        ),
+  });
+
+
+  const mutation = useMutation({
+    mutationFn: ({
+      id,
+      value,
+    }) =>
+      api.post(
+        `/api/content/reports/${id}/status`,
+
+        {
+          status:
+            value,
+        }
+      ),
+
+    onSuccess: async () => {
+      hapticNotif(
+        'success'
+      );
+
+      toast(
+        'وضعیت گزارش تغییر کرد ✅',
+        'success'
+      );
+
+      await Promise.all([
+        queryClient
+          .invalidateQueries({
+            queryKey: [
+              'content-reports',
+            ],
+          }),
+
+        queryClient
+          .invalidateQueries({
+            queryKey: [
+              'content-report-stats',
+            ],
+          }),
+      ]);
+    },
+
+    onError: (error) =>
+      toast(
+        errorText(
+          error,
+          'عملیات انجام نشد'
+        ),
+        'error'
+      ),
+  });
+
+
+  const reports =
+    Array.isArray(data)
+      ? data
+      : [];
+
+
+  const tabs = [
+    [
+      'new',
+      'جدید',
+    ],
+
+    [
+      'reviewing',
+      'در بررسی',
+    ],
+
+    [
+      'resolved',
+      'برطرف‌شده',
+    ],
+
+    [
+      'rejected',
+      'ردشده',
+    ],
+  ];
+
+
+  return (
+    <>
+      <Header
+        title="گزارش‌های محتوا"
+        subtitle={`${
+          Number(stats?.new) ||
+          0
+        } گزارش جدید`}
+      />
+
+      <main className="page fade-up">
+        <section
+          className="grid2"
+          style={{
+            marginBottom:
+              13,
+          }}
+        >
+          <div
+            className="card"
+            style={{
+              textAlign:
+                'center',
+            }}
+          >
+            <b
+              style={{
+                color:
+                  'var(--warn)',
+
+                fontSize:
+                  20,
+              }}
+            >
+              {number(
+                stats?.new
+              )}
+            </b>
+
+            <div
+              style={{
+                color:
+                  'var(--txm)',
+
+                fontSize:
+                  9,
+              }}
+            >
+              جدید
+            </div>
+          </div>
+
+          <div
+            className="card"
+            style={{
+              textAlign:
+                'center',
+            }}
+          >
+            <b
+              style={{
+                color:
+                  'var(--acc2)',
+
+                fontSize:
+                  20,
+              }}
+            >
+              {number(
+                stats?.reviewing
+              )}
+            </b>
+
+            <div
+              style={{
+                color:
+                  'var(--txm)',
+
+                fontSize:
+                  9,
+              }}
+            >
+              در بررسی
+            </div>
+          </div>
+        </section>
+
+
+        <div className="tab-bar">
+          {tabs.map(
+            ([
+              key,
+              label,
+            ]) => (
+              <button
+                key={key}
+                className="tab-btn"
+                onClick={() =>
+                  setStatus(key)
+                }
+                style={{
+                  color:
+                    status === key
+                      ? '#fff'
+                      : 'var(--tx2)',
+
+                  background:
+                    status === key
+                      ? 'var(--grad-brand)'
+                      : 'transparent',
+                }}
+              >
+                {label}{' '}
+
+                ({number(
+                  stats?.[key]
+                )})
+              </button>
+            )
           )}
         </div>
 
-        {entries.length > 0 && (
-          <div className="card" style={{ marginBottom:14 }}>
-            <div className="sec-title">🎯 نمرات ({entries.length} نفر)</div>
-            {entries.map((e, i) => (
-              <div key={e.user_id} style={{ display:'flex',alignItems:'center',gap:8,marginBottom:8 }}>
-                <span style={{ flex:1,fontSize:12.5 }}>{e.name}</span>
-                <input className="inp" type="number" step="0.01" style={{ width:80 }} placeholder="نمره"
-                  value={e.score} onChange={ev => setEntries(prev => prev.map((x,xi)=>xi===i?{...x,score:ev.target.value}:x))} />
-                <button onClick={() => setEntries(prev => prev.filter((_,xi)=>xi!==i))} style={{ background:'none',border:'none',color:'var(--err)',fontSize:15,cursor:'pointer' }}>🗑</button>
-              </div>
-            ))}
-          </div>
-        )}
 
-        <button className="btn btn-p btn-full" disabled={!bulkForm.lesson||!bulkForm.exam_title||!bulkForm.exam_date||!entries.length||entries.some(e=>e.score==='')||bulkMut.isPending}
-          onClick={() => bulkMut.mutate()}>
-          {bulkMut.isPending ? <Spinner size={14}/> : `💾 ثبت ${entries.length} نمره`}
-        </button>
-      </div>
-    </>
-  );
+        {isLoading ? (
+          <SkeletonCard />
+        ) : isError ? (
+          <Empty>
+            دریافت گزارش‌ها انجام نشد.
 
-  return (
-    <>
-      <Header title="📊 مدیریت نمرات" subtitle={data?`${data.total} نمره ثبت‌شده`:''} />
-      <div className="page fade-up">
-        <button className="btn btn-p btn-full" style={{ marginBottom:14 }} onClick={() => { haptic(); setView('bulk'); }}>+ ثبت نمره دسته‌ای</button>
+            <button
+              className="btn btn-p"
+              style={{
+                marginTop:
+                  12,
+              }}
+              onClick={() =>
+                refetch()
+              }
+            >
+              تلاش دوباره
+            </button>
+          </Empty>
+        ) : reports.length === 0 ? (
+          <Empty>
+            گزارشی در این وضعیت نیست.
+          </Empty>
+        ) : (
+          <section
+            style={{
+              display:
+                'grid',
 
-        {isLoading ? <SkeletonCard /> : !data?.grades?.length ? <EmptyState icon="📊" text="هنوز نمره‌ای ثبت نشده" /> :
-          data.grades.map(g => (
-            <div key={g.id} className="card" style={{ marginBottom:9 }}>
-              <div style={{ display:'flex',justifyContent:'space-between',alignItems:'flex-start' }}>
-                <div>
-                  <div style={{ fontWeight:700,fontSize:13.5 }}>{g.student_name}</div>
-                  <div style={{ fontSize:11,color:'var(--txm)',marginTop:2 }}>{g.lesson} — {g.exam_title} • {g.exam_date}</div>
-                </div>
-                {editing?.id === g.id ? (
-                  <div style={{ display:'flex',gap:6,alignItems:'center' }}>
-                    <input className="inp" type="number" step="0.01" style={{ width:70 }} value={editing.score} onChange={e=>setEditing({...editing,score:e.target.value})} autoFocus />
-                    <button className="btn btn-p" style={{ fontSize:11,padding:'6px 8px' }} onClick={() => editMut.mutate()}>✓</button>
-                    <button className="btn btn-dark" style={{ fontSize:11,padding:'6px 8px' }} onClick={() => setEditing(null)}>✕</button>
+              gap:
+                8,
+            }}
+          >
+            {reports.map((item) => (
+              <article
+                key={item.id}
+                className="card"
+              >
+                <div
+                  style={{
+                    display:
+                      'flex',
+
+                    gap:
+                      8,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize:
+                        22,
+                    }}
+                  >
+                    {item.target_type ===
+                    'question'
+                      ? '🧪'
+                      : '📎'}
+                  </span>
+
+                  <div
+                    style={{
+                      flex:
+                        1,
+                    }}
+                  >
+                    <b>
+                      گزارش #{item.id}
+                    </b>
+
+                    <div
+                      style={{
+                        color:
+                          'var(--txm)',
+
+                        fontSize:
+                          9,
+
+                        marginTop:
+                          3,
+                      }}
+                    >
+                      {item.reason}
+
+                      {' • '}
+
+                      {item.reporter_name ||
+                        'ناشناس'}
+
+                      {' • '}
+
+                      {item.created_at ||
+                        '—'}
+                    </div>
                   </div>
-                ) : (
-                  <div style={{ display:'flex',gap:6,alignItems:'center' }}>
-                    <span style={{ fontSize:16,fontWeight:800,color:'var(--acc)' }}>{g.score}</span>
-                    <button className="btn btn-dark" style={{ fontSize:11,padding:'6px 8px' }} onClick={() => setEditing({id:g.id,score:g.score})}>✏️</button>
-                    <button className="btn btn-d" style={{ fontSize:11,padding:'6px 8px' }} onClick={() => { if(confirm('این نمره حذف بشه؟')) delMut.mutate(g.id); }}>🗑</button>
+
+                  <span className="badge b-gray">
+                    {status}
+                  </span>
+                </div>
+
+                {item.note && (
+                  <div
+                    style={{
+                      marginTop:
+                        8,
+
+                      padding:
+                        '8px 9px',
+
+                      background:
+                        'rgba(100,116,139,.08)',
+
+                      borderRadius:
+                        10,
+
+                      fontSize:
+                        10,
+                    }}
+                  >
+                    {item.note}
                   </div>
                 )}
-              </div>
-            </div>
-          ))}
-      </div>
-    </>
-  );
-}
 
-export function ContentReportsAdmin() {
-  const toast = useUIStore(s => s.toast);
-  const qc = useQueryClient();
-  const [status, setStatus] = useState('new');
+                <div
+                  style={{
+                    display:
+                      'flex',
 
-  const { data: stats } = useQuery({ queryKey:['reports-stats'], queryFn:() => api.get('/api/content/reports/stats').then(r=>r.data) });
-  const { data: reports, isLoading } = useQuery({
-    queryKey: ['reports-list', status], queryFn: () => api.get(`/api/content/reports${status?`?status=${status}`:''}`).then(r=>r.data.reports),
-  });
+                    gap:
+                      6,
 
-  const updateStatus = useMutation({
-    mutationFn: ({ id, status }) => api.post(`/api/content/reports/${id}/status`, { status }).then(r=>r.data),
-    onSuccess: () => { hapticNotif('success'); toast('✅ به‌روزرسانی شد','success'); qc.invalidateQueries({queryKey:['reports-list']}); qc.invalidateQueries({queryKey:['reports-stats']}); },
-  });
+                    marginTop:
+                      9,
+                  }}
+                >
+                  {status === 'new' && (
+                    <button
+                      className={
+                        'btn btn-dark'
+                      }
+                      style={{
+                        flex:
+                          1,
+                      }}
+                      onClick={() =>
+                        mutation.mutate({
+                          id:
+                            item.id,
 
-  const STATUS_TABS = [['new','🆕 جدید','b-yel'],['reviewing','🔍 بررسی','b-acc'],['resolved','✅ برطرف شد','b-grn'],['rejected','❌ رد شد','b-red']];
+                          value:
+                            'reviewing',
+                        })
+                      }
+                    >
+                      🔍 بررسی
+                    </button>
+                  )}
 
-  return (
-    <>
-      <Header title="🚩 گزارش‌های ایراد" subtitle={stats ? `${stats.new} گزارش جدید` : ''} />
-      <div className="page fade-up">
-        <div style={{ display:'flex',gap:6,marginBottom:14,overflowX:'auto' }}>
-          {STATUS_TABS.map(([val,label]) => (
-            <button key={val} onClick={() => { haptic(); setStatus(val); }}
-              style={{ flexShrink:0,padding:'7px 12px',borderRadius:999,fontSize:11.5,fontWeight:600,
-                border:`1px solid ${status===val?'var(--acc)':'var(--bd)'}`,
-                background:status===val?'var(--acc-glow)':'var(--elev)',color:status===val?'var(--acc)':'var(--txm)' }}>
-              {label} {stats && stats[val] != null ? `(${stats[val]})` : ''}
-            </button>
-          ))}
-        </div>
+                  {![
+                    'resolved',
+                    'rejected',
+                  ].includes(
+                    status
+                  ) && (
+                    <>
+                      <button
+                        className="btn btn-g"
+                        style={{
+                          flex:
+                            1,
+                        }}
+                        onClick={() =>
+                          mutation.mutate({
+                            id:
+                              item.id,
 
-        {isLoading ? <SkeletonCard /> : !reports?.length ? <EmptyState icon="🚩" text="گزارشی در این وضعیت نیست" /> :
-          reports.map(r => (
-            <div key={r.id} className="card" style={{ marginBottom:9 }}>
-              <div style={{ display:'flex',justifyContent:'space-between',marginBottom:6 }}>
-                <span style={{ fontWeight:700,fontSize:13 }}>{r.target_type==='question'?'🧪 سوال':'📎 جزوه'} #{r.id}</span>
-                <span style={{ fontSize:10.5,color:'var(--txm)' }}>{r.created_at}</span>
-              </div>
-              <div style={{ fontSize:12,marginBottom:4 }}><b>دلیل:</b> {r.reason}</div>
-              {r.note && <div style={{ fontSize:11.5,color:'var(--txm)',marginBottom:6 }}>«{r.note}»</div>}
-              <div style={{ fontSize:11,color:'var(--txm)',marginBottom:9 }}>گزارش‌دهنده: {r.reporter_name}</div>
-              {r.status !== 'resolved' && r.status !== 'rejected' && (
-                <div style={{ display:'flex',gap:7 }}>
-                  {r.status==='new' && <button className="btn btn-dark" style={{ flex:1,fontSize:11,padding:'6px 4px' }} onClick={() => updateStatus.mutate({id:r.id,status:'reviewing'})}>🔍 در حال بررسی</button>}
-                  <button className="btn btn-p" style={{ flex:1,fontSize:11,padding:'6px 4px' }} onClick={() => updateStatus.mutate({id:r.id,status:'resolved'})}>✅ برطرف شد</button>
-                  <button className="btn btn-d" style={{ flex:1,fontSize:11,padding:'6px 4px' }} onClick={() => updateStatus.mutate({id:r.id,status:'rejected'})}>❌ رد</button>
+                            value:
+                              'resolved',
+                          })
+                        }
+                      >
+                        ✅ حل شد
+                      </button>
+
+                      <button
+                        className="btn btn-d"
+                        style={{
+                          flex:
+                            1,
+                        }}
+                        onClick={() =>
+                          mutation.mutate({
+                            id:
+                              item.id,
+
+                            value:
+                              'rejected',
+                          })
+                        }
+                      >
+                        رد
+                      </button>
+                    </>
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
-      </div>
+              </article>
+            ))}
+          </section>
+        )}
+      </main>
     </>
   );
 }
