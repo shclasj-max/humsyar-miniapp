@@ -308,8 +308,8 @@ export default function Questions() {
 
   function backToMenu() { haptic(); setView('menu'); setQ(null); setAns(null); }
 
-  if (view === 'exam')   return (<><Header title="آزمون سفارشی" right={<button className="btn btn-dark" style={{ fontSize:11,padding:'5px 10px' }} onClick={backToMenu}>بازگشت</button>} /><CustomExam onExit={backToMenu} /></>);
-  if (view === 'design') return (<><Header title="✏️ طراحی سوال" right={<button className="btn btn-dark" style={{ fontSize:11,padding:'5px 10px' }} onClick={backToMenu}>بازگشت</button>} /><DesignQuestion onBack={backToMenu} /></>);
+  if (view === 'exam')   return (<><Header title="آزمون سفارشی" onBack={backToMenu} /><CustomExam onExit={backToMenu} /></>);
+  if (view === 'design') return (<><Header title="✏️ طراحی سوال" onBack={backToMenu} /><DesignQuestion onBack={backToMenu} /></>);
 
   const modeLabel = practiceMode==='weak'?'⚡ نقاط ضعف':practiceMode==='hard'?'🔴 سطح سخت':selectedLesson||'تمرین آزاد';
 
@@ -318,7 +318,7 @@ export default function Questions() {
       <Header
         title={view==='practice' ? modeLabel : 'بانک سوال'}
         subtitle={view==='practice' ? `${qCorrect}/${qCount} صحیح` : undefined}
-        right={view==='practice' ? <button className="btn btn-dark" style={{ fontSize:11,padding:'5px 10px' }} onClick={backToMenu}>بازگشت</button> : undefined}
+        onBack={view==='practice' ? backToMenu : undefined}
       />
       <div className="page fade-up">
         {view === 'menu' && (
