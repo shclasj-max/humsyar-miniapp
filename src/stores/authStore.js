@@ -1,29 +1,65 @@
 import { create } from 'zustand';
 import api from '../lib/api';
-import { getTgUser } from '../lib/telegram';
+import { getTgUser, isTelegram } from '../lib/telegram';
 
 export const useAuthStore = create((set) => ({
-  user:    null,
-  tgUser:  null,
+  user: null,
+  tgUser: null,
   loading: true,
-  error:   null,
+  error: null,
 
   init: async () => {
     const tgUser = getTgUser();
-    set({ tgUser });
+
+    set({
+      tgUser,
+      loading: true,
+      error: null,
+    });
+
+    // خارج از محیط تلگرام، initData معتبر وجود ندارد
+    // و API نمی‌تواند کاربر را احراز هویت کند.
+    if (!isTelegram) {
+      set({
+        loading: false,
+        error: 'telegram_required',
+      });
+
+      return;
+    }
+
     try {
-      const res = await api.get('/api/profile');
-      set({ user: res.data.user, loading: false, error: null });
-    } catch (err) {
-      const detail = err.response?.data?.detail;
-      set({ loading: false, error: detail || 'error' });
+      const response = await api.get('/api/profile');
+
+      set({
+        user: response.data?.user || null,
+        loading: false,
+        error: null,
+      });
+    } catch (error) {
+      const detail = error.response?.data?.detail;
+
+      set({
+        loading: false,
+        error: detail || (
+          error.response
+            ? 'error'
+            : 'network_error'
+        ),
+      });
     }
   },
 
   refresh: async () => {
     try {
-      const res = await api.get('/api/profile');
-      set({ user: res.data.user });
-    } catch (_) {}
+      const response = await api.get('/api/profile');
+      const user = response.data?.user || null;
+
+      set({ user });
+
+      return user;
+    } catch (_) {
+      return null;
+    }
   },
 }));
