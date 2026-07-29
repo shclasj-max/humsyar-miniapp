@@ -41,7 +41,7 @@ import AiChat from './pages/Ai/AiChat';
 import GlobalSearch from './pages/Search/GlobalSearch';
 
 
-/* یادگیری */
+/* صفحات یادگیری */
 
 import Questions from './pages/Learn/Questions';
 import ExamCenter from './pages/Learn/ExamCenter';
@@ -77,6 +77,7 @@ import AdminHome from './pages/Admin/AdminHome';
 import ContentHome from './pages/Admin/ContentHome';
 
 import SubscriptionAdmin from './pages/Admin/SubscriptionAdmin';
+import AiAdmin from './pages/Admin/AiAdmin';
 
 
 /* مدیریت کاربران */
@@ -108,7 +109,7 @@ import {
 } from './pages/Admin/ContentAdmin';
 
 
-/* کتابخانه محتوا */
+/* مدیریت کتابخانه */
 
 import {
   BasicScienceAdmin,
@@ -118,7 +119,7 @@ import {
 } from './pages/Admin/ContentLibrary';
 
 
-/* برنامه و نمرات */
+/* مدیریت برنامه و نمرات */
 
 import AcademicScheduleAdmin from './pages/Admin/AcademicScheduleAdmin';
 
@@ -226,22 +227,30 @@ export default function App() {
 
         <Route
           path="/"
-          element={<Dashboard />}
+          element={
+            <Dashboard />
+          }
         />
 
         <Route
           path="/learn"
-          element={<Learn />}
+          element={
+            <Learn />
+          }
         />
 
         <Route
           path="/schedule"
-          element={<Schedule />}
+          element={
+            <Schedule />
+          }
         />
 
         <Route
           path="/grades"
-          element={<Grades />}
+          element={
+            <Grades />
+          }
         />
 
 
@@ -249,12 +258,16 @@ export default function App() {
 
         <Route
           path="/ai"
-          element={<AiChat />}
+          element={
+            <AiChat />
+          }
         />
 
         <Route
           path="/search"
-          element={<GlobalSearch />}
+          element={
+            <GlobalSearch />
+          }
         />
 
 
@@ -262,32 +275,44 @@ export default function App() {
 
         <Route
           path="/learn/questions"
-          element={<Questions />}
+          element={
+            <Questions />
+          }
         />
 
         <Route
           path="/learn/exams"
-          element={<ExamCenter />}
+          element={
+            <ExamCenter />
+          }
         />
 
         <Route
           path="/learn/question-history"
-          element={<QuestionHistory />}
+          element={
+            <QuestionHistory />
+          }
         />
 
         <Route
           path="/learn/my-questions"
-          element={<MyQuestions />}
+          element={
+            <MyQuestions />
+          }
         />
 
         <Route
           path="/learn/resources"
-          element={<Resources />}
+          element={
+            <Resources />
+          }
         />
 
         <Route
           path="/learn/references"
-          element={<References />}
+          element={
+            <References />
+          }
         />
 
 
@@ -295,37 +320,51 @@ export default function App() {
 
         <Route
           path="/me"
-          element={<Me />}
+          element={
+            <Me />
+          }
         />
 
         <Route
           path="/me/profile"
-          element={<Profile />}
+          element={
+            <Profile />
+          }
         />
 
         <Route
           path="/me/notifications"
-          element={<Notifications />}
+          element={
+            <Notifications />
+          }
         />
 
         <Route
           path="/me/subscription"
-          element={<Subscription />}
+          element={
+            <Subscription />
+          }
         />
 
         <Route
           path="/me/tickets"
-          element={<Tickets />}
+          element={
+            <Tickets />
+          }
         />
 
         <Route
           path="/me/faq"
-          element={<Faq />}
+          element={
+            <Faq />
+          }
         />
 
         <Route
           path="/me/reports"
-          element={<Reports />}
+          element={
+            <Reports />
+          }
         />
 
 
@@ -348,6 +387,18 @@ export default function App() {
           element={
             <AdminRoute>
               <SubscriptionAdmin />
+            </AdminRoute>
+          }
+        />
+
+
+        {/* مدیریت هوشیار */}
+
+        <Route
+          path="/admin/ai"
+          element={
+            <AdminRoute>
+              <AiAdmin />
             </AdminRoute>
           }
         />
@@ -494,7 +545,7 @@ export default function App() {
         />
 
 
-        {/* کتابخانه */}
+        {/* کتابخانه محتوا */}
 
         <Route
           path="/admin/content/basic-science"
