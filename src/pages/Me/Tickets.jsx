@@ -1,173 +1,1165 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
+
 import api from '../../lib/api';
 import Header from '../../components/layout/Header';
-import { SkeletonCard, Spinner } from '../../components/shared/Loading';
-import { haptic, hapticNotif } from '../../lib/telegram';
-import { useUIStore } from '../../stores/uiStore';
 
-function TicketList({ tickets, onSelect, onNew }) {
-  return (
-    <>
-      {!tickets.length ? (
-        <div className="empty">
-          <div style={{ fontSize:40,marginBottom:10 }}>🎫</div>
-          <div>هنوز تیکتی ثبت نکرده‌اید</div>
-          <button className="btn btn-p" style={{ marginTop:14 }} onClick={onNew}>📝 ثبت اولین تیکت</button>
-        </div>
-      ) : (
-        <div style={{ display:'flex',flexDirection:'column',gap:8 }}>
-          {tickets.map((t, i) => (
-            <button key={t.id} onClick={() => { haptic(); onSelect(t.id); }}
-              className="card" style={{ cursor:'pointer',textAlign:'right',borderColor:t.status==='open'?'rgba(245,158,11,.3)':'var(--bd)',width:'100%' }}>
-              <div style={{ display:'flex',alignItems:'center',gap:12 }}>
-                <div style={{ width:42,height:42,borderRadius:'var(--r-md)',background:t.status==='open'?'rgba(245,158,11,.12)':'rgba(16,185,129,.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0 }}>🎫</div>
-                <div style={{ flex:1,minWidth:0 }}>
-                  <div style={{ fontWeight:600,fontSize:13 }}>#{t.id} — {t.subject}</div>
-                  <div style={{ fontSize:11,color:'var(--txm)',marginTop:2 }}>{t.created_at}{t.reply_count>0&&` • ${t.reply_count} پاسخ`}</div>
-                </div>
-                <span className={`badge ${t.status==='open'?'b-yel':'b-grn'}`}>{t.status==='open'?'باز':'بسته'}</span>
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
-    </>
-  );
-}
+import {
+  SkeletonCard,
+  Spinner,
+} from '../../components/shared/Loading';
 
-function NewTicketForm({ subjects, onCreated, onCancel }) {
-  const [subject, setSubject] = useState('');
-  const [message, setMessage] = useState('');
-  const toast = useUIStore(s => s.toast);
+import {
+  hapticNotif,
+} from '../../lib/telegram';
 
-  const createMut = useMutation({
-    mutationFn: () => api.post('/api/tickets', { subject, message }).then(r => r.data),
-    onSuccess: (data) => { hapticNotif('success'); toast('تیکت ثبت شد ✅','success'); onCreated(data.ticket_id); },
-    onError: (err) => { hapticNotif('error'); toast(err.response?.data?.detail||'خطا','error'); },
-  });
+import {
+  useUIStore,
+} from '../../stores/uiStore';
 
-  return (
-    <div className="card card-glow fade-up">
-      <div className="sec-title">📝 تیکت جدید</div>
-      <div style={{ marginBottom:14 }}>
-        <div style={{ fontSize:11,color:'var(--txm)',marginBottom:7 }}>موضوع</div>
-        <div style={{ display:'flex',flexDirection:'column',gap:5 }}>
-          {subjects.map(s => (
-            <button key={s} onClick={() => { haptic(); setSubject(s); }}
-              style={{ textAlign:'right',padding:'9px 12px',borderRadius:'var(--r-md)',border:`1px solid ${subject===s?'var(--acc)':'var(--bd)'}`,background:subject===s?'var(--acc-glow)':'var(--elev)',color:subject===s?'var(--acc)':'var(--tx)',fontFamily:'var(--font)',fontSize:13,cursor:'pointer',transition:'all .15s' }}>
-              {s}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div style={{ marginBottom:16 }}>
-        <div style={{ fontSize:11,color:'var(--txm)',marginBottom:5 }}>توضیحات</div>
-        <textarea className="inp" rows={5} value={message} onChange={e=>setMessage(e.target.value)} placeholder="مشکل یا سوال خود را کامل بنویسید..." style={{ resize:'vertical',lineHeight:1.6 }} />
-        <div style={{ fontSize:10,color:'var(--txm)',marginTop:3,textAlign:'left' }}>{message.length} کاراکتر</div>
-      </div>
-      <div style={{ display:'flex',gap:8 }}>
-        <button className="btn btn-p" style={{ flex:2 }} disabled={!subject||message.trim().length<10||createMut.isPending} onClick={() => createMut.mutate()}>
-          {createMut.isPending ? <Spinner size={16} /> : '📨 ارسال تیکت'}
-        </button>
-        <button className="btn btn-dark" style={{ flex:1 }} onClick={onCancel}>لغو</button>
-      </div>
-    </div>
-  );
-}
 
-function TicketDetail({ ticketId, onBack }) {
-  const [replyText, setReply] = useState('');
-  const toast = useUIStore(s => s.toast);
-  const qc    = useQueryClient();
+const number = (value) => {
+  const parsed = Number(value);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['ticket', ticketId],
-    queryFn: () => api.get(`/api/tickets/${ticketId}`).then(r => r.data.ticket),
-    staleTime: 1000 * 20,
-    refetchInterval: 15000,
-  });
+  return Number.isFinite(parsed)
+    ? Math.max(0, parsed)
+    : 0;
+};
 
-  const replyMut = useMutation({
-    mutationFn: () => api.post(`/api/tickets/${ticketId}/reply`, { message: replyText }).then(r => r.data),
-    onSuccess: () => { hapticNotif('success'); setReply(''); qc.invalidateQueries({ queryKey: ['ticket', ticketId] }); },
-    onError: () => toast('خطا در ارسال','error'),
-  });
 
-  if (isLoading) return <SkeletonCard />;
-  if (!data) return null;
-  const isClosed = data.status === 'closed';
+const statusInfo = (status) => {
+  if (status === 'closed') {
+    return {
+      label:
+        'بسته‌شده',
 
-  return (
-    <div className="fade-up">
-      <button onClick={() => { haptic(); onBack(); }} style={{ background:'none',border:'none',cursor:'pointer',color:'var(--acc)',fontSize:13,marginBottom:12,padding:0,fontFamily:'var(--font)' }}>← بازگشت</button>
-      <div className="card" style={{ marginBottom:11 }}>
-        <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:7 }}>
-          <div style={{ fontWeight:700,fontSize:14 }}>#{data.id} — {data.subject}</div>
-          <span className={`badge ${isClosed?'b-grn':'b-yel'}`}>{isClosed?'بسته':'باز'}</span>
-        </div>
-        <div style={{ fontSize:13,color:'var(--tx2)',lineHeight:1.7 }}>{data.message}</div>
-        <div style={{ fontSize:10,color:'var(--txm)',marginTop:7 }}>{data.created_at}</div>
-      </div>
-      {data.replies?.length > 0 && (
-        <div style={{ display:'flex',flexDirection:'column',gap:8,marginBottom:13 }}>
-          {data.replies.map((r, i) => (
-            <div key={i} style={{ alignSelf:r.sender==='support'?'flex-end':'flex-start',maxWidth:'85%',background:r.sender==='support'?'var(--acc)':'var(--elev)',color:r.sender==='support'?'#fff':'var(--tx)',borderRadius:'var(--r-md)',padding:'9px 13px',fontSize:13,lineHeight:1.6 }}>
-              {r.sender==='user' && <div style={{ fontSize:10,fontWeight:700,color:'var(--warn)',marginBottom:3 }}>🧑‍🎓 دانشجو</div>}
-              {r.text}
-              <div style={{ fontSize:9,marginTop:3,opacity:.7 }}>{r.at}</div>
-            </div>
-          ))}
-        </div>
-      )}
-      {!isClosed ? (
-        <div style={{ display:'flex',gap:8 }}>
-          <input className="inp" value={replyText} onChange={e=>setReply(e.target.value)} placeholder="پیام خود را بنویسید..." style={{ flex:1 }} />
-          <button className="btn btn-p" onClick={() => replyMut.mutate()} disabled={!replyText.trim()||replyMut.isPending}>
-            {replyMut.isPending ? <Spinner size={14} /> : '📤'}
-          </button>
-        </div>
-      ) : (
-        <div className="card" style={{ textAlign:'center',fontSize:12,color:'var(--txm)' }}>این تیکت بسته شده است</div>
-      )}
-    </div>
-  );
-}
+      badge:
+        'b-gray',
+    };
+  }
+
+  return {
+    label:
+      'باز',
+
+    badge:
+      'b-grn',
+  };
+};
+
 
 export default function Tickets() {
-  const [view, setView]         = useState('list');
-  const [selectedId, setSelId]  = useState(null);
-  const qc = useQueryClient();
+  const [
+    view,
+    setView,
+  ] = useState('list');
 
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ['tickets'],
-    queryFn: () => api.get('/api/tickets').then(r => r.data),
-    staleTime: 1000 * 30,
+  const [
+    selectedId,
+    setSelectedId,
+  ] = useState(null);
+
+  const [
+    form,
+    setForm,
+  ] = useState({
+    subject: '',
+    message: '',
   });
 
-  function handleCreated(id) { refetch(); setSelId(id); setView('detail'); }
+  const [
+    reply,
+    setReply,
+  ] = useState('');
+
+  const toast = useUIStore(
+    (state) => state.toast
+  );
+
+  const queryClient =
+    useQueryClient();
+
+
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: [
+      'tickets',
+    ],
+
+    queryFn: () =>
+      api
+        .get('/api/tickets')
+        .then(
+          (response) =>
+            response.data
+        ),
+  });
+
+
+  const {
+    data: detail,
+
+    isLoading:
+      detailLoading,
+
+    isError:
+      detailError,
+  } = useQuery({
+    queryKey: [
+      'ticket',
+      selectedId,
+    ],
+
+    queryFn: () =>
+      api
+        .get(
+          `/api/tickets/${selectedId}`
+        )
+        .then(
+          (response) =>
+            response.data
+              ?.ticket
+        ),
+
+    enabled:
+      selectedId != null &&
+      view === 'detail',
+  });
+
+
+  const refresh = async () => {
+    await Promise.all([
+      queryClient
+        .invalidateQueries({
+          queryKey:
+            ['tickets'],
+        }),
+
+      queryClient
+        .invalidateQueries({
+          queryKey: [
+            'ticket',
+            selectedId,
+          ],
+        }),
+
+      queryClient
+        .invalidateQueries({
+          queryKey:
+            ['profile'],
+        }),
+    ]);
+  };
+
+
+  const createMutation =
+    useMutation({
+      mutationFn: () =>
+        api.post(
+          '/api/tickets',
+          {
+            subject:
+              form.subject,
+
+            message:
+              form.message.trim(),
+          }
+        ),
+
+      onSuccess: async (
+        response
+      ) => {
+        hapticNotif(
+          'success'
+        );
+
+        toast(
+          'تیکت با موفقیت ثبت شد ✅',
+          'success'
+        );
+
+        setForm({
+          subject: '',
+          message: '',
+        });
+
+        setSelectedId(
+          response.data
+            ?.ticket_id
+        );
+
+        setView('detail');
+
+        await refresh();
+      },
+
+      onError: (error) =>
+        toast(
+          error?.response
+            ?.data
+            ?.detail ||
+            'ثبت تیکت انجام نشد',
+
+          'error'
+        ),
+    });
+
+
+  const replyMutation =
+    useMutation({
+      mutationFn: () =>
+        api.post(
+          `/api/tickets/${selectedId}/reply`,
+
+          {
+            message:
+              reply.trim(),
+          }
+        ),
+
+      onSuccess: async () => {
+        hapticNotif(
+          'success'
+        );
+
+        setReply('');
+
+        toast(
+          'پاسخ ارسال شد ✅',
+          'success'
+        );
+
+        await refresh();
+      },
+
+      onError: (error) =>
+        toast(
+          error?.response
+            ?.data
+            ?.detail ||
+            'ارسال پاسخ انجام نشد',
+
+          'error'
+        ),
+    });
+
+
+  const tickets =
+    Array.isArray(
+      data?.tickets
+    )
+      ? data.tickets
+      : [];
+
+
+  const subjects =
+    Array.isArray(
+      data?.subjects
+    )
+      ? data.subjects
+      : [];
+
+
+  const openCount =
+    tickets.filter(
+      (item) =>
+        item.status !==
+        'closed'
+    ).length;
+
+
+  const ticket =
+    detail || {};
+
+
+  if (view === 'new') {
+    const valid =
+      form.subject &&
+      form.message
+        .trim()
+        .length >= 10;
+
+    return (
+      <>
+        <Header
+          title="تیکت جدید"
+          subtitle={
+            'با پشتیبانی در ارتباط باشید'
+          }
+          onBack={() =>
+            setView('list')
+          }
+        />
+
+        <main className="page fade-up">
+          <section
+            className={
+              'card card-glow'
+            }
+            style={{
+              padding: 17,
+
+              marginBottom:
+                13,
+
+              background:
+                'linear-gradient(145deg,rgba(29,78,216,.2),rgba(16,24,39,.95))',
+            }}
+          >
+            <div
+              style={{
+                display:
+                  'flex',
+
+                alignItems:
+                  'center',
+
+                gap:
+                  12,
+              }}
+            >
+              <span
+                style={{
+                  display:
+                    'grid',
+
+                  width:
+                    48,
+
+                  height:
+                    48,
+
+                  placeItems:
+                    'center',
+
+                  borderRadius:
+                    15,
+
+                  background:
+                    'var(--grad-brand)',
+
+                  fontSize:
+                    23,
+                }}
+              >
+                🎫
+              </span>
+
+              <div>
+                <b>
+                  چطور می‌تونیم کمک کنیم؟
+                </b>
+
+                <div
+                  style={{
+                    color:
+                      'var(--txm)',
+
+                    fontSize:
+                      10,
+
+                    marginTop:
+                      3,
+                  }}
+                >
+                  موضوع را انتخاب و مشکل
+                  را با جزئیات توضیح دهید.
+                </div>
+              </div>
+            </div>
+          </section>
+
+
+          <section
+            className="card"
+            style={{
+              display: 'grid',
+              gap: 10,
+            }}
+          >
+            <label
+              style={{
+                color:
+                  'var(--txm)',
+
+                fontSize:
+                  10.5,
+              }}
+            >
+              موضوع
+            </label>
+
+            <select
+              className="inp"
+              value={
+                form.subject
+              }
+              onChange={(event) =>
+                setForm({
+                  ...form,
+
+                  subject:
+                    event.target
+                      .value,
+                })
+              }
+            >
+              <option value="">
+                انتخاب موضوع
+              </option>
+
+              {subjects.map(
+                (subject) => (
+                  <option
+                    key={subject}
+                    value={subject}
+                  >
+                    {subject}
+                  </option>
+                )
+              )}
+            </select>
+
+
+            <label
+              style={{
+                color:
+                  'var(--txm)',
+
+                fontSize:
+                  10.5,
+              }}
+            >
+              شرح درخواست
+            </label>
+
+            <textarea
+              className="inp"
+              rows={6}
+              maxLength={2000}
+              value={
+                form.message
+              }
+              onChange={(event) =>
+                setForm({
+                  ...form,
+
+                  message:
+                    event.target
+                      .value,
+                })
+              }
+              placeholder={
+                'مشکل یا سؤال خود را ' +
+                'دقیق بنویسید...'
+              }
+            />
+
+            <div
+              style={{
+                color:
+                  form.message
+                    .trim()
+                    .length >= 10
+                    ? 'var(--ok)'
+                    : 'var(--txm)',
+
+                fontSize:
+                  9,
+              }}
+            >
+              {form.message
+                .trim()
+                .length}
+              /10 حداقل کاراکتر
+            </div>
+          </section>
+
+
+          <button
+            className={
+              'btn btn-p btn-full'
+            }
+            style={{
+              marginTop:
+                13,
+            }}
+            disabled={
+              !valid ||
+              createMutation
+                .isPending
+            }
+            onClick={() =>
+              createMutation.mutate()
+            }
+          >
+            {createMutation
+              .isPending ? (
+              <Spinner size={16} />
+            ) : (
+              'ارسال تیکت'
+            )}
+          </button>
+        </main>
+      </>
+    );
+  }
+
+
+  if (view === 'detail') {
+    const status =
+      statusInfo(
+        ticket.status
+      );
+
+    const replies =
+      Array.isArray(
+        ticket.replies
+      )
+        ? ticket.replies
+        : [];
+
+    return (
+      <>
+        <Header
+          title={`تیکت #${
+            selectedId || '—'
+          }`}
+          subtitle={
+            ticket.subject ||
+            'جزئیات گفت‌وگو'
+          }
+          onBack={() => {
+            setSelectedId(null);
+            setView('list');
+          }}
+        />
+
+        <main className="page fade-up">
+          {detailLoading ? (
+            <SkeletonCard />
+          ) : detailError ? (
+            <div className="empty card">
+              دریافت تیکت انجام نشد.
+            </div>
+          ) : (
+            <div
+              style={{
+                display:
+                  'grid',
+
+                gap:
+                  11,
+              }}
+            >
+              <section
+                className="card"
+                style={{
+                  borderColor:
+                    ticket.status ===
+                    'closed'
+                      ? 'var(--bd)'
+                      : 'rgba(16,185,129,.25)',
+                }}
+              >
+                <div
+                  style={{
+                    display:
+                      'flex',
+
+                    justifyContent:
+                      'space-between',
+
+                    gap:
+                      8,
+                  }}
+                >
+                  <div>
+                    <div
+                      style={{
+                        color:
+                          'var(--txm)',
+
+                        fontSize:
+                          9.5,
+                      }}
+                    >
+                      موضوع درخواست
+                    </div>
+
+                    <b
+                      style={{
+                        display:
+                          'block',
+
+                        fontSize:
+                          13.5,
+
+                        marginTop:
+                          3,
+                      }}
+                    >
+                      {ticket.subject ||
+                        'بدون موضوع'}
+                    </b>
+                  </div>
+
+                  <span
+                    className={`badge ${
+                      status.badge
+                    }`}
+                  >
+                    {status.label}
+                  </span>
+                </div>
+
+                <div
+                  style={{
+                    marginTop:
+                      11,
+
+                    padding:
+                      '10px 11px',
+
+                    color:
+                      'var(--tx2)',
+
+                    background:
+                      'rgba(100,116,139,.08)',
+
+                    borderRadius:
+                      12,
+
+                    fontSize:
+                      11,
+
+                    lineHeight:
+                      1.8,
+                  }}
+                >
+                  {ticket.message ||
+                    'پیامی ثبت نشده است.'}
+                </div>
+              </section>
+
+
+              <div className="sec-title">
+                💬 گفت‌وگو
+              </div>
+
+
+              {replies.length === 0 ? (
+                <div className="empty card">
+                  هنوز پاسخی ثبت نشده است.
+                </div>
+              ) : (
+                replies.map(
+                  (
+                    item,
+                    index
+                  ) => {
+                    const mine =
+                      item.sender ===
+                      'user';
+
+                    return (
+                      <div
+                        key={`${
+                          item.at
+                        }-${index}`}
+                        style={{
+                          display:
+                            'flex',
+
+                          justifyContent:
+                            mine
+                              ? 'flex-start'
+                              : 'flex-end',
+                        }}
+                      >
+                        <div
+                          style={{
+                            maxWidth:
+                              '88%',
+
+                            padding:
+                              '10px 12px',
+
+                            color:
+                              'var(--tx)',
+
+                            background:
+                              mine
+                                ? 'rgba(59,130,246,.14)'
+                                : 'rgba(16,185,129,.12)',
+
+                            border:
+                              `1px solid ${
+                                mine
+                                  ? 'var(--bdg)'
+                                  : 'rgba(16,185,129,.22)'
+                              }`,
+
+                            borderRadius:
+                              mine
+                                ? '15px 15px 4px 15px'
+                                : '15px 15px 15px 4px',
+
+                            fontSize:
+                              11,
+
+                            lineHeight:
+                              1.8,
+                          }}
+                        >
+                          <div>
+                            {item.text}
+                          </div>
+
+                          <div
+                            style={{
+                              color:
+                                'var(--txm)',
+
+                              fontSize:
+                                8.5,
+
+                              marginTop:
+                                4,
+                            }}
+                          >
+                            {mine
+                              ? 'شما'
+                              : 'پشتیبانی'}
+
+                            {' • '}
+
+                            {item.at ||
+                              ''}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                )
+              )}
+
+
+              {ticket.status !==
+                'closed' ? (
+                <section className="card">
+                  <textarea
+                    className="inp"
+                    rows={3}
+                    maxLength={1000}
+                    value={reply}
+                    onChange={(event) =>
+                      setReply(
+                        event.target
+                          .value
+                      )
+                    }
+                    placeholder={
+                      'پاسخ خود را بنویسید...'
+                    }
+                  />
+
+                  <button
+                    className={
+                      'btn btn-p btn-full'
+                    }
+                    style={{
+                      marginTop:
+                        9,
+                    }}
+                    disabled={
+                      !reply.trim() ||
+                      replyMutation
+                        .isPending
+                    }
+                    onClick={() =>
+                      replyMutation
+                        .mutate()
+                    }
+                  >
+                    {replyMutation
+                      .isPending ? (
+                      <Spinner
+                        size={15}
+                      />
+                    ) : (
+                      'ارسال پاسخ'
+                    )}
+                  </button>
+                </section>
+              ) : (
+                <div
+                  className="card"
+                  style={{
+                    color:
+                      'var(--txm)',
+
+                    fontSize:
+                      10.5,
+
+                    textAlign:
+                      'center',
+                  }}
+                >
+                  🔒 این تیکت بسته شده و
+                  امکان ارسال پاسخ ندارد.
+                </div>
+              )}
+            </div>
+          )}
+        </main>
+      </>
+    );
+  }
+
 
   return (
     <>
-      <Header title={view==='detail'?`تیکت #${selectedId}`:view==='new'?'تیکت جدید':'پشتیبانی'}
-        onBack={view!=='list' ? () => setView('list') : undefined}
-        right={view==='list' ? (
-          <button className="btn btn-p" style={{ fontSize:11,padding:'5px 12px' }} onClick={() => { haptic(); setView('new'); }}>+ جدید</button>
-        ) : undefined}
+      <Header
+        title="پشتیبانی"
+        subtitle={
+          'تیکت‌ها و گفت‌وگوها'
+        }
       />
-      <div className="page fade-up">
-        {view === 'list' && (
-          isLoading ? <SkeletonCard /> : (
-            <TicketList tickets={data?.tickets||[]} onSelect={id=>{setSelId(id);setView('detail');}} onNew={() => setView('new')} />
-          )
+
+      <main className="page fade-up">
+        <section
+          className={
+            'card card-glow'
+          }
+          style={{
+            padding:
+              17,
+
+            marginBottom:
+              14,
+
+            background:
+              'linear-gradient(145deg,rgba(29,78,216,.2),rgba(16,24,39,.95) 55%,rgba(34,211,238,.08))',
+          }}
+        >
+          <div
+            style={{
+              display:
+                'flex',
+
+              alignItems:
+                'center',
+
+              gap:
+                13,
+            }}
+          >
+            <span
+              style={{
+                display:
+                  'grid',
+
+                width:
+                  52,
+
+                height:
+                  52,
+
+                placeItems:
+                  'center',
+
+                borderRadius:
+                  16,
+
+                background:
+                  'var(--grad-brand)',
+
+                fontSize:
+                  24,
+              }}
+            >
+              🛟
+            </span>
+
+            <div
+              style={{
+                flex: 1,
+              }}
+            >
+              <div
+                style={{
+                  color:
+                    'var(--txm)',
+
+                  fontSize:
+                    10.5,
+                }}
+              >
+                مرکز پشتیبانی هامزیار
+              </div>
+
+              <b
+                style={{
+                  display:
+                    'block',
+
+                  fontSize:
+                    16.5,
+
+                  marginTop:
+                    2,
+                }}
+              >
+                {openCount} تیکت باز
+              </b>
+
+              <div
+                style={{
+                  color:
+                    'var(--tx2)',
+
+                  fontSize:
+                    9.5,
+
+                  marginTop:
+                    3,
+                }}
+              >
+                درخواست‌ها و پاسخ‌های
+                پشتیبانی را اینجا پیگیری
+                کنید.
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <button
+          className={
+            'btn btn-p btn-full'
+          }
+          style={{
+            marginBottom:
+              14,
+          }}
+          onClick={() =>
+            setView('new')
+          }
+        >
+          ＋ ایجاد تیکت جدید
+        </button>
+
+
+        <div className="sec-title">
+          تیکت‌های من
+        </div>
+
+
+        {isLoading ? (
+          <>
+            <SkeletonCard />
+            <SkeletonCard />
+          </>
+        ) : isError ? (
+          <div className="empty card">
+            دریافت تیکت‌ها انجام نشد.
+
+            <button
+              className="btn btn-p"
+              style={{
+                marginTop:
+                  12,
+              }}
+              onClick={() =>
+                refetch()
+              }
+            >
+              تلاش دوباره
+            </button>
+          </div>
+        ) : tickets.length === 0 ? (
+          <div className="empty card">
+            هنوز تیکتی ثبت نکرده‌اید.
+          </div>
+        ) : (
+          <section
+            style={{
+              display:
+                'grid',
+
+              gap:
+                9,
+            }}
+          >
+            {tickets.map(
+              (item) => {
+                const status =
+                  statusInfo(
+                    item.status
+                  );
+
+                return (
+                  <button
+                    type="button"
+                    key={item.id}
+                    className={
+                      'card card-tap'
+                    }
+                    onClick={() => {
+                      setSelectedId(
+                        item.id
+                      );
+
+                      setView(
+                        'detail'
+                      );
+                    }}
+                    style={{
+                      display:
+                        'flex',
+
+                      alignItems:
+                        'center',
+
+                      width:
+                        '100%',
+
+                      gap:
+                        11,
+
+                      padding:
+                        13,
+
+                      textAlign:
+                        'right',
+                    }}
+                  >
+                    <span
+                      style={{
+                        display:
+                          'grid',
+
+                        width:
+                          44,
+
+                        height:
+                          44,
+
+                        placeItems:
+                          'center',
+
+                        borderRadius:
+                          14,
+
+                        background:
+                          item.status ===
+                          'closed'
+                            ? 'rgba(100,116,139,.12)'
+                            : 'rgba(16,185,129,.12)',
+
+                        fontSize:
+                          20,
+                      }}
+                    >
+                      🎫
+                    </span>
+
+                    <span
+                      style={{
+                        flex:
+                          1,
+
+                        minWidth:
+                          0,
+                      }}
+                    >
+                      <b
+                        style={{
+                          display:
+                            'block',
+
+                          overflow:
+                            'hidden',
+
+                          fontSize:
+                            12.5,
+
+                          textOverflow:
+                            'ellipsis',
+
+                          whiteSpace:
+                            'nowrap',
+                        }}
+                      >
+                        {item.subject ||
+                          'بدون موضوع'}
+                      </b>
+
+                      <span
+                        style={{
+                          display:
+                            'block',
+
+                          color:
+                            'var(--txm)',
+
+                          fontSize:
+                            9.5,
+
+                          marginTop:
+                            3,
+                        }}
+                      >
+                        #{item.id}
+
+                        {' • '}
+
+                        {item.created_at ||
+                          '—'}
+
+                        {' • '}
+
+                        {number(
+                          item.reply_count
+                        )}{' '}
+
+                        پاسخ
+                      </span>
+                    </span>
+
+                    <span
+                      className={`badge ${
+                        status.badge
+                      }`}
+                    >
+                      {status.label}
+                    </span>
+
+                    <span
+                      style={{
+                        color:
+                          'var(--txm)',
+                      }}
+                    >
+                      ←
+                    </span>
+                  </button>
+                );
+              }
+            )}
+          </section>
         )}
-        {view === 'new' && (
-          <NewTicketForm subjects={data?.subjects||[]} onCreated={handleCreated} onCancel={() => setView('list')} />
-        )}
-        {view === 'detail' && selectedId && (
-          <TicketDetail ticketId={selectedId} onBack={() => setView('list')} />
-        )}
-      </div>
+      </main>
     </>
   );
 }
