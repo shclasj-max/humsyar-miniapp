@@ -150,6 +150,7 @@ export default function Tickets() {
   return (
     <>
       <Header title={view==='detail'?`تیکت #${selectedId}`:view==='new'?'تیکت جدید':'پشتیبانی'}
+        onBack={view!=='list' ? () => setView('list') : undefined}
         right={view==='list' ? (
           <button className="btn btn-p" style={{ fontSize:11,padding:'5px 12px' }} onClick={() => { haptic(); setView('new'); }}>+ جدید</button>
         ) : undefined}
