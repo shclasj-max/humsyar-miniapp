@@ -48,7 +48,7 @@ export default function Me() {
 
   return (
     <>
-      <Header title="من" />
+      <Header title="من" back={false} />
       <div className="page fade-up">
         {isLoading ? (
           <div style={{ display:'flex',flexDirection:'column',gap:10 }}>
