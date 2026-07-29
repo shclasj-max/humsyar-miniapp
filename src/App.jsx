@@ -34,17 +34,14 @@ import Schedule from './pages/Schedule';
 import Grades from './pages/Grades';
 
 
-/* هوشیار */
+/* هوشیار و جست‌وجو */
 
 import AiChat from './pages/Ai/AiChat';
-
-
-/* جست‌وجوی سراسری */
 
 import GlobalSearch from './pages/Search/GlobalSearch';
 
 
-/* صفحات یادگیری */
+/* یادگیری */
 
 import Questions from './pages/Learn/Questions';
 import ExamCenter from './pages/Learn/ExamCenter';
@@ -56,7 +53,7 @@ import Resources from './pages/Learn/Resources';
 import References from './pages/Learn/References';
 
 
-/* صفحات حساب کاربری */
+/* حساب کاربری */
 
 import Me from './pages/Me';
 import Profile from './pages/Me/Profile';
@@ -78,6 +75,8 @@ import {
 
 import AdminHome from './pages/Admin/AdminHome';
 import ContentHome from './pages/Admin/ContentHome';
+
+import SubscriptionAdmin from './pages/Admin/SubscriptionAdmin';
 
 
 /* مدیریت کاربران */
@@ -109,7 +108,7 @@ import {
 } from './pages/Admin/ContentAdmin';
 
 
-/* مدیریت کتابخانه */
+/* کتابخانه محتوا */
 
 import {
   BasicScienceAdmin,
@@ -119,7 +118,7 @@ import {
 } from './pages/Admin/ContentLibrary';
 
 
-/* مدیریت برنامه و نمرات */
+/* برنامه و نمرات */
 
 import AcademicScheduleAdmin from './pages/Admin/AcademicScheduleAdmin';
 
@@ -227,95 +226,68 @@ export default function App() {
 
         <Route
           path="/"
-          element={
-            <Dashboard />
-          }
+          element={<Dashboard />}
         />
 
         <Route
           path="/learn"
-          element={
-            <Learn />
-          }
+          element={<Learn />}
         />
 
         <Route
           path="/schedule"
-          element={
-            <Schedule />
-          }
+          element={<Schedule />}
         />
 
         <Route
           path="/grades"
-          element={
-            <Grades />
-          }
+          element={<Grades />}
         />
 
 
-        {/* هوشیار */}
+        {/* هوشیار و جست‌وجو */}
 
         <Route
           path="/ai"
-          element={
-            <AiChat />
-          }
+          element={<AiChat />}
         />
-
-
-        {/* جست‌وجوی سراسری */}
 
         <Route
           path="/search"
-          element={
-            <GlobalSearch />
-          }
+          element={<GlobalSearch />}
         />
 
 
-        {/* صفحات یادگیری */}
+        {/* یادگیری */}
 
         <Route
           path="/learn/questions"
-          element={
-            <Questions />
-          }
+          element={<Questions />}
         />
 
         <Route
           path="/learn/exams"
-          element={
-            <ExamCenter />
-          }
+          element={<ExamCenter />}
         />
 
         <Route
           path="/learn/question-history"
-          element={
-            <QuestionHistory />
-          }
+          element={<QuestionHistory />}
         />
 
         <Route
           path="/learn/my-questions"
-          element={
-            <MyQuestions />
-          }
+          element={<MyQuestions />}
         />
 
         <Route
           path="/learn/resources"
-          element={
-            <Resources />
-          }
+          element={<Resources />}
         />
 
         <Route
           path="/learn/references"
-          element={
-            <References />
-          }
+          element={<References />}
         />
 
 
@@ -323,61 +295,59 @@ export default function App() {
 
         <Route
           path="/me"
-          element={
-            <Me />
-          }
+          element={<Me />}
         />
 
         <Route
           path="/me/profile"
-          element={
-            <Profile />
-          }
+          element={<Profile />}
         />
 
         <Route
           path="/me/notifications"
-          element={
-            <Notifications />
-          }
+          element={<Notifications />}
         />
 
         <Route
           path="/me/subscription"
-          element={
-            <Subscription />
-          }
+          element={<Subscription />}
         />
 
         <Route
           path="/me/tickets"
-          element={
-            <Tickets />
-          }
+          element={<Tickets />}
         />
 
         <Route
           path="/me/faq"
-          element={
-            <Faq />
-          }
+          element={<Faq />}
         />
 
         <Route
           path="/me/reports"
-          element={
-            <Reports />
-          }
+          element={<Reports />}
         />
 
 
-        {/* خانه پنل مدیریت */}
+        {/* خانه مدیریت */}
 
         <Route
           path="/admin"
           element={
             <AdminRoute>
               <AdminHome />
+            </AdminRoute>
+          }
+        />
+
+
+        {/* مدیریت اشتراک */}
+
+        <Route
+          path="/admin/subscription"
+          element={
+            <AdminRoute>
+              <SubscriptionAdmin />
             </AdminRoute>
           }
         />
@@ -470,7 +440,7 @@ export default function App() {
         />
 
 
-        {/* خانه مدیریت محتوا */}
+        {/* خانه محتوا */}
 
         <Route
           path="/admin/content"
@@ -524,7 +494,7 @@ export default function App() {
         />
 
 
-        {/* کتابخانه محتوا */}
+        {/* کتابخانه */}
 
         <Route
           path="/admin/content/basic-science"
@@ -563,7 +533,7 @@ export default function App() {
         />
 
 
-        {/* مسیرهای قدیمی سازگار */}
+        {/* مسیرهای سازگاری */}
 
         <Route
           path="/questions"
