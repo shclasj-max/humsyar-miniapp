@@ -1,17 +1,22 @@
-import { useState } from 'react';
+import {
+  useRef,
+  useState,
+} from 'react';
 
 import {
   useMutation,
   useQuery,
+  useQueryClient,
 } from '@tanstack/react-query';
 
-import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 
 import {
   SkeletonCard,
   Spinner,
 } from '../../components/shared/Loading';
+
+import api from '../../lib/api';
 
 import {
   haptic,
@@ -21,6 +26,175 @@ import {
 import {
   useUIStore,
 } from '../../stores/uiStore';
+
+
+function safeArray(value) {
+  return Array.isArray(value)
+    ? value
+    : [];
+}
+
+
+function errorText(
+  error,
+  fallback,
+) {
+  const detail =
+    error?.response?.data?.detail;
+
+  return (
+    typeof detail === 'string'
+    && detail.trim()
+  )
+    ? detail
+    : fallback;
+}
+
+
+function LoadingList() {
+  return (
+    <div style={styles.list}>
+      <SkeletonCard lines={2} />
+      <SkeletonCard lines={2} />
+      <SkeletonCard lines={2} />
+    </div>
+  );
+}
+
+
+function EmptyState({
+  icon = '📭',
+  text,
+}) {
+  return (
+    <div
+      className="card empty"
+      style={styles.empty}
+    >
+      <span style={styles.emptyIcon}>
+        {icon}
+      </span>
+
+      <p>{text}</p>
+    </div>
+  );
+}
+
+
+function ReferenceFile({
+  item,
+  rowKey,
+  sendingKey,
+  sendDisabled,
+  language,
+  onSend,
+}) {
+  // فقط همان ردیفی که روی آن کلیک شده،
+  // حالت لودینگ خواهد داشت.
+  const isSending =
+    sendingKey === rowKey;
+
+  const isPersian =
+    language === 'fa';
+
+  const title =
+    `جلد ${
+      Number(item?.volume) || 1
+    }`;
+
+  return (
+    <article
+      className="card"
+      style={styles.fileCard}
+    >
+      <div
+        style={{
+          ...styles.fileIcon,
+
+          color:
+            isPersian
+              ? '#34D399'
+              : '#70A7FF',
+
+          background:
+            isPersian
+              ? 'rgba(16,185,129,.12)'
+              : 'rgba(59,130,246,.12)',
+        }}
+      >
+        {
+          isPersian
+            ? '🇮🇷'
+            : '🌐'
+        }
+      </div>
+
+      <div style={styles.fileBody}>
+        <strong style={styles.fileTitle}>
+          {title}
+        </strong>
+
+        <span style={styles.fileMeta}>
+          {
+            isPersian
+              ? 'ترجمه فارسی'
+              : 'نسخه لاتین'
+          }
+
+          {' • '}
+
+          {
+            Number(
+              item?.downloads
+            ) || 0
+          }
+
+          {' دانلود'}
+        </span>
+
+        {
+          item?.description
+          && (
+            <p style={styles.description}>
+              {item.description}
+            </p>
+          )
+        }
+      </div>
+
+      <button
+        type="button"
+        className="btn btn-g"
+        style={styles.sendButton}
+        onClick={
+          () => onSend(
+            item?.id,
+            rowKey,
+          )
+        }
+        disabled={
+          sendDisabled
+          || !item?.id
+        }
+        aria-busy={isSending}
+        aria-label={
+          `ارسال ${title} در ربات`
+        }
+      >
+        {
+          isSending
+            ? (
+              <>
+                <Spinner size={15} />
+                ارسال...
+              </>
+            )
+            : 'ارسال'
+        }
+      </button>
+    </article>
+  );
+}
 
 
 export default function References() {
@@ -44,16 +218,29 @@ export default function References() {
     setLanguage,
   ] = useState('fa');
 
-  const toast = useUIStore(
-    (state) => state.toast
-  );
+  const [
+    sendingKey,
+    setSendingKey,
+  ] = useState(null);
 
+  // این قفل بلافاصله و قبل از Render بعدی تغییر می‌کند.
+  // بنابراین لمس سریع و چندباره هم درخواست دوم ایجاد نمی‌کند.
+  const sendLockRef =
+    useRef(null);
+
+  const toast =
+    useUIStore(
+      (state) => state.toast
+    );
+
+  const queryClient =
+    useQueryClient();
 
   const {
     data: subjects = [],
     isLoading: subjectsLoading,
     isError: subjectsError,
-    refetch,
+    refetch: refetchSubjects,
   } = useQuery({
     queryKey: [
       'reference-subjects',
@@ -66,18 +253,20 @@ export default function References() {
         )
         .then(
           (response) =>
-            response.data
-              ?.subjects || []
+            safeArray(
+              response.data?.subjects
+            )
         ),
 
     staleTime:
       10 * 60 * 1000,
   });
 
-
   const {
     data: booksData,
     isLoading: booksLoading,
+    isError: booksError,
+    refetch: refetchBooks,
   } = useQuery({
     queryKey: [
       'reference-books',
@@ -93,18 +282,19 @@ export default function References() {
         )
         .then(
           (response) =>
-            response.data
+            response.data || {}
         ),
 
     enabled:
-      view === 'books' &&
-      Boolean(subject?.id),
+      view === 'books'
+      && Boolean(subject?.id),
   });
-
 
   const {
     data: filesData,
     isLoading: filesLoading,
+    isError: filesError,
+    refetch: refetchFiles,
   } = useQuery({
     queryKey: [
       'reference-files',
@@ -120,23 +310,44 @@ export default function References() {
         )
         .then(
           (response) =>
-            response.data
+            response.data || {}
         ),
 
     enabled:
-      view === 'files' &&
-      Boolean(book?.id),
+      view === 'files'
+      && Boolean(book?.id),
   });
 
+  const books =
+    safeArray(
+      booksData?.books
+    );
+
+  const faFiles =
+    safeArray(
+      filesData?.fa_files
+    );
+
+  const enFiles =
+    safeArray(
+      filesData?.en_files
+    );
+
+  const visibleFiles =
+    language === 'fa'
+      ? faFiles
+      : enFiles;
 
   const downloadMutation =
     useMutation({
-      mutationFn: (id) =>
+      mutationFn: ({
+        id,
+      }) =>
         api.post(
           `/api/references/download/${id}`
         ),
 
-      onSuccess: (
+      onSuccess: async (
         response
       ) => {
         hapticNotif(
@@ -145,59 +356,102 @@ export default function References() {
 
         toast(
           `جلد ${
-            response.data
-              ?.volume || ''
+            response.data?.volume
+            || ''
           } در ربات ارسال شد ✅`,
-
           'success'
+        );
+
+        await queryClient
+          .invalidateQueries({
+            queryKey: [
+              'reference-files',
+            ],
+          });
+      },
+
+      onError: (error) => {
+        hapticNotif(
+          'error'
+        );
+
+        toast(
+          errorText(
+            error,
+            'ارسال فایل انجام نشد'
+          ),
+          'error'
         );
       },
 
-      onError: (error) =>
-        toast(
-          error?.response
-            ?.data
-            ?.detail ||
-            'ارسال فایل انجام نشد',
+      onSettled: (
+        _data,
+        _error,
+        variables
+      ) => {
+        if (
+          sendLockRef.current
+          === variables?.key
+        ) {
+          sendLockRef.current =
+            null;
+        }
 
-          'error'
-        ),
+        setSendingKey(
+          (current) =>
+            current === variables?.key
+              ? null
+              : current
+        );
+      },
     });
 
+  const sendFile = (
+    id,
+    key,
+  ) => {
+    const fileId =
+      String(
+        id || ''
+      ).trim();
 
-  const books =
-    Array.isArray(
-      booksData?.books
-    )
-      ? booksData.books
-      : [];
+    const rowKey =
+      String(
+        key || ''
+      ).trim();
 
+    if (
+      !fileId
+      || !rowKey
+      || sendLockRef.current
+      || downloadMutation.isPending
+    ) {
+      return;
+    }
 
-  const faFiles =
-    Array.isArray(
-      filesData?.fa_files
-    )
-      ? filesData.fa_files
-      : [];
+    // قفل قبل از شروع mutation فعال می‌شود.
+    sendLockRef.current =
+      rowKey;
 
+    // فقط شناسه همان ردیف انتخاب‌شده ذخیره می‌شود.
+    setSendingKey(
+      rowKey
+    );
 
-  const enFiles =
-    Array.isArray(
-      filesData?.en_files
-    )
-      ? filesData.en_files
-      : [];
+    haptic('medium');
 
+    downloadMutation.mutate({
+      id: fileId,
+      key: rowKey,
+    });
+  };
 
-  const files =
-    language === 'fa'
-      ? faFiles
-      : enFiles;
+  const goBack = () => {
+    haptic('light');
 
-
-  const back = () => {
     if (view === 'files') {
       setBook(null);
+      setLanguage('fa');
       setView('books');
 
     } else if (
@@ -208,739 +462,732 @@ export default function References() {
     }
   };
 
-
   const title =
     view === 'files'
-      ? filesData
-          ?.book
-          ?.name ||
-        book?.name ||
-        'جلدهای کتاب'
-
+      ? (
+        filesData?.book?.name
+        || book?.name
+        || 'جلدهای کتاب'
+      )
       : view === 'books'
-        ? booksData
-            ?.subject
-            ?.name ||
-          subject?.name ||
-          'کتاب‌ها'
-
+        ? (
+          booksData?.subject?.name
+          || subject?.name
+          || 'کتاب‌ها'
+        )
         : 'رفرنس‌های درسی';
 
+  const subtitle =
+    view === 'subjects'
+      ? (
+        'کتاب‌های مرجع فارسی و لاتین'
+      )
+      : view === 'books'
+        ? (
+          'کتاب موردنظر را انتخاب کنید'
+        )
+        : (
+          'فقط جلد انتخاب‌شده در ربات ارسال می‌شود'
+        );
+
+  const renderError = (
+    message,
+    retry,
+  ) => (
+    <div
+      className="card"
+      style={styles.errorCard}
+    >
+      <span>⚠️</span>
+
+      <p>{message}</p>
+
+      <button
+        type="button"
+        className="btn btn-g"
+        onClick={
+          () => retry()
+        }
+      >
+        تلاش دوباره
+      </button>
+    </div>
+  );
 
   return (
     <>
       <Header
         title={title}
-        subtitle={
-          'کتاب‌های مرجع فارسی و لاتین'
-        }
+        subtitle={subtitle}
         back={
           view !== 'subjects'
         }
         onBack={
           view !== 'subjects'
-            ? back
+            ? goBack
             : undefined
         }
       />
 
-      <main className="page fade-up">
-        {view === 'subjects' && (
-          <section
-            className={
-              'card card-glow'
-            }
-            style={{
-              padding:
-                17,
-
-              marginBottom:
-                14,
-
-              background:
-                'linear-gradient(145deg,rgba(29,78,216,.2),rgba(16,24,39,.95) 55%,rgba(139,92,246,.09))',
-            }}
-          >
-            <div
-              style={{
-                display:
-                  'flex',
-
-                alignItems:
-                  'center',
-
-                gap:
-                  13,
-              }}
-            >
-              <span
-                style={{
-                  display:
-                    'grid',
-
-                  width:
-                    52,
-
-                  height:
-                    52,
-
-                  placeItems:
-                    'center',
-
-                  borderRadius:
-                    16,
-
-                  background:
-                    'linear-gradient(135deg,#1D4ED8,#7C3AED)',
-
-                  fontSize:
-                    25,
-                }}
+      <main
+        className="page fade-up"
+        style={styles.page}
+      >
+        {
+          view === 'subjects'
+          && (
+            <>
+              <section
+                className="card card-glow"
+                style={styles.hero}
               >
-                📘
-              </span>
-
-              <div>
-                <b
-                  style={{
-                    fontSize:
-                      16.5,
-                  }}
-                >
-                  کتابخانه رفرنس
-                </b>
-
                 <div
-                  style={{
-                    color:
-                      'var(--txm)',
-
-                    fontSize:
-                      10,
-
-                    marginTop:
-                      3,
-                  }}
+                  style={styles.heroIcon}
                 >
-                  نسخه‌های فارسی و انگلیسی
-                  منابع معتبر پزشکی
+                  📚
                 </div>
-              </div>
-            </div>
-          </section>
-        )}
-
-
-        {view === 'subjects' ? (
-          subjectsLoading ? (
-            <>
-              <SkeletonCard />
-              <SkeletonCard />
-            </>
-          ) : subjectsError ? (
-            <div className="empty card">
-              دریافت درس‌ها انجام نشد.
-
-              <button
-                className="btn btn-p"
-                style={{
-                  marginTop:
-                    12,
-                }}
-                onClick={() =>
-                  refetch()
-                }
-              >
-                تلاش دوباره
-              </button>
-            </div>
-          ) : (
-            Array.isArray(
-              subjects
-            ) &&
-            subjects.length === 0
-          ) ? (
-            <div className="empty card">
-              هنوز رفرنسی ثبت نشده است.
-            </div>
-          ) : (
-            <section className="grid2">
-              {subjects.map(
-                (
-                  item,
-                  index
-                ) => (
-                  <button
-                    type="button"
-                    key={item.id}
-                    className={
-                      'card card-tap pop-in'
-                    }
-                    onClick={() => {
-                      haptic();
-
-                      setSubject(item);
-
-                      setView(
-                        'books'
-                      );
-                    }}
-                    style={{
-                      padding:
-                        16,
-
-                      textAlign:
-                        'center',
-
-                      animationDelay:
-                        `${
-                          index * 35
-                        }ms`,
-                    }}
-                  >
-                    <span
-                      style={{
-                        display:
-                          'grid',
-
-                        width:
-                          50,
-
-                        height:
-                          50,
-
-                        placeItems:
-                          'center',
-
-                        margin:
-                          '0 auto 8px',
-
-                        borderRadius:
-                          16,
-
-                        background:
-                          'rgba(59,130,246,.12)',
-
-                        fontSize:
-                          24,
-                      }}
-                    >
-                      🩺
-                    </span>
-
-                    <b
-                      style={{
-                        fontSize:
-                          12.5,
-                      }}
-                    >
-                      {item.name ||
-                        'درس'}
-                    </b>
-
-                    <div
-                      style={{
-                        color:
-                          'var(--txm)',
-
-                        fontSize:
-                          9.5,
-
-                        marginTop:
-                          3,
-                      }}
-                    >
-                      {Number(
-                        item.book_count
-                      ) || 0}{' '}
-
-                      کتاب
-                    </div>
-                  </button>
-                )
-              )}
-            </section>
-          )
-        ) : view === 'books' ? (
-          booksLoading ? (
-            <>
-              <SkeletonCard />
-              <SkeletonCard />
-            </>
-          ) : books.length === 0 ? (
-            <div className="empty card">
-              کتابی برای این درس ثبت نشده
-              است.
-            </div>
-          ) : (
-            <section
-              style={{
-                display:
-                  'grid',
-
-                gap:
-                  9,
-              }}
-            >
-              {books.map((item) => (
-                <button
-                  type="button"
-                  key={item.id}
-                  className={
-                    'card card-tap'
-                  }
-                  onClick={() => {
-                    setBook(item);
-
-                    setLanguage(
-                      item.fa_count
-                        ? 'fa'
-                        : 'en'
-                    );
-
-                    setView(
-                      'files'
-                    );
-                  }}
-                  style={{
-                    display:
-                      'flex',
-
-                    alignItems:
-                      'center',
-
-                    width:
-                      '100%',
-
-                    gap:
-                      11,
-
-                    padding:
-                      13,
-
-                    textAlign:
-                      'right',
-                  }}
-                >
-                  <span
-                    style={{
-                      display:
-                        'grid',
-
-                      width:
-                        46,
-
-                      height:
-                        46,
-
-                      placeItems:
-                        'center',
-
-                      borderRadius:
-                        14,
-
-                      background:
-                        'rgba(139,92,246,.13)',
-
-                      fontSize:
-                        22,
-                    }}
-                  >
-                    📕
-                  </span>
-
-                  <span
-                    style={{
-                      flex:
-                        1,
-
-                      minWidth:
-                        0,
-                    }}
-                  >
-                    <b
-                      style={{
-                        display:
-                          'block',
-
-                        overflow:
-                          'hidden',
-
-                        fontSize:
-                          12.5,
-
-                        textOverflow:
-                          'ellipsis',
-
-                        whiteSpace:
-                          'nowrap',
-                      }}
-                    >
-                      {item.name ||
-                        'کتاب'}
-                    </b>
-
-                    <span
-                      style={{
-                        display:
-                          'flex',
-
-                        gap:
-                          5,
-
-                        marginTop:
-                          5,
-                      }}
-                    >
-                      <span className="badge b-acc">
-                        🇮🇷{' '}
-
-                        {Number(
-                          item.fa_count
-                        ) || 0}{' '}
-
-                        جلد
-                      </span>
-
-                      <span className="badge b-pur">
-                        🇬🇧{' '}
-
-                        {Number(
-                          item.en_count
-                        ) || 0}{' '}
-
-                        جلد
-                      </span>
-                    </span>
-                  </span>
-
-                  <span
-                    style={{
-                      color:
-                        'var(--txm)',
-                    }}
-                  >
-                    ←
-                  </span>
-                </button>
-              ))}
-            </section>
-          )
-        ) : filesLoading ? (
-          <SkeletonCard />
-        ) : (
-          <>
-            <section
-              className="card"
-              style={{
-                marginBottom:
-                  12,
-              }}
-            >
-              <div
-                style={{
-                  display:
-                    'flex',
-
-                  alignItems:
-                    'center',
-
-                  gap:
-                    11,
-                }}
-              >
-                <span
-                  style={{
-                    display:
-                      'grid',
-
-                    width:
-                      45,
-
-                    height:
-                      45,
-
-                    placeItems:
-                      'center',
-
-                    borderRadius:
-                      14,
-
-                    background:
-                      'var(--acc-soft)',
-
-                    fontSize:
-                      22,
-                  }}
-                >
-                  📖
-                </span>
 
                 <div>
-                  <b>
-                    {filesData
-                      ?.book
-                      ?.name ||
-                      book?.name}
-                  </b>
-
-                  <div
-                    style={{
-                      color:
-                        'var(--txm)',
-
-                      fontSize:
-                        9.5,
-
-                      marginTop:
-                        3,
-                    }}
+                  <strong
+                    style={styles.heroTitle}
                   >
-                    {faFiles.length +
-                      enFiles.length}{' '}
+                    کتابخانه رفرنس
+                  </strong>
 
-                    فایل در دسترس
-                  </div>
+                  <p
+                    style={styles.heroText}
+                  >
+                    کتاب، زبان و جلد موردنظر را انتخاب کنید؛ فقط همان فایل ارسال می‌شود.
+                  </p>
                 </div>
-              </div>
-            </section>
+              </section>
 
-
-            <div className="tab-bar">
-              <button
-                className="tab-btn"
-                disabled={
-                  !faFiles.length
-                }
-                onClick={() =>
-                  setLanguage('fa')
-                }
-                style={{
-                  color:
-                    language === 'fa'
-                      ? '#fff'
-                      : 'var(--tx2)',
-
-                  background:
-                    language === 'fa'
-                      ? 'var(--grad-brand)'
-                      : 'transparent',
-                }}
-              >
-                🇮🇷 فارسی (
-                {faFiles.length})
-              </button>
-
-              <button
-                className="tab-btn"
-                disabled={
-                  !enFiles.length
-                }
-                onClick={() =>
-                  setLanguage('en')
-                }
-                style={{
-                  color:
-                    language === 'en'
-                      ? '#fff'
-                      : 'var(--tx2)',
-
-                  background:
-                    language === 'en'
-                      ? 'var(--grad-brand)'
-                      : 'transparent',
-                }}
-              >
-                🇬🇧 انگلیسی (
-                {enFiles.length})
-              </button>
-            </div>
-
-
-            {files.length === 0 ? (
-              <div className="empty card">
-                فایلی برای این زبان موجود
-                نیست.
-              </div>
-            ) : (
-              <section
-                style={{
-                  display:
-                    'grid',
-
-                  gap:
-                    9,
-                }}
-              >
-                {files.map(
-                  (
-                    item,
-                    index
-                  ) => (
-                    <article
-                      key={item.id}
-                      className={
-                        'card pop-in'
-                      }
-                      style={{
-                        padding:
-                          13,
-
-                        animationDelay:
-                          `${
-                            index *
-                            35
-                          }ms`,
-                      }}
-                    >
-                      <div
-                        style={{
-                          display:
-                            'flex',
-
-                          alignItems:
-                            'center',
-
-                          gap:
-                            11,
-                        }}
-                      >
-                        <span
-                          style={{
-                            display:
-                              'grid',
-
-                            width:
-                              48,
-
-                            height:
-                              48,
-
-                            placeItems:
-                              'center',
-
-                            borderRadius:
-                              15,
-
-                            background:
-                              language ===
-                              'fa'
-                                ? 'rgba(16,185,129,.12)'
-                                : 'rgba(139,92,246,.13)',
-
-                            fontSize:
-                              22,
-                          }}
-                        >
-                          {language ===
-                          'fa'
-                            ? '🇮🇷'
-                            : '🇬🇧'}
-                        </span>
-
-                        <div
-                          style={{
-                            flex:
-                              1,
-                          }}
-                        >
-                          <b
-                            style={{
-                              fontSize:
-                                12.5,
-                            }}
-                          >
-                            جلد{' '}
-
-                            {Number(
-                              item.volume
-                            ) ||
-                              index +
-                                1}
-                          </b>
-
+              {
+                subjectsLoading
+                  ? (
+                    <LoadingList />
+                  )
+                  : subjectsError
+                    ? (
+                      renderError(
+                        'دریافت موضوعات رفرنس انجام نشد.',
+                        refetchSubjects
+                      )
+                    )
+                    : safeArray(
+                      subjects
+                    ).length === 0
+                      ? (
+                        <EmptyState
+                          text="هنوز موضوعی برای رفرنس‌ها ثبت نشده است."
+                        />
+                      )
+                      : (
+                        <section>
                           <div
-                            style={{
-                              color:
-                                'var(--txm)',
-
-                              fontSize:
-                                9.5,
-
-                              marginTop:
-                                3,
-                            }}
+                            className="sec-title"
                           >
-                            {Number(
-                              item.downloads
-                            ) || 0}{' '}
-
-                            دانلود
+                            دسته‌بندی رفرنس‌ها
                           </div>
 
-                          {item.description && (
-                            <div
-                              style={{
-                                color:
-                                  'var(--tx2)',
+                          <div
+                            style={styles.grid}
+                          >
+                            {
+                              safeArray(
+                                subjects
+                              ).map(
+                                (
+                                  item,
+                                  index
+                                ) => (
+                                  <button
+                                    key={
+                                      `${
+                                        item.id
+                                      }-${index}`
+                                    }
+                                    type="button"
+                                    className="card card-tap"
+                                    style={
+                                      styles.subjectCard
+                                    }
+                                    onClick={
+                                      () => {
+                                        haptic(
+                                          'light'
+                                        );
 
-                                fontSize:
-                                  9.5,
+                                        setSubject(
+                                          item
+                                        );
 
-                                marginTop:
-                                  3,
-                              }}
-                            >
-                              {
-                                item.description
-                              }
-                            </div>
-                          )}
-                        </div>
+                                        setView(
+                                          'books'
+                                        );
+                                      }
+                                    }
+                                  >
+                                    <span
+                                      style={
+                                        styles.subjectIcon
+                                      }
+                                    >
+                                      📖
+                                    </span>
 
-                        <button
-                          className={
-                            'btn btn-p'
-                          }
-                          style={{
-                            minHeight:
-                              35,
+                                    <strong
+                                      style={
+                                        styles.subjectName
+                                      }
+                                    >
+                                      {
+                                        item.name
+                                        || 'موضوع بدون نام'
+                                      }
+                                    </strong>
 
-                            padding:
-                              '6px 10px',
-
-                            fontSize:
-                              10,
-                          }}
-                          disabled={
-                            downloadMutation
-                              .isPending
-                          }
-                          onClick={() =>
-                            downloadMutation
-                              .mutate(
-                                item.id
+                                    <span
+                                      style={
+                                        styles.subjectMeta
+                                      }
+                                    >
+                                      {
+                                        Number(
+                                          item.book_count
+                                        ) || 0
+                                      }{' '}
+                                      کتاب
+                                    </span>
+                                  </button>
+                                )
                               )
-                          }
-                        >
-                          {downloadMutation
-                            .isPending ? (
-                            <Spinner
-                              size={13}
-                            />
-                          ) : (
-                            'ارسال به ربات'
-                          )}
-                        </button>
-                      </div>
-                    </article>
+                            }
+                          </div>
+                        </section>
+                      )
+              }
+            </>
+          )
+        }
+
+        {
+          view === 'books'
+          && (
+            booksLoading
+              ? (
+                <LoadingList />
+              )
+              : booksError
+                ? (
+                  renderError(
+                    'دریافت کتاب‌ها انجام نشد.',
+                    refetchBooks
                   )
-                )}
-              </section>
-            )}
-          </>
-        )}
+                )
+                : books.length === 0
+                  ? (
+                    <EmptyState
+                      text="برای این موضوع کتابی ثبت نشده است."
+                    />
+                  )
+                  : (
+                    <div
+                      style={styles.list}
+                    >
+                      {
+                        books.map(
+                          (
+                            item,
+                            index
+                          ) => (
+                            <button
+                              key={
+                                `${
+                                  item.id
+                                }-${index}`
+                              }
+                              type="button"
+                              className="card card-tap"
+                              style={
+                                styles.bookCard
+                              }
+                              onClick={
+                                () => {
+                                  haptic(
+                                    'light'
+                                  );
+
+                                  setBook(
+                                    item
+                                  );
+
+                                  setLanguage(
+                                    Number(
+                                      item.fa_count
+                                    ) > 0
+                                      ? 'fa'
+                                      : 'en'
+                                  );
+
+                                  setView(
+                                    'files'
+                                  );
+                                }
+                              }
+                            >
+                              <span
+                                style={
+                                  styles.bookIcon
+                                }
+                              >
+                                📘
+                              </span>
+
+                              <span
+                                style={
+                                  styles.bookBody
+                                }
+                              >
+                                <strong>
+                                  {
+                                    item.name
+                                    || 'کتاب بدون نام'
+                                  }
+                                </strong>
+
+                                <small>
+                                  فارسی:{' '}
+                                  {
+                                    Number(
+                                      item.fa_count
+                                    ) || 0
+                                  }
+
+                                  {' • '}
+
+                                  لاتین:{' '}
+                                  {
+                                    Number(
+                                      item.en_count
+                                    ) || 0
+                                  }
+                                </small>
+                              </span>
+
+                              <span
+                                style={
+                                  styles.arrow
+                                }
+                              >
+                                ‹
+                              </span>
+                            </button>
+                          )
+                        )
+                      }
+                    </div>
+                  )
+          )
+        }
+
+        {
+          view === 'files'
+          && (
+            filesLoading
+              ? (
+                <LoadingList />
+              )
+              : filesError
+                ? (
+                  renderError(
+                    'دریافت جلدهای کتاب انجام نشد.',
+                    refetchFiles
+                  )
+                )
+                : (
+                  <>
+                    <div
+                      style={
+                        styles.languageTabs
+                      }
+                      role="tablist"
+                      aria-label="زبان رفرنس"
+                    >
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={
+                          language === 'fa'
+                        }
+                        className={
+                          language === 'fa'
+                            ? 'btn btn-p'
+                            : 'btn btn-dark'
+                        }
+                        style={
+                          styles.languageButton
+                        }
+                        onClick={
+                          () => {
+                            haptic(
+                              'light'
+                            );
+
+                            setLanguage(
+                              'fa'
+                            );
+                          }
+                        }
+                        disabled={
+                          downloadMutation
+                            .isPending
+                        }
+                      >
+                        🇮🇷 فارسی
+
+                        <span
+                          className="badge b-gray"
+                        >
+                          {faFiles.length}
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={
+                          language === 'en'
+                        }
+                        className={
+                          language === 'en'
+                            ? 'btn btn-p'
+                            : 'btn btn-dark'
+                        }
+                        style={
+                          styles.languageButton
+                        }
+                        onClick={
+                          () => {
+                            haptic(
+                              'light'
+                            );
+
+                            setLanguage(
+                              'en'
+                            );
+                          }
+                        }
+                        disabled={
+                          downloadMutation
+                            .isPending
+                        }
+                      >
+                        🌐 لاتین
+
+                        <span
+                          className="badge b-gray"
+                        >
+                          {enFiles.length}
+                        </span>
+                      </button>
+                    </div>
+
+                    <div
+                      className="card"
+                      style={styles.notice}
+                    >
+                      <span>ℹ️</span>
+
+                      با زدن «ارسال»، فقط همان جلد انتخاب‌شده در ربات فرستاده می‌شود.
+                    </div>
+
+                    {
+                      visibleFiles.length === 0
+                        ? (
+                          <EmptyState
+                            icon="📚"
+                            text={
+                              language === 'fa'
+                                ? 'نسخه فارسی این کتاب ثبت نشده است.'
+                                : 'نسخه لاتین این کتاب ثبت نشده است.'
+                            }
+                          />
+                        )
+                        : (
+                          <div
+                            style={
+                              styles.list
+                            }
+                          >
+                            {
+                              visibleFiles.map(
+                                (
+                                  item,
+                                  index
+                                ) => {
+                                  // کلید هر ردیف مستقل است.
+                                  // بنابراین Spinner فقط روی همان دکمه ظاهر می‌شود.
+                                  const rowKey =
+                                    `${
+                                      language
+                                    }-${
+                                      item.id
+                                    }-${index}`;
+
+                                  return (
+                                    <ReferenceFile
+                                      key={
+                                        rowKey
+                                      }
+                                      item={
+                                        item
+                                      }
+                                      rowKey={
+                                        rowKey
+                                      }
+                                      sendingKey={
+                                        sendingKey
+                                      }
+                                      sendDisabled={
+                                        downloadMutation
+                                          .isPending
+                                      }
+                                      language={
+                                        language
+                                      }
+                                      onSend={
+                                        sendFile
+                                      }
+                                    />
+                                  );
+                                }
+                              )
+                            }
+                          </div>
+                        )
+                    }
+                  </>
+                )
+          )
+        }
       </main>
     </>
   );
 }
+
+
+const styles = {
+  page: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 13,
+    paddingInline: 13,
+  },
+
+  hero: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 13,
+    padding: 16,
+
+    background:
+      'linear-gradient(145deg,rgba(29,78,216,.2),rgba(16,24,39,.96) 58%,rgba(139,92,246,.08))',
+  },
+
+  heroIcon: {
+    display: 'grid',
+    placeItems: 'center',
+    flex: '0 0 52px',
+    width: 52,
+    height: 52,
+    fontSize: 25,
+    borderRadius: 16,
+
+    background:
+      'linear-gradient(135deg,#1D4ED8,#3B82F6 55%,#8B5CF6)',
+
+    boxShadow:
+      'var(--shd-glow)',
+  },
+
+  heroTitle: {
+    fontSize: 15,
+  },
+
+  heroText: {
+    marginTop: 4,
+    color: 'var(--tx2)',
+    fontSize: 10.5,
+    lineHeight: 1.9,
+  },
+
+  list: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 9,
+  },
+
+  grid: {
+    display: 'grid',
+
+    gridTemplateColumns:
+      'repeat(2,minmax(0,1fr))',
+
+    gap: 9,
+  },
+
+  subjectCard: {
+    display: 'flex',
+    alignItems: 'center',
+    minHeight: 128,
+    flexDirection: 'column',
+    gap: 6,
+    fontFamily: 'inherit',
+    cursor: 'pointer',
+  },
+
+  subjectIcon: {
+    fontSize: 30,
+  },
+
+  subjectName: {
+    overflow: 'hidden',
+    maxWidth: '100%',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+
+  subjectMeta: {
+    color: 'var(--tx2)',
+    fontSize: 10,
+  },
+
+  bookCard: {
+    display: 'flex',
+    alignItems: 'center',
+    width: '100%',
+    gap: 10,
+    fontFamily: 'inherit',
+    textAlign: 'right',
+    cursor: 'pointer',
+  },
+
+  bookIcon: {
+    display: 'grid',
+    placeItems: 'center',
+    flex: '0 0 43px',
+    height: 43,
+    fontSize: 22,
+    borderRadius: 12,
+
+    background:
+      'rgba(139,92,246,.12)',
+  },
+
+  bookBody: {
+    display: 'flex',
+    flex: 1,
+    minWidth: 0,
+    flexDirection: 'column',
+    gap: 3,
+  },
+
+  arrow: {
+    color: 'var(--txm)',
+    fontSize: 23,
+  },
+
+  languageTabs: {
+    display: 'grid',
+
+    gridTemplateColumns:
+      'repeat(2,minmax(0,1fr))',
+
+    gap: 8,
+  },
+
+  languageButton: {
+    width: '100%',
+    gap: 7,
+  },
+
+  notice: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 7,
+    padding: 10,
+    color: 'var(--tx2)',
+    fontSize: 9.5,
+    lineHeight: 1.8,
+  },
+
+  fileCard: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    padding: 11,
+  },
+
+  fileIcon: {
+    display: 'grid',
+    placeItems: 'center',
+    flex: '0 0 43px',
+    width: 43,
+    height: 43,
+    fontSize: 21,
+    borderRadius: 12,
+  },
+
+  fileBody: {
+    display: 'flex',
+    flex: 1,
+    minWidth: 0,
+    flexDirection: 'column',
+    gap: 2,
+  },
+
+  fileTitle: {
+    fontSize: 11.5,
+  },
+
+  fileMeta: {
+    color: 'var(--tx2)',
+    fontSize: 9.5,
+  },
+
+  description: {
+    marginTop: 3,
+    color: 'var(--txm)',
+    fontSize: 9,
+    lineHeight: 1.7,
+  },
+
+  sendButton: {
+    flex: '0 0 auto',
+    minWidth: 68,
+    minHeight: 34,
+    padding: '6px 9px',
+    fontSize: 10,
+  },
+
+  empty: {
+    padding: '45px 14px',
+  },
+
+  emptyIcon: {
+    display: 'block',
+    marginBottom: 8,
+    fontSize: 31,
+  },
+
+  errorCard: {
+    display: 'flex',
+    alignItems: 'center',
+    flexDirection: 'column',
+    gap: 10,
+    padding: 25,
+    color: 'var(--tx2)',
+    textAlign: 'center',
+  },
+};
