@@ -426,12 +426,12 @@ export function GradesAdmin() {
 
         <div className="card" style={{ marginBottom:14 }}>
           <div className="sec-title">👤 افزودن دانشجو</div>
-          <input className="inp" placeholder="جستجوی نام..." value={nameQuery} onChange={e=>setNameQuery(e.target.value)} />
+          <input className="inp" placeholder="نام، شماره دانشجویی، یوزرنیم یا آیدی عددی..." value={nameQuery} onChange={e=>setNameQuery(e.target.value)} />
           {foundStudents?.length > 0 && (
             <div style={{ marginTop:8,maxHeight:180,overflowY:'auto' }}>
               {foundStudents.map(s => (
                 <button key={s.id} className="menu-row" style={{ width:'100%' }} onClick={() => addStudentToEntries(s)}>
-                  <span style={{ flex:1,textAlign:'right' }}>👤 {s.name} <span style={{ color:'var(--txm)',fontSize:11 }}>گروه {s.group}</span></span>
+                  <span style={{ flex:1,textAlign:'right' }}>👤 {s.name} <span style={{ color:'var(--txm)',fontSize:11 }}>{s.student_id && `${s.student_id} • `}گروه {s.group}</span></span>
                 </button>
               ))}
             </div>
