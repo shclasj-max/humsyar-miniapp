@@ -4,7 +4,9 @@ import {
   Navigate,
 } from 'react-router-dom';
 
-import { useEffect } from 'react';
+import {
+  useEffect,
+} from 'react';
 
 import {
   initTelegram,
@@ -23,16 +25,25 @@ import {
 
 import AuthError from './components/shared/AuthError';
 
+
+/* صفحات اصلی */
+
 import Dashboard from './pages/Dashboard';
 import Learn from './pages/Learn';
+
 import Questions from './pages/Learn/Questions';
 import ExamCenter from './pages/Learn/ExamCenter';
 import QuestionHistory from './pages/Learn/QuestionHistory';
 import MyQuestions from './pages/Learn/MyQuestions';
 import Resources from './pages/Learn/Resources';
 import References from './pages/Learn/References';
+
 import Schedule from './pages/Schedule';
 import Grades from './pages/Grades';
+
+
+/* صفحات حساب کاربری */
+
 import Me from './pages/Me';
 import Profile from './pages/Me/Profile';
 
@@ -48,8 +59,10 @@ import {
   Reports,
 } from './pages/Me/FaqReports';
 
+
+/* صفحات مدیریت اصلی */
+
 import {
-  AdminPanel,
   AdminUsers,
   AdminUserDetail,
   AdminIntakes,
@@ -59,7 +72,15 @@ import {
 } from './pages/Admin/AdminPanel';
 
 import {
-  ContentAdminPanel,
+  BroadcastAdmin,
+  PollAdmin,
+  NotificationsAdmin,
+} from './pages/Admin/Communication';
+
+
+/* صفحات مدیریت محتوا */
+
+import {
   ContentQuestions,
   ContentFaq,
 } from './pages/Admin/ContentAdmin';
@@ -71,11 +92,11 @@ import {
   ContentReportsAdmin,
 } from './pages/Admin/ContentLibrary';
 
-import {
-  BroadcastAdmin,
-  PollAdmin,
-  NotificationsAdmin,
-} from './pages/Admin/Communication';
+
+/* صفحات جدید مدیریت */
+
+import AdminHome from './pages/Admin/AdminHome';
+import ContentHome from './pages/Admin/ContentHome';
 
 import AcademicScheduleAdmin from './pages/Admin/AcademicScheduleAdmin';
 import AcademicGradesAdmin from './pages/Admin/AcademicGradesAdmin';
@@ -84,9 +105,9 @@ import AcademicGradesAdmin from './pages/Admin/AcademicGradesAdmin';
 function AdminRoute({
   children,
 }) {
-  const {
-    user,
-  } = useAuthStore();
+  const user = useAuthStore(
+    (state) => state.user
+  );
 
   if (
     !user ||
@@ -107,9 +128,9 @@ function AdminRoute({
 function ContentAdminRoute({
   children,
 }) {
-  const {
-    user,
-  } = useAuthStore();
+  const user = useAuthStore(
+    (state) => state.user
+  );
 
   const allowedRoles = [
     'admin',
@@ -135,16 +156,23 @@ function ContentAdminRoute({
 
 
 export default function App() {
-  const {
-    loading,
-    error,
-    init,
-  } = useAuthStore();
+  const loading = useAuthStore(
+    (state) => state.loading
+  );
+
+  const error = useAuthStore(
+    (state) => state.error
+  );
+
+  const init = useAuthStore(
+    (state) => state.init
+  );
+
 
   useEffect(() => {
     initTelegram();
     init();
-  }, []);
+  }, [init]);
 
 
   if (loading) {
@@ -171,6 +199,8 @@ export default function App() {
       <Toast />
 
       <Routes>
+        {/* صفحات اصلی */}
+
         <Route
           path="/"
           element={
@@ -241,6 +271,9 @@ export default function App() {
           }
         />
 
+
+        {/* حساب کاربری */}
+
         <Route
           path="/me"
           element={
@@ -290,14 +323,20 @@ export default function App() {
           }
         />
 
+
+        {/* خانهٔ پنل مدیریت */}
+
         <Route
           path="/admin"
           element={
             <AdminRoute>
-              <AdminPanel />
+              <AdminHome />
             </AdminRoute>
           }
         />
+
+
+        {/* مدیریت کاربران */}
 
         <Route
           path="/admin/users"
@@ -353,6 +392,9 @@ export default function App() {
           }
         />
 
+
+        {/* ارتباطات مدیریتی */}
+
         <Route
           path="/admin/broadcast"
           element={
@@ -380,29 +422,26 @@ export default function App() {
           }
         />
 
+
+        {/* خانهٔ پنل محتوا */}
+
         <Route
           path="/admin/content"
           element={
             <ContentAdminRoute>
-              <ContentAdminPanel />
+              <ContentHome />
             </ContentAdminRoute>
           }
         />
+
+
+        {/* مدیریت سؤال و FAQ */}
 
         <Route
           path="/admin/content/questions"
           element={
             <ContentAdminRoute>
               <ContentQuestions />
-            </ContentAdminRoute>
-          }
-        />
-
-        <Route
-          path="/admin/content/schedule"
-          element={
-            <ContentAdminRoute>
-              <AcademicScheduleAdmin />
             </ContentAdminRoute>
           }
         />
@@ -415,6 +454,30 @@ export default function App() {
             </ContentAdminRoute>
           }
         />
+
+
+        {/* برنامه و نمرات */}
+
+        <Route
+          path="/admin/content/schedule"
+          element={
+            <ContentAdminRoute>
+              <AcademicScheduleAdmin />
+            </ContentAdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/content/grades"
+          element={
+            <ContentAdminRoute>
+              <AcademicGradesAdmin />
+            </ContentAdminRoute>
+          }
+        />
+
+
+        {/* کتابخانهٔ محتوا */}
 
         <Route
           path="/admin/content/basic-science"
@@ -452,14 +515,8 @@ export default function App() {
           }
         />
 
-        <Route
-          path="/admin/content/grades"
-          element={
-            <ContentAdminRoute>
-              <AcademicGradesAdmin />
-            </ContentAdminRoute>
-          }
-        />
+
+        {/* مسیرهای سازگاری */}
 
         <Route
           path="/questions"
@@ -490,6 +547,9 @@ export default function App() {
             />
           }
         />
+
+
+        {/* مسیر نامعتبر */}
 
         <Route
           path="*"
