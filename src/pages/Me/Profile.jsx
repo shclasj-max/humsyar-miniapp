@@ -351,3 +351,777 @@ export default function Profile() {
     onSuccess: async () => {
       hapticNotif('success');
       toast('نام ذخیره شد ✅', 'success');
+      setEditName(false);
+      await refreshProfile();
+    },
+
+    onError: (error) => {
+      hapticNotif('error');
+      toast(
+        errorMessage(
+          error,
+          'نام ذخیره نشد'
+        ),
+        'error'
+      );
+    },
+  });
+
+  const updateStudentId = useMutation({
+    mutationFn: (studentId) =>
+      api
+        .patch('/api/profile/student-id', {
+          student_id: studentId,
+        })
+        .then((response) => response.data),
+
+    onSuccess: async () => {
+      hapticNotif('success');
+      toast(
+        'شماره دانشجویی ذخیره شد ✅',
+        'success'
+      );
+      setEditStudentId(false);
+      await refreshProfile();
+    },
+
+    onError: (error) => {
+      hapticNotif('error');
+      toast(
+        errorMessage(
+          error,
+          'شماره دانشجویی ذخیره نشد'
+        ),
+        'error'
+      );
+    },
+  });
+
+  const updateGroup = useMutation({
+    mutationFn: (group) =>
+      api
+        .patch('/api/profile/group', {
+          group,
+        })
+        .then((response) => response.data),
+
+    onSuccess: async () => {
+      hapticNotif('success');
+      toast(
+        'گروه تغییر کرد ✅',
+        'success'
+      );
+      setShowGroup(false);
+      await refreshProfile();
+    },
+
+    onError: (error) => {
+      hapticNotif('error');
+      toast(
+        errorMessage(
+          error,
+          'گروه تغییر نکرد'
+        ),
+        'error'
+      );
+    },
+  });
+
+  const updateIntake = useMutation({
+    mutationFn: (intake) =>
+      api
+        .patch('/api/profile/intake', {
+          intake,
+        })
+        .then((response) => response.data),
+
+    onSuccess: async () => {
+      hapticNotif('success');
+      toast(
+        'ورودی تغییر کرد ✅',
+        'success'
+      );
+      setShowIntake(false);
+      await refreshProfile();
+    },
+
+    onError: (error) => {
+      hapticNotif('error');
+      toast(
+        errorMessage(
+          error,
+          'ورودی تغییر نکرد'
+        ),
+        'error'
+      );
+    },
+  });
+
+  const user = data?.user || null;
+  const stats = data?.stats || {};
+
+  const weakTopics = Array.isArray(
+    stats.weak_topics
+  )
+    ? stats.weak_topics
+    : [];
+
+  const badgeItems = Array.isArray(badges)
+    ? badges
+    : [];
+
+  const intakeOptions = (
+    Array.isArray(intakes) ? intakes : []
+  ).map((item) => ({
+    value: item.code,
+    label: item.label || item.code,
+  }));
+
+  return (
+    <>
+      <Header title="پروفایل" />
+
+      {showGroup && (
+        <PickerSheet
+          title="انتخاب گروه"
+          options={[
+            {
+              value: '1',
+              label: 'گروه ۱',
+            },
+            {
+              value: '2',
+              label: 'گروه ۲',
+            },
+          ]}
+          current={user?.group}
+          onSelect={(value) =>
+            updateGroup.mutate(value)
+          }
+          onClose={() =>
+            !updateGroup.isPending &&
+            setShowGroup(false)
+          }
+          pending={updateGroup.isPending}
+        />
+      )}
+
+      {showIntake && (
+        <PickerSheet
+          title="انتخاب ورودی"
+          options={intakeOptions}
+          current={user?.intake}
+          onSelect={(value) =>
+            updateIntake.mutate(value)
+          }
+          onClose={() =>
+            !updateIntake.isPending &&
+            setShowIntake(false)
+          }
+          loading={intakesLoading}
+          pending={updateIntake.isPending}
+        />
+      )}
+
+      <div className="page fade-up">
+        {isLoading ? (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 10,
+            }}
+          >
+            <SkeletonCard />
+            <SkeletonCard />
+          </div>
+        ) : isError ? (
+          <div className="empty">
+            <div
+              style={{
+                fontSize: 40,
+                marginBottom: 10,
+              }}
+            >
+              🌐
+            </div>
+
+            <div>
+              دریافت اطلاعات پروفایل با مشکل مواجه شد.
+            </div>
+
+            <button
+              className="btn btn-p"
+              style={{ marginTop: 14 }}
+              onClick={() => refetch()}
+              disabled={isRefetching}
+            >
+              {isRefetching ? (
+                <Spinner size={16} />
+              ) : (
+                'تلاش دوباره'
+              )}
+            </button>
+          </div>
+        ) : user ? (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 13,
+            }}
+          >
+            <div className="card card-glow">
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 13,
+                }}
+              >
+                <div
+                  className="avatar"
+                  style={{
+                    width: 52,
+                    height: 52,
+                    fontSize: 22,
+                  }}
+                >
+                  {user.name?.[0] || '؟'}
+                </div>
+
+                <div style={{ flex: 1 }}>
+                  <div
+                    style={{
+                      fontWeight: 800,
+                      fontSize: 17,
+                    }}
+                  >
+                    {user.name ||
+                      'کاربر هامزیار'}
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      haptic();
+                      setStudentIdValue(
+                        user.student_id || ''
+                      );
+                      setEditStudentId(true);
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: 'var(--txm)',
+                      fontSize: 11,
+                      padding: 0,
+                      fontFamily: 'var(--font)',
+                    }}
+                  >
+                    شماره دانشجویی:{' '}
+                    {user.student_id || '—'} ✏️
+                  </button>
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: 5,
+                      marginTop: 6,
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <button
+                      onClick={() => {
+                        haptic();
+                        setShowIntake(true);
+                      }}
+                      className="badge b-acc"
+                      style={{
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontFamily:
+                          'var(--font)',
+                      }}
+                    >
+                      ورودی{' '}
+                      {user.intake || '—'} ✏️
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        haptic();
+                        setShowGroup(true);
+                      }}
+                      className="badge b-acc"
+                      style={{
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontFamily:
+                          'var(--font)',
+                      }}
+                    >
+                      گروه {user.group || '—'} ✏️
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    haptic();
+                    setNameValue(
+                      user.name || ''
+                    );
+                    setEditName(true);
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: 18,
+                  }}
+                  aria-label="ویرایش نام"
+                >
+                  ✏️
+                </button>
+              </div>
+
+              {editName && (
+                <form
+                  onSubmit={(event) => {
+                    event.preventDefault();
+
+                    if (
+                      nameValue.trim().length >= 3
+                    ) {
+                      updateName.mutate(
+                        nameValue
+                      );
+                    }
+                  }}
+                  style={{
+                    marginTop: 14,
+                    display: 'flex',
+                    gap: 8,
+                  }}
+                >
+                  <input
+                    className="inp"
+                    value={nameValue}
+                    onChange={(event) =>
+                      setNameValue(
+                        event.target.value
+                      )
+                    }
+                    placeholder="نام جدید"
+                    maxLength={50}
+                    style={{ flex: 1 }}
+                    autoFocus
+                  />
+
+                  <button
+                    className="btn btn-p"
+                    type="submit"
+                    disabled={
+                      updateName.isPending ||
+                      nameValue.trim().length < 3
+                    }
+                  >
+                    {updateName.isPending ? (
+                      <Spinner size={14} />
+                    ) : (
+                      'ذخیره'
+                    )}
+                  </button>
+
+                  <button
+                    className="btn btn-dark"
+                    type="button"
+                    onClick={() =>
+                      setEditName(false)
+                    }
+                    disabled={
+                      updateName.isPending
+                    }
+                  >
+                    لغو
+                  </button>
+                </form>
+              )}
+
+              {editStudentId && (
+                <form
+                  onSubmit={(event) => {
+                    event.preventDefault();
+
+                    if (
+                      /^\d{3,20}$/.test(
+                        studentIdValue.trim()
+                      )
+                    ) {
+                      updateStudentId.mutate(
+                        studentIdValue
+                      );
+                    }
+                  }}
+                  style={{
+                    marginTop: 14,
+                    display: 'flex',
+                    gap: 8,
+                  }}
+                >
+                  <input
+                    className="inp"
+                    value={studentIdValue}
+                    onChange={(event) =>
+                      setStudentIdValue(
+                        event.target.value.replace(
+                          /\D/g,
+                          ''
+                        )
+                      )
+                    }
+                    placeholder="شماره دانشجویی"
+                    inputMode="numeric"
+                    minLength={3}
+                    maxLength={20}
+                    style={{ flex: 1 }}
+                    autoFocus
+                  />
+
+                  <button
+                    className="btn btn-p"
+                    type="submit"
+                    disabled={
+                      updateStudentId.isPending ||
+                      !/^\d{3,20}$/.test(
+                        studentIdValue.trim()
+                      )
+                    }
+                  >
+                    {updateStudentId.isPending ? (
+                      <Spinner size={14} />
+                    ) : (
+                      'ذخیره'
+                    )}
+                  </button>
+
+                  <button
+                    className="btn btn-dark"
+                    type="button"
+                    onClick={() =>
+                      setEditStudentId(false)
+                    }
+                    disabled={
+                      updateStudentId.isPending
+                    }
+                  >
+                    لغو
+                  </button>
+                </form>
+              )}
+            </div>
+
+            {rankData?.rank && (
+              <div
+                className="card"
+                style={{
+                  background:
+                    'linear-gradient(135deg,rgba(245,158,11,.08),rgba(59,130,246,.06))',
+                  borderColor:
+                    'rgba(245,158,11,.25)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 13,
+                }}
+              >
+                <div style={{ fontSize: 28 }}>
+                  🏅
+                </div>
+
+                <div>
+                  <div
+                    style={{
+                      fontWeight: 800,
+                      fontSize: 16,
+                      color: 'var(--warn)',
+                    }}
+                  >
+                    رتبه{' '}
+                    {toNumber(rankData.rank)} از{' '}
+                    {toNumber(
+                      rankData.total_users
+                    )}
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: 'var(--txm)',
+                    }}
+                  >
+                    بهتر از{' '}
+                    {toPercent(
+                      rankData.percentile
+                    )}
+                    ٪ دانشجویان
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="card">
+              <div className="sec-title">
+                📊 آمار
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent:
+                    'space-around',
+                  marginBottom: 13,
+                }}
+              >
+                {[
+                  [
+                    '🧪',
+                    toNumber(
+                      stats.total_answers
+                    ),
+                    'سوال',
+                    'var(--acc)',
+                  ],
+                  [
+                    '✅',
+                    toNumber(
+                      stats.correct_answers
+                    ),
+                    'صحیح',
+                    'var(--ok)',
+                  ],
+                  [
+                    '📥',
+                    toNumber(stats.downloads),
+                    'دانلود',
+                    'var(--info)',
+                  ],
+                  [
+                    '📈',
+                    `${toPercent(
+                      stats.percentage
+                    )}٪`,
+                    'موفقیت',
+                    'var(--warn)',
+                  ],
+                ].map(
+                  ([
+                    icon,
+                    value,
+                    label,
+                    color,
+                  ]) => (
+                    <div
+                      key={label}
+                      style={{
+                        textAlign: 'center',
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 18,
+                        }}
+                      >
+                        {icon}
+                      </div>
+
+                      <div
+                        style={{
+                          fontSize: 17,
+                          fontWeight: 800,
+                          color,
+                          margin: '2px 0',
+                        }}
+                      >
+                        {value}
+                      </div>
+
+                      <div
+                        style={{
+                          fontSize: 9.5,
+                          color: 'var(--txm)',
+                        }}
+                      >
+                        {label}
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
+
+              {stats.level && (
+                <div
+                  style={{
+                    background: `${
+                      stats.level.color ||
+                      '#60A5FA'
+                    }15`,
+                    border: `1px solid ${
+                      stats.level.color ||
+                      '#60A5FA'
+                    }40`,
+                    borderRadius:
+                      'var(--r-md)',
+                    padding: '8px 12px',
+                    marginBottom: 12,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 20,
+                    }}
+                  >
+                    {stats.level.icon || '📈'}
+                  </span>
+
+                  <div
+                    style={{
+                      fontWeight: 700,
+                      color:
+                        stats.level.color ||
+                        '#60A5FA',
+                      fontSize: 14,
+                    }}
+                  >
+                    {stats.level.label ||
+                      'سطح کاربر'}
+                  </div>
+
+                  <div
+                    style={{
+                      marginRight: 'auto',
+                      fontSize: 11,
+                      color: 'var(--txm)',
+                    }}
+                  >
+                    سطح کاربری
+                  </div>
+                </div>
+              )}
+
+              <WeekChart
+                data={stats.weekly_chart}
+              />
+
+              {weakTopics.length > 0 && (
+                <>
+                  <div className="divider" />
+
+                  <div
+                    style={{
+                      color: 'var(--txm)',
+                      fontSize: 12,
+                      marginBottom: 7,
+                    }}
+                  >
+                    ⚡ نقاط ضعف
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: 5,
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    {weakTopics.map(
+                      (topic) => (
+                        <span
+                          key={topic}
+                          className="badge b-red"
+                        >
+                          {topic}
+                        </span>
+                      )
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {badgeItems.length > 0 && (
+              <div className="card">
+                <div className="sec-title">
+                  🏅 بج‌های پیشرفت
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: 10,
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  {badgeItems.map((badge) => (
+                    <div
+                      key={badge.id}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 4,
+                        opacity: badge.earned
+                          ? 1
+                          : 0.3,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: '50%',
+                          background: badge.earned
+                            ? 'rgba(59,130,246,.14)'
+                            : 'rgba(71,85,105,.1)',
+                          border: `2px solid ${
+                            badge.earned
+                              ? 'rgba(59,130,246,.35)'
+                              : 'var(--bd)'
+                          }`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent:
+                            'center',
+                          fontSize: 20,
+                        }}
+                      >
+                        {badge.icon}
+                      </div>
+
+                      <div
+                        style={{
+                          fontSize: 9,
+                          color: 'var(--tx2)',
+                          textAlign: 'center',
+                        }}
+                      >
+                        {badge.title}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="empty">
+            اطلاعات پروفایل در دسترس نیست.
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
