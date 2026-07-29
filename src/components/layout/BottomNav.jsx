@@ -1,71 +1,385 @@
-import { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { haptic } from '../../lib/telegram';
+import {
+  useEffect,
+  useState,
+} from 'react';
+
+import {
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
+
+import {
+  haptic,
+} from '../../lib/telegram';
+
 
 const TABS = [
-  { path: '/',        icon: '🩺', label: 'داشبورد' },
-  { path: '/learn',   icon: '📖', label: 'یادگیری' },
-  { path: '/schedule',icon: '📅', label: 'برنامه'  },
-  { path: '/grades',  icon: '📊', label: 'نمرات'   },
-  { path: '/me',      icon: '🙋', label: 'من'       },
+  {
+    path: '/',
+    icon: '🩺',
+    label: 'داشبورد',
+  },
+
+  {
+    path: '/learn',
+    icon: '📖',
+    label: 'یادگیری',
+  },
+
+  {
+    path: '/schedule',
+    icon: '📅',
+    label: 'برنامه',
+  },
+
+  {
+    path: '/grades',
+    icon: '📊',
+    label: 'نمرات',
+  },
+
+  {
+    path: '/me',
+    icon: '🙋',
+    label: 'من',
+  },
 ];
+
 
 const MORE = [
-  { path: '/me/subscription', icon: '💳', label: 'اشتراک',        desc: 'مدیریت پلن و خرید' },
-  { path: '/me/tickets',      icon: '🎫', label: 'پشتیبانی',      desc: 'تیکت و گفتگو' },
-  { path: '/me/faq',          icon: '❓', label: 'سوالات متداول', desc: 'پاسخ سریع' },
-  { path: '/me/reports',      icon: '🚩', label: 'گزارش ایراد',   desc: 'خطا در محتوا' },
+  {
+    path: '/me/profile',
+    icon: '👤',
+    label: 'پروفایل',
+    desc: 'اطلاعات و آمار حساب',
+  },
+
+  {
+    path: '/me/notifications',
+    icon: '🔔',
+    label: 'اعلان‌ها',
+    desc: 'تنظیم یادآوری‌ها',
+  },
+
+  {
+    path: '/me/subscription',
+    icon: '💳',
+    label: 'اشتراک',
+    desc: 'مدیریت پلن و خرید',
+  },
+
+  {
+    path: '/me/tickets',
+    icon: '🎫',
+    label: 'پشتیبانی',
+    desc: 'تیکت و گفت‌وگو',
+  },
+
+  {
+    path: '/me/faq',
+    icon: '❓',
+    label: 'سؤالات متداول',
+    desc: 'پاسخ‌های سریع',
+  },
+
+  {
+    path: '/me/reports',
+    icon: '🚩',
+    label: 'گزارش ایراد',
+    desc: 'اعلام خطای محتوا',
+  },
 ];
 
-function MoreSheet({ onClose }) {
-  const navigate = useNavigate();
+
+function matchesPath(
+  pathname,
+  path
+) {
+  if (path === '/') {
+    return pathname === '/';
+  }
+
   return (
-    <div onClick={onClose} style={{ position:'fixed',inset:0,background:'rgba(0,0,0,.65)',zIndex:200,display:'flex',alignItems:'flex-end',justifyContent:'center' }}>
-      <div onClick={e => e.stopPropagation()} className="fade-up" style={{ width:'100%',maxWidth:480,background:'var(--surf)',borderRadius:'20px 20px 0 0',padding:'18px 14px calc(18px + env(safe-area-inset-bottom))' }}>
-        <div style={{ width:34,height:4,background:'var(--bd)',borderRadius:999,margin:'0 auto 14px' }} />
-        <div style={{ fontWeight:700,fontSize:14,marginBottom:12 }}>بیشتر</div>
-        {MORE.map(item => (
-          <button key={item.path} onClick={() => { haptic(); navigate(item.path); onClose(); }} style={{ width:'100%',display:'flex',alignItems:'center',gap:12,padding:'12px 6px',background:'none',border:'none',cursor:'pointer',textAlign:'right',borderBottom:'1px solid var(--bd)' }}>
-            <span style={{ fontSize:24 }}>{item.icon}</span>
-            <div style={{ flex:1 }}>
-              <div style={{ fontWeight:600,fontSize:13.5,color:'var(--tx)' }}>{item.label}</div>
-              <div style={{ fontSize:11,color:'var(--txm)',marginTop:1 }}>{item.desc}</div>
-            </div>
-            <span style={{ color:'var(--txm)' }}>←</span>
-          </button>
-        ))}
+    pathname === path ||
+    pathname.startsWith(
+      `${path}/`
+    )
+  );
+}
+
+
+function MoreSheet({
+  onClose,
+}) {
+  const navigate =
+    useNavigate();
+
+  useEffect(() => {
+    const previousOverflow =
+      document.body
+        .style
+        .overflow;
+
+    const closeWithEscape = (
+      event
+    ) => {
+      if (
+        event.key === 'Escape'
+      ) {
+        onClose();
+      }
+    };
+
+    document.body.style.overflow =
+      'hidden';
+
+    window.addEventListener(
+      'keydown',
+      closeWithEscape
+    );
+
+    return () => {
+      document.body.style.overflow =
+        previousOverflow;
+
+      window.removeEventListener(
+        'keydown',
+        closeWithEscape
+      );
+    };
+  }, [onClose]);
+
+
+  const open = (path) => {
+    haptic('light');
+    onClose();
+    navigate(path);
+  };
+
+
+  return (
+    <div
+      className="more-sheet"
+      role="presentation"
+      onClick={onClose}
+    >
+      <div
+        className={
+          'more-sheet__panel ' +
+          'glass fade-up'
+        }
+        role="dialog"
+        aria-modal="true"
+        aria-label="منوی بیشتر"
+        onClick={(event) =>
+          event.stopPropagation()
+        }
+      >
+        <div className="more-sheet__handle" />
+
+        <div className="more-sheet__title">
+          دسترسی سریع
+        </div>
+
+        {MORE.map(
+          (item, index) => (
+            <button
+              type="button"
+              key={item.path}
+              className={
+                'more-sheet__item ' +
+                'pop-in'
+              }
+              style={{
+                animationDelay:
+                  `${index * 32}ms`,
+              }}
+              onClick={() =>
+                open(item.path)
+              }
+            >
+              <span className="more-sheet__item-icon">
+                {item.icon}
+              </span>
+
+              <span className="more-sheet__item-text">
+                <span className="more-sheet__item-title">
+                  {item.label}
+                </span>
+
+                <span className="more-sheet__item-desc">
+                  {item.desc}
+                </span>
+              </span>
+
+              <span className="more-sheet__arrow">
+                ←
+              </span>
+            </button>
+          )
+        )}
       </div>
     </div>
   );
 }
 
+
 export default function BottomNav() {
-  const location = useLocation();
-  const navigate  = useNavigate();
-  const [showMore, setShowMore] = useState(false);
+  const location =
+    useLocation();
 
-  const moreActive = MORE.some(m => location.pathname.startsWith(m.path));
+  const navigate =
+    useNavigate();
 
-  function go(path) { haptic('light'); navigate(path); }
+  const [
+    showMore,
+    setShowMore,
+  ] = useState(false);
+
+
+  useEffect(() => {
+    setShowMore(false);
+  }, [location.pathname]);
+
+
+  if (
+    location.pathname.startsWith(
+      '/admin'
+    )
+  ) {
+    return null;
+  }
+
+
+  const moreActive =
+    MORE.some(
+      (item) =>
+        matchesPath(
+          location.pathname,
+          item.path
+        )
+    );
+
+
+  const tabIndex =
+    TABS.findIndex(
+      (item) =>
+        matchesPath(
+          location.pathname,
+          item.path
+        )
+    );
+
+
+  const activeIndex =
+    moreActive
+      ? TABS.length
+      : Math.max(
+          0,
+          tabIndex
+        );
+
+
+  const go = (path) => {
+    haptic('light');
+
+    if (
+      location.pathname !== path
+    ) {
+      navigate(path);
+    }
+  };
+
 
   return (
     <>
-      {showMore && <MoreSheet onClose={() => setShowMore(false)} />}
-      <nav style={{ position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:480,height:'var(--nav-h)',background:'var(--surf)',borderTop:'1px solid var(--bd)',display:'flex',alignItems:'center',justifyContent:'space-around',padding:'0 4px',paddingBottom:'env(safe-area-inset-bottom)',zIndex:100 }}>
-        {TABS.map(tab => {
-          const active = tab.path === '/' ? location.pathname === '/' : location.pathname.startsWith(tab.path);
-          return (
-            <button key={tab.path} onClick={() => go(tab.path)} style={{ display:'flex',flexDirection:'column',alignItems:'center',gap:2,padding:'5px 0',border:'none',background:'transparent',cursor:'pointer',flex:1,position:'relative' }}>
-              {active && <div style={{ position:'absolute',top:0,width:28,height:3,background:'var(--acc)',borderRadius:'0 0 4px 4px' }} />}
-              <span style={{ fontSize:21,lineHeight:1 }}>{tab.icon}</span>
-              <span style={{ fontSize:9.5,fontFamily:'var(--font)',fontWeight:active?700:400,color:active?'var(--acc)':'var(--txm)' }}>{tab.label}</span>
-            </button>
-          );
-        })}
-        <button onClick={() => { haptic('light'); setShowMore(true); }} style={{ display:'flex',flexDirection:'column',alignItems:'center',gap:2,padding:'5px 0',border:'none',background:'transparent',cursor:'pointer',flex:1,position:'relative' }}>
-          {moreActive && <div style={{ position:'absolute',top:0,width:28,height:3,background:'var(--acc)',borderRadius:'0 0 4px 4px' }} />}
-          <span style={{ fontSize:21,lineHeight:1 }}>☰</span>
-          <span style={{ fontSize:9.5,fontFamily:'var(--font)',fontWeight:moreActive?700:400,color:moreActive?'var(--acc)':'var(--txm)' }}>بیشتر</span>
+      {showMore && (
+        <MoreSheet
+          onClose={() =>
+            setShowMore(false)
+          }
+        />
+      )}
+
+      <nav
+        className="bottom-nav glass"
+        aria-label="ناوبری اصلی"
+        style={{
+          '--active-index':
+            activeIndex,
+        }}
+      >
+        <div
+          className="bottom-nav__indicator"
+          aria-hidden="true"
+        />
+
+        {TABS.map(
+          (tab, index) => {
+            const active =
+              !moreActive &&
+              index === activeIndex;
+
+            return (
+              <button
+                type="button"
+                key={tab.path}
+                className={
+                  'bottom-nav__item ' +
+                  (
+                    active
+                      ? 'bottom-nav__item--active'
+                      : ''
+                  )
+                }
+                onClick={() =>
+                  go(tab.path)
+                }
+                aria-label={
+                  tab.label
+                }
+                aria-current={
+                  active
+                    ? 'page'
+                    : undefined
+                }
+              >
+                <span className="bottom-nav__icon">
+                  {tab.icon}
+                </span>
+
+                <span className="bottom-nav__label">
+                  {tab.label}
+                </span>
+              </button>
+            );
+          }
+        )}
+
+        <button
+          type="button"
+          className={
+            'bottom-nav__item ' +
+            (
+              moreActive
+                ? 'bottom-nav__item--active'
+                : ''
+            )
+          }
+          onClick={() => {
+            haptic('light');
+            setShowMore(true);
+          }}
+          aria-label="بیشتر"
+          aria-expanded={showMore}
+        >
+          <span className="bottom-nav__icon">
+            ☰
+          </span>
+
+          <span className="bottom-nav__label">
+            بیشتر
+          </span>
         </button>
       </nav>
     </>
