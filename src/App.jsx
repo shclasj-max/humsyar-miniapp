@@ -30,16 +30,20 @@ import AuthError from './components/shared/AuthError';
 
 import Dashboard from './pages/Dashboard';
 import Learn from './pages/Learn';
+import Schedule from './pages/Schedule';
+import Grades from './pages/Grades';
+
+
+/* صفحات یادگیری */
 
 import Questions from './pages/Learn/Questions';
 import ExamCenter from './pages/Learn/ExamCenter';
+
 import QuestionHistory from './pages/Learn/QuestionHistory';
 import MyQuestions from './pages/Learn/MyQuestions';
+
 import Resources from './pages/Learn/Resources';
 import References from './pages/Learn/References';
-
-import Schedule from './pages/Schedule';
-import Grades from './pages/Grades';
 
 
 /* صفحات حساب کاربری */
@@ -60,7 +64,13 @@ import {
 } from './pages/Me/FaqReports';
 
 
-/* صفحات مدیریت اصلی */
+/* خانه‌های مدیریت */
+
+import AdminHome from './pages/Admin/AdminHome';
+import ContentHome from './pages/Admin/ContentHome';
+
+
+/* مدیریت کاربران */
 
 import {
   AdminUsers,
@@ -68,8 +78,17 @@ import {
   AdminIntakes,
   AdminContentAdmins,
   AdminBlacklist,
+} from './pages/Admin/UserManagement';
+
+
+/* مدیریت تیکت‌ها */
+
+import {
   AdminTickets,
 } from './pages/Admin/AdminPanel';
+
+
+/* مدیریت ارتباطات */
 
 import {
   BroadcastAdmin,
@@ -78,12 +97,15 @@ import {
 } from './pages/Admin/Communication';
 
 
-/* صفحات مدیریت محتوا */
+/* مدیریت سؤال و FAQ */
 
 import {
   ContentQuestions,
   ContentFaq,
 } from './pages/Admin/ContentAdmin';
+
+
+/* مدیریت کتابخانه محتوا */
 
 import {
   BasicScienceAdmin,
@@ -93,12 +115,10 @@ import {
 } from './pages/Admin/ContentLibrary';
 
 
-/* صفحات جدید مدیریت */
-
-import AdminHome from './pages/Admin/AdminHome';
-import ContentHome from './pages/Admin/ContentHome';
+/* مدیریت برنامه و نمرات */
 
 import AcademicScheduleAdmin from './pages/Admin/AcademicScheduleAdmin';
+
 import AcademicGradesAdmin from './pages/Admin/AcademicGradesAdmin';
 
 
@@ -216,6 +236,23 @@ export default function App() {
         />
 
         <Route
+          path="/schedule"
+          element={
+            <Schedule />
+          }
+        />
+
+        <Route
+          path="/grades"
+          element={
+            <Grades />
+          }
+        />
+
+
+        {/* صفحات یادگیری */}
+
+        <Route
           path="/learn/questions"
           element={
             <Questions />
@@ -254,20 +291,6 @@ export default function App() {
           path="/learn/references"
           element={
             <References />
-          }
-        />
-
-        <Route
-          path="/schedule"
-          element={
-            <Schedule />
-          }
-        />
-
-        <Route
-          path="/grades"
-          element={
-            <Grades />
           }
         />
 
@@ -324,7 +347,7 @@ export default function App() {
         />
 
 
-        {/* خانهٔ پنل مدیریت */}
+        {/* خانه پنل مدیریت */}
 
         <Route
           path="/admin"
@@ -423,7 +446,7 @@ export default function App() {
         />
 
 
-        {/* خانهٔ پنل محتوا */}
+        {/* خانه مدیریت محتوا */}
 
         <Route
           path="/admin/content"
@@ -435,7 +458,7 @@ export default function App() {
         />
 
 
-        {/* مدیریت سؤال و FAQ */}
+        {/* سؤال و FAQ */}
 
         <Route
           path="/admin/content/questions"
@@ -477,7 +500,7 @@ export default function App() {
         />
 
 
-        {/* کتابخانهٔ محتوا */}
+        {/* کتابخانه محتوا */}
 
         <Route
           path="/admin/content/basic-science"
@@ -516,7 +539,7 @@ export default function App() {
         />
 
 
-        {/* مسیرهای سازگاری */}
+        {/* مسیرهای قدیمی سازگار */}
 
         <Route
           path="/questions"
