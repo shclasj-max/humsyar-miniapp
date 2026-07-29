@@ -26,6 +26,9 @@ import AuthError from './components/shared/AuthError';
 import Dashboard from './pages/Dashboard';
 import Learn from './pages/Learn';
 import Questions from './pages/Learn/Questions';
+import ExamCenter from './pages/Learn/ExamCenter';
+import QuestionHistory from './pages/Learn/QuestionHistory';
+import MyQuestions from './pages/Learn/MyQuestions';
 import Resources from './pages/Learn/Resources';
 import References from './pages/Learn/References';
 import Schedule from './pages/Schedule';
@@ -108,14 +111,14 @@ function ContentAdminRoute({
     user,
   } = useAuthStore();
 
-  const allowed = [
+  const allowedRoles = [
     'admin',
     'content_admin',
   ];
 
   if (
     !user ||
-    !allowed.includes(
+    !allowedRoles.includes(
       user.role
     )
   ) {
@@ -143,9 +146,13 @@ export default function App() {
     init();
   }, []);
 
+
   if (loading) {
-    return <LoadingScreen />;
+    return (
+      <LoadingScreen />
+    );
   }
+
 
   if (error) {
     return (
@@ -154,6 +161,7 @@ export default function App() {
       />
     );
   }
+
 
   return (
     <div
@@ -165,72 +173,121 @@ export default function App() {
       <Routes>
         <Route
           path="/"
-          element={<Dashboard />}
+          element={
+            <Dashboard />
+          }
         />
 
         <Route
           path="/learn"
-          element={<Learn />}
+          element={
+            <Learn />
+          }
         />
 
         <Route
           path="/learn/questions"
-          element={<Questions />}
+          element={
+            <Questions />
+          }
+        />
+
+        <Route
+          path="/learn/exams"
+          element={
+            <ExamCenter />
+          }
+        />
+
+        <Route
+          path="/learn/question-history"
+          element={
+            <QuestionHistory />
+          }
+        />
+
+        <Route
+          path="/learn/my-questions"
+          element={
+            <MyQuestions />
+          }
         />
 
         <Route
           path="/learn/resources"
-          element={<Resources />}
+          element={
+            <Resources />
+          }
         />
 
         <Route
           path="/learn/references"
-          element={<References />}
+          element={
+            <References />
+          }
         />
 
         <Route
           path="/schedule"
-          element={<Schedule />}
+          element={
+            <Schedule />
+          }
         />
 
         <Route
           path="/grades"
-          element={<Grades />}
+          element={
+            <Grades />
+          }
         />
 
         <Route
           path="/me"
-          element={<Me />}
+          element={
+            <Me />
+          }
         />
 
         <Route
           path="/me/profile"
-          element={<Profile />}
+          element={
+            <Profile />
+          }
         />
 
         <Route
           path="/me/notifications"
-          element={<Notifications />}
+          element={
+            <Notifications />
+          }
         />
 
         <Route
           path="/me/subscription"
-          element={<Subscription />}
+          element={
+            <Subscription />
+          }
         />
 
         <Route
           path="/me/tickets"
-          element={<Tickets />}
+          element={
+            <Tickets />
+          }
         />
 
         <Route
           path="/me/faq"
-          element={<Faq />}
+          element={
+            <Faq />
+          }
         />
 
         <Route
           path="/me/reports"
-          element={<Reports />}
+          element={
+            <Reports />
+          }
         />
 
         <Route
