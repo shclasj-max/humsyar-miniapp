@@ -1,17 +1,22 @@
-import { useState } from 'react';
+import {
+  useRef,
+  useState,
+} from 'react';
 
 import {
   useMutation,
   useQuery,
+  useQueryClient,
 } from '@tanstack/react-query';
 
-import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 
 import {
   SkeletonCard,
   Spinner,
 } from '../../components/shared/Loading';
+
+import api from '../../lib/api';
 
 import {
   haptic,
@@ -68,6 +73,177 @@ const TYPES = {
 };
 
 
+function safeArray(value) {
+  return Array.isArray(value)
+    ? value
+    : [];
+}
+
+
+function errorText(
+  error,
+  fallback,
+) {
+  const detail =
+    error?.response?.data?.detail;
+
+  return (
+    typeof detail === 'string'
+    && detail.trim()
+  )
+    ? detail
+    : fallback;
+}
+
+
+function ResourceFile({
+  item,
+  rowKey,
+  sendingKey,
+  sendDisabled,
+  searchMode = false,
+  onSend,
+}) {
+  const [
+    icon,
+    label,
+    color,
+    soft,
+  ] = (
+    TYPES[item?.type]
+    || [
+      '📎',
+      'فایل',
+      '#70A7FF',
+      'rgba(59,130,246,.12)',
+    ]
+  );
+
+  // فقط ردیفی که واقعاً کلیک شده، لودینگ نشان می‌دهد.
+  const isSending =
+    sendingKey === rowKey;
+
+  const title = (
+    item?.name
+    || item?.description
+    || label
+  );
+
+  const context = [
+    item?.lesson,
+    item?.session,
+  ]
+    .filter(Boolean)
+    .join(' • ');
+
+  return (
+    <article
+      className="card"
+      style={styles.fileCard}
+    >
+      <div
+        style={{
+          ...styles.fileIcon,
+          color,
+          background: soft,
+        }}
+      >
+        {icon}
+      </div>
+
+      <div style={styles.fileBody}>
+        <strong style={styles.fileTitle}>
+          {title}
+        </strong>
+
+        <span style={styles.fileMeta}>
+          {
+            searchMode
+              ? context || label
+              : `${label} • ${
+                  Number(
+                    item?.downloads
+                  ) || 0
+                } دانلود`
+          }
+        </span>
+
+        {
+          item?.description
+          && item.description !== title
+          && (
+            <p style={styles.fileDescription}>
+              {item.description}
+            </p>
+          )
+        }
+      </div>
+
+      <button
+        type="button"
+        className="btn btn-g"
+        style={styles.sendButton}
+        onClick={
+          () => onSend(
+            item?.id,
+            rowKey,
+          )
+        }
+        disabled={
+          sendDisabled
+          || !item?.id
+        }
+        aria-busy={isSending}
+        aria-label={
+          `ارسال ${title} در ربات`
+        }
+      >
+        {
+          isSending
+            ? (
+              <>
+                <Spinner size={15} />
+                ارسال...
+              </>
+            )
+            : 'ارسال'
+        }
+      </button>
+    </article>
+  );
+}
+
+
+function LoadingList() {
+  return (
+    <div style={styles.list}>
+      <SkeletonCard lines={2} />
+      <SkeletonCard lines={2} />
+      <SkeletonCard lines={2} />
+    </div>
+  );
+}
+
+
+function EmptyState({
+  icon = '📭',
+  text,
+}) {
+  return (
+    <div
+      className="card empty"
+      style={styles.empty}
+    >
+      <span style={styles.emptyIcon}>
+        {icon}
+      </span>
+
+      <p>{text}</p>
+    </div>
+  );
+}
+
+
 export default function Resources() {
   const [
     view,
@@ -94,15 +270,30 @@ export default function Resources() {
     setSearch,
   ] = useState('');
 
-  const toast = useUIStore(
-    (state) => state.toast
-  );
+  const [
+    sendingKey,
+    setSendingKey,
+  ] = useState(null);
 
+  // این ref به‌صورت هم‌زمان تغییر می‌کند.
+  // بنابراین چند لمس سریع قبل از Render بعدی هم
+  // نمی‌تواند درخواست دوم بسازد.
+  const sendLockRef =
+    useRef(null);
+
+  const toast =
+    useUIStore(
+      (state) => state.toast
+    );
+
+  const queryClient =
+    useQueryClient();
 
   const {
     data: terms = [],
     isLoading: termsLoading,
     isError: termsError,
+    refetch: refetchTerms,
   } = useQuery({
     queryKey: [
       'resource-terms',
@@ -115,18 +306,20 @@ export default function Resources() {
         )
         .then(
           (response) =>
-            response.data
-              ?.terms || []
+            safeArray(
+              response.data?.terms
+            )
         ),
 
     staleTime:
       10 * 60 * 1000,
   });
 
-
   const {
     data: lessons = [],
     isLoading: lessonsLoading,
+    isError: lessonsError,
+    refetch: refetchLessons,
   } = useQuery({
     queryKey: [
       'resource-lessons',
@@ -144,19 +337,21 @@ export default function Resources() {
         )
         .then(
           (response) =>
-            response.data
-              ?.lessons || []
+            safeArray(
+              response.data?.lessons
+            )
         ),
 
     enabled:
-      view === 'lessons' &&
-      Boolean(term),
+      view === 'lessons'
+      && Boolean(term?.name),
   });
-
 
   const {
     data: sessions = [],
     isLoading: sessionsLoading,
+    isError: sessionsError,
+    refetch: refetchSessions,
   } = useQuery({
     queryKey: [
       'resource-sessions',
@@ -172,19 +367,21 @@ export default function Resources() {
         )
         .then(
           (response) =>
-            response.data
-              ?.sessions || []
+            safeArray(
+              response.data?.sessions
+            )
         ),
 
     enabled:
-      view === 'sessions' &&
-      Boolean(lesson?._id),
+      view === 'sessions'
+      && Boolean(lesson?._id),
   });
-
 
   const {
     data: files = [],
     isLoading: filesLoading,
+    isError: filesError,
+    refetch: refetchFiles,
   } = useQuery({
     queryKey: [
       'resource-files',
@@ -200,55 +397,60 @@ export default function Resources() {
         )
         .then(
           (response) =>
-            response.data
-              ?.files || []
+            safeArray(
+              response.data?.files
+            )
         ),
 
     enabled:
-      view === 'files' &&
-      Boolean(session?._id),
+      view === 'files'
+      && Boolean(session?._id),
   });
 
+  const normalizedSearch =
+    search.trim();
 
   const {
     data: results = [],
     isFetching: searching,
+    isError: searchError,
   } = useQuery({
     queryKey: [
       'resource-search',
-      search,
+      normalizedSearch,
     ],
 
     queryFn: () =>
       api
         .get(
           '/api/resources/search',
-
           {
             params: {
-              q: search.trim(),
+              q: normalizedSearch,
             },
           }
         )
         .then(
           (response) =>
-            response.data
-              ?.results || []
+            safeArray(
+              response.data?.results
+            )
         ),
 
     enabled:
-      search.trim().length >= 2,
+      normalizedSearch.length >= 2,
   });
-
 
   const downloadMutation =
     useMutation({
-      mutationFn: (id) =>
+      mutationFn: ({
+        id,
+      }) =>
         api.post(
           `/api/resources/download/${id}`
         ),
 
-      onSuccess: (
+      onSuccess: async (
         response
       ) => {
         hapticNotif(
@@ -257,27 +459,108 @@ export default function Resources() {
 
         toast(
           `${
-            response.data?.name ||
-            'فایل'
+            response.data?.name
+            || 'فایل'
           } در ربات ارسال شد ✅`,
-
           'success'
+        );
+
+        await Promise.all([
+          queryClient
+            .invalidateQueries({
+              queryKey: [
+                'resource-files',
+              ],
+            }),
+
+          queryClient
+            .invalidateQueries({
+              queryKey: [
+                'resource-search',
+              ],
+            }),
+        ]);
+      },
+
+      onError: (error) => {
+        hapticNotif(
+          'error'
+        );
+
+        toast(
+          errorText(
+            error,
+            'ارسال فایل انجام نشد'
+          ),
+          'error'
         );
       },
 
-      onError: (error) =>
-        toast(
-          error?.response
-            ?.data
-            ?.detail ||
-            'ارسال فایل انجام نشد',
+      onSettled: (
+        _data,
+        _error,
+        variables
+      ) => {
+        if (
+          sendLockRef.current
+          === variables?.key
+        ) {
+          sendLockRef.current =
+            null;
+        }
 
-          'error'
-        ),
+        setSendingKey(
+          (current) =>
+            current === variables?.key
+              ? null
+              : current
+        );
+      },
     });
 
+  const sendFile = (
+    id,
+    key,
+  ) => {
+    const fileId =
+      String(
+        id || ''
+      ).trim();
+
+    const rowKey =
+      String(
+        key || ''
+      ).trim();
+
+    if (
+      !fileId
+      || !rowKey
+      || sendLockRef.current
+      || downloadMutation.isPending
+    ) {
+      return;
+    }
+
+    // قفل بلافاصله و قبل از mutation فعال می‌شود.
+    sendLockRef.current =
+      rowKey;
+
+    // فقط کلید همین ردیف ذخیره می‌شود.
+    setSendingKey(
+      rowKey
+    );
+
+    haptic('medium');
+
+    downloadMutation.mutate({
+      id: fileId,
+      key: rowKey,
+    });
+  };
 
   const goBack = () => {
+    haptic('light');
+
     if (view === 'files') {
       setSession(null);
       setView('sessions');
@@ -296,216 +579,70 @@ export default function Resources() {
     }
   };
 
-
   const title =
     view === 'files'
-      ? session?.topic ||
-        'فایل‌های جلسه'
-
+      ? (
+        session?.topic
+        || 'فایل‌های جلسه'
+      )
       : view === 'sessions'
-        ? lesson?.name ||
-          'جلسات درس'
-
+        ? (
+          lesson?.name
+          || 'جلسات درس'
+        )
         : view === 'lessons'
-          ? term?.name ||
-            'درس‌ها'
-
+          ? (
+            term?.name
+            || 'درس‌ها'
+          )
           : 'منابع علوم پایه';
 
-
-  const searchRows =
-    search.trim().length >= 2
+  const subtitle =
+    view === 'terms'
       ? (
-          Array.isArray(results)
-            ? results
-            : []
+        'جزوه، ویدیو، اسلاید و فایل‌های آموزشی'
+      )
+      : view === 'lessons'
+        ? (
+          'یک درس را انتخاب کنید'
         )
-      : null;
+        : view === 'sessions'
+          ? (
+            'جلسه موردنظر را انتخاب کنید'
+          )
+          : (
+            'فقط فایل انتخاب‌شده در ربات ارسال می‌شود'
+          );
 
+  const renderError = (
+    message,
+    retry,
+  ) => (
+    <div
+      className="card"
+      style={styles.errorCard}
+    >
+      <span>⚠️</span>
 
-  function ResourceFile({
-    item,
-    searchMode = false,
-  }) {
-    const [
-      icon,
-      label,
-      color,
-      soft,
-    ] = (
-      TYPES[item.type] || [
-        '📎',
-        'فایل',
-        '#70A7FF',
-        'rgba(59,130,246,.12)',
-      ]
-    );
+      <p>{message}</p>
 
-    return (
-      <article
-        className="card"
-        style={{
-          padding:
-            13,
-        }}
+      <button
+        type="button"
+        className="btn btn-g"
+        onClick={
+          () => retry()
+        }
       >
-        <div
-          style={{
-            display:
-              'flex',
-
-            alignItems:
-              'center',
-
-            gap:
-              11,
-          }}
-        >
-          <span
-            style={{
-              display:
-                'grid',
-
-              width:
-                46,
-
-              height:
-                46,
-
-              placeItems:
-                'center',
-
-              borderRadius:
-                14,
-
-              color,
-
-              background:
-                soft,
-
-              fontSize:
-                22,
-            }}
-          >
-            {icon}
-          </span>
-
-          <div
-            style={{
-              flex:
-                1,
-
-              minWidth:
-                0,
-            }}
-          >
-            <b
-              style={{
-                display:
-                  'block',
-
-                overflow:
-                  'hidden',
-
-                fontSize:
-                  12.5,
-
-                textOverflow:
-                  'ellipsis',
-
-                whiteSpace:
-                  'nowrap',
-              }}
-            >
-              {item.name ||
-                label}
-            </b>
-
-            <div
-              style={{
-                color:
-                  'var(--txm)',
-
-                fontSize:
-                  9.5,
-
-                marginTop:
-                  3,
-              }}
-            >
-              {searchMode
-                ? `${item.lesson || ''} ${
-                    item.session
-                      ? `• ${item.session}`
-                      : ''
-                  }`
-                : `${label} • ${
-                    Number(
-                      item.downloads
-                    ) || 0
-                  } دانلود`}
-            </div>
-
-            {item.description && (
-              <div
-                style={{
-                  color:
-                    'var(--tx2)',
-
-                  fontSize:
-                    9.5,
-
-                  marginTop:
-                    3,
-                }}
-              >
-                {item.description}
-              </div>
-            )}
-          </div>
-
-          <button
-            className="btn btn-p"
-            style={{
-              minHeight:
-                35,
-
-              padding:
-                '6px 10px',
-
-              fontSize:
-                10,
-            }}
-            disabled={
-              downloadMutation
-                .isPending
-            }
-            onClick={() =>
-              downloadMutation.mutate(
-                item.id
-              )
-            }
-          >
-            {downloadMutation
-              .isPending ? (
-              <Spinner size={13} />
-            ) : (
-              'ارسال'
-            )}
-          </button>
-        </div>
-      </article>
-    );
-  }
-
+        تلاش دوباره
+      </button>
+    </div>
+  );
 
   return (
     <>
       <Header
         title={title}
-        subtitle={
-          'کتابخانه محتوای آموزشی'
-        }
+        subtitle={subtitle}
         back={
           view !== 'terms'
         }
@@ -516,595 +653,828 @@ export default function Resources() {
         }
       />
 
-      <main className="page fade-up">
-        {view === 'terms' && (
-          <section
-            className={
-              'card card-glow'
-            }
-            style={{
-              padding:
-                17,
-
-              marginBottom:
-                14,
-
-              background:
-                'linear-gradient(145deg,rgba(16,185,129,.13),rgba(16,24,39,.95) 55%,rgba(34,211,238,.08))',
-            }}
-          >
-            <div
-              style={{
-                display:
-                  'flex',
-
-                alignItems:
-                  'center',
-
-                gap:
-                  13,
-              }}
-            >
-              <span
-                style={{
-                  display:
-                    'grid',
-
-                  width:
-                    52,
-
-                  height:
-                    52,
-
-                  placeItems:
-                    'center',
-
-                  borderRadius:
-                    16,
-
-                  background:
-                    'linear-gradient(135deg,#059669,#06B6D4)',
-
-                  fontSize:
-                    25,
-                }}
-              >
-                📚
-              </span>
-
-              <div>
-                <b
-                  style={{
-                    fontSize:
-                      16.5,
-                  }}
-                >
-                  کتابخانه علوم پایه
-                </b>
-
-                <div
-                  style={{
-                    color:
-                      'var(--txm)',
-
-                    fontSize:
-                      10,
-
-                    marginTop:
-                      3,
-                  }}
-                >
-                  محتوای آموزشی را
-                  ترم‌به‌ترم دنبال کنید.
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-
-
-        <div
-          style={{
-            position:
-              'relative',
-
-            marginBottom:
-              14,
-          }}
-        >
-          <input
-            className="inp"
-            value={search}
-            onChange={(event) =>
-              setSearch(
-                event.target.value
-              )
-            }
-            placeholder={
-              'جست‌وجو در تمام منابع...'
-            }
-            style={{
-              paddingLeft:
-                40,
-            }}
-          />
-
-          {searching && (
-            <span
-              style={{
-                position:
-                  'absolute',
-
-                left:
-                  12,
-
-                top:
-                  12,
-              }}
-            >
-              <Spinner size={15} />
-            </span>
-          )}
-        </div>
-
-
-        {searchRows !== null ? (
-          <section
-            style={{
-              display:
-                'grid',
-
-              gap:
-                9,
-            }}
-          >
-            <div className="sec-title">
-              نتایج جست‌وجو (
-              {searchRows.length})
-            </div>
-
-            {searchRows.length ? (
-              searchRows.map(
-                (item) => (
-                  <ResourceFile
-                    key={item.id}
-                    item={item}
-                    searchMode
-                  />
-                )
-              )
-            ) : (
-              !searching && (
-                <div className="empty card">
-                  نتیجه‌ای پیدا نشد.
-                </div>
-              )
-            )}
-          </section>
-        ) : view === 'terms' ? (
-          termsLoading ? (
+      <main
+        className="page fade-up"
+        style={styles.page}
+      >
+        {
+          view === 'terms'
+          && (
             <>
-              <SkeletonCard />
-              <SkeletonCard />
-            </>
-          ) : termsError ? (
-            <div className="empty card">
-              دریافت ترم‌ها انجام نشد.
-            </div>
-          ) : (
-            <section className="grid2">
-              {(
-                Array.isArray(terms)
-                  ? terms
-                  : []
-              ).map(
-                (
-                  item,
-                  index
-                ) => (
-                  <button
-                    type="button"
-                    key={item.name}
-                    className={
-                      'card card-tap pop-in'
-                    }
-                    onClick={() => {
-                      haptic();
-
-                      setTerm(item);
-
-                      setView(
-                        'lessons'
-                      );
-                    }}
-                    style={{
-                      padding:
-                        16,
-
-                      textAlign:
-                        'center',
-
-                      animationDelay:
-                        `${
-                          index * 35
-                        }ms`,
-                    }}
-                  >
-                    <span
-                      style={{
-                        display:
-                          'grid',
-
-                        width:
-                          50,
-
-                        height:
-                          50,
-
-                        placeItems:
-                          'center',
-
-                        margin:
-                          '0 auto 8px',
-
-                        borderRadius:
-                          16,
-
-                        background:
-                          'rgba(16,185,129,.12)',
-
-                        fontSize:
-                          24,
-                      }}
-                    >
-                      🎓
-                    </span>
-
-                    <b
-                      style={{
-                        fontSize:
-                          12.5,
-                      }}
-                    >
-                      {item.name}
-                    </b>
-
-                    <div
-                      style={{
-                        color:
-                          'var(--txm)',
-
-                        fontSize:
-                          9.5,
-
-                        marginTop:
-                          3,
-                      }}
-                    >
-                      {Number(
-                        item
-                          .lesson_count
-                      ) || 0}{' '}
-
-                      درس
-                    </div>
-                  </button>
-                )
-              )}
-            </section>
-          )
-        ) : view === 'lessons' ? (
-          lessonsLoading ? (
-            <SkeletonCard />
-          ) : (
-            <section
-              style={{
-                display:
-                  'grid',
-
-                gap:
-                  9,
-              }}
-            >
-              {(
-                Array.isArray(
-                  lessons
-                )
-                  ? lessons
-                  : []
-              ).map((item) => (
-                <button
-                  type="button"
-                  key={item._id}
-                  className={
-                    'card card-tap'
-                  }
-                  onClick={() => {
-                    setLesson(item);
-
-                    setView(
-                      'sessions'
-                    );
-                  }}
-                  style={{
-                    display:
-                      'flex',
-
-                    alignItems:
-                      'center',
-
-                    width:
-                      '100%',
-
-                    gap:
-                      11,
-
-                    padding:
-                      13,
-
-                    textAlign:
-                      'right',
-                  }}
+              <section
+                className="card card-glow"
+                style={styles.hero}
+              >
+                <div
+                  style={styles.heroIcon}
                 >
-                  <span
-                    style={{
-                      display:
-                        'grid',
+                  📚
+                </div>
 
-                      width:
-                        44,
-
-                      height:
-                        44,
-
-                      placeItems:
-                        'center',
-
-                      borderRadius:
-                        14,
-
-                      background:
-                        'var(--acc-soft)',
-
-                      fontSize:
-                        21,
-                    }}
+                <div>
+                  <strong
+                    style={styles.heroTitle}
                   >
-                    📖
-                  </span>
+                    کتابخانه علوم پایه
+                  </strong>
 
-                  <span
-                    style={{
-                      flex:
-                        1,
-                    }}
+                  <p
+                    style={styles.heroText}
                   >
-                    <b
-                      style={{
-                        fontSize:
-                          12.5,
-                      }}
+                    فایل موردنظر را پیدا کنید و همان یک فایل را در ربات تحویل بگیرید.
+                  </p>
+                </div>
+              </section>
+
+              <div
+                style={styles.searchBox}
+              >
+                <span>⌕</span>
+
+                <input
+                  className="inp"
+                  value={search}
+                  onChange={
+                    (event) =>
+                      setSearch(
+                        event.target.value
+                      )
+                  }
+                  placeholder="جست‌وجوی نام درس، جلسه یا فایل..."
+                  maxLength={100}
+                  style={
+                    styles.searchInput
+                  }
+                />
+
+                {
+                  search
+                  && (
+                    <button
+                      type="button"
+                      style={
+                        styles.clearSearch
+                      }
+                      onClick={
+                        () => setSearch('')
+                      }
+                      aria-label="پاک‌کردن جست‌وجو"
                     >
-                      {item.name ||
-                        'درس'}
-                    </b>
-
-                    <span
-                      style={{
-                        display:
-                          'block',
-
-                        color:
-                          'var(--txm)',
-
-                        fontSize:
-                          9.5,
-
-                        marginTop:
-                          3,
-                      }}
-                    >
-                      {Number(
-                        item
-                          .session_count
-                      ) || 0}{' '}
-
-                      جلسه
-                    </span>
-                  </span>
-
-                  <span
-                    style={{
-                      color:
-                        'var(--txm)',
-                    }}
-                  >
-                    ←
-                  </span>
-                </button>
-              ))}
-            </section>
-          )
-        ) : view === 'sessions' ? (
-          sessionsLoading ? (
-            <SkeletonCard />
-          ) : (
-            <section
-              style={{
-                display:
-                  'grid',
-
-                gap:
-                  9,
-              }}
-            >
-              {(
-                Array.isArray(
-                  sessions
-                )
-                  ? sessions
-                  : []
-              ).map(
-                (
-                  item,
-                  index
-                ) => (
-                  <button
-                    type="button"
-                    key={item._id}
-                    className={
-                      'card card-tap'
-                    }
-                    onClick={() => {
-                      setSession(item);
-
-                      setView(
-                        'files'
-                      );
-                    }}
-                    style={{
-                      display:
-                        'flex',
-
-                      alignItems:
-                        'center',
-
-                      width:
-                        '100%',
-
-                      gap:
-                        11,
-
-                      padding:
-                        13,
-
-                      textAlign:
-                        'right',
-                    }}
-                  >
-                    <span
-                      style={{
-                        display:
-                          'grid',
-
-                        width:
-                          44,
-
-                        height:
-                          44,
-
-                        placeItems:
-                          'center',
-
-                        borderRadius:
-                          14,
-
-                        background:
-                          'rgba(139,92,246,.13)',
-
-                        color:
-                          '#C4B5FD',
-
-                        fontSize:
-                          13,
-
-                        fontWeight:
-                          900,
-                      }}
-                    >
-                      {item.number ||
-                        index + 1}
-                    </span>
-
-                    <span
-                      style={{
-                        flex:
-                          1,
-                      }}
-                    >
-                      <b
-                        style={{
-                          fontSize:
-                            12.5,
-                        }}
-                      >
-                        {item.topic ||
-                          `جلسه ${
-                            index + 1
-                          }`}
-                      </b>
-
-                      <span
-                        style={{
-                          display:
-                            'block',
-
-                          color:
-                            'var(--txm)',
-
-                          fontSize:
-                            9.5,
-
-                          marginTop:
-                            3,
-                        }}
-                      >
-                        {Number(
-                          item
-                            .file_count
-                        ) || 0}{' '}
-
-                        فایل
-                      </span>
-                    </span>
-
-                    <span
-                      style={{
-                        color:
-                          'var(--txm)',
-                      }}
-                    >
-                      ←
-                    </span>
-                  </button>
-                )
-              )}
-            </section>
-          )
-        ) : filesLoading ? (
-          <SkeletonCard />
-        ) : (
-          <section
-            style={{
-              display:
-                'grid',
-
-              gap:
-                9,
-            }}
-          >
-            {(
-              Array.isArray(files)
-                ? files
-                : []
-            ).length ? (
-              files.map(
-                (item) => (
-                  <ResourceFile
-                    key={item.id}
-                    item={item}
-                  />
-                )
-              )
-            ) : (
-              <div className="empty card">
-                فایلی در این جلسه ثبت نشده
-                است.
+                      ×
+                    </button>
+                  )
+                }
               </div>
-            )}
-          </section>
-        )}
+
+              {
+                normalizedSearch
+                  .length >= 2
+                  ? (
+                    <section>
+                      <div
+                        className="sec-title"
+                      >
+                        نتیجه جست‌وجو
+                      </div>
+
+                      {
+                        searching
+                          ? (
+                            <LoadingList />
+                          )
+                          : searchError
+                            ? (
+                              <EmptyState
+                                icon="⚠️"
+                                text="جست‌وجو انجام نشد؛ دوباره تلاش کنید."
+                              />
+                            )
+                            : safeArray(
+                              results
+                            ).length === 0
+                              ? (
+                                <EmptyState
+                                  icon="🔎"
+                                  text="فایلی با این عبارت پیدا نشد."
+                                />
+                              )
+                              : (
+                                <div
+                                  style={
+                                    styles.list
+                                  }
+                                >
+                                  {
+                                    safeArray(
+                                      results
+                                    ).map(
+                                      (
+                                        item,
+                                        index
+                                      ) => {
+                                        const rowKey =
+                                          `search-${
+                                            item.id
+                                          }-${index}`;
+
+                                        return (
+                                          <ResourceFile
+                                            key={
+                                              rowKey
+                                            }
+                                            item={
+                                              item
+                                            }
+                                            rowKey={
+                                              rowKey
+                                            }
+                                            sendingKey={
+                                              sendingKey
+                                            }
+                                            sendDisabled={
+                                              downloadMutation
+                                                .isPending
+                                            }
+                                            searchMode
+                                            onSend={
+                                              sendFile
+                                            }
+                                          />
+                                        );
+                                      }
+                                    )
+                                  }
+                                </div>
+                              )
+                      }
+                    </section>
+                  )
+                  : termsLoading
+                    ? (
+                      <LoadingList />
+                    )
+                    : termsError
+                      ? (
+                        renderError(
+                          'دریافت ترم‌ها انجام نشد.',
+                          refetchTerms
+                        )
+                      )
+                      : safeArray(
+                        terms
+                      ).length === 0
+                        ? (
+                          <EmptyState
+                            text="هنوز ترمی ثبت نشده است."
+                          />
+                        )
+                        : (
+                          <section>
+                            <div
+                              className="sec-title"
+                            >
+                              انتخاب ترم
+                            </div>
+
+                            <div
+                              style={
+                                styles.grid
+                              }
+                            >
+                              {
+                                safeArray(
+                                  terms
+                                ).map(
+                                  (
+                                    item,
+                                    index
+                                  ) => (
+                                    <button
+                                      key={
+                                        `${
+                                          item.name
+                                        }-${index}`
+                                      }
+                                      type="button"
+                                      className="card card-tap"
+                                      style={
+                                        styles.navCard
+                                      }
+                                      onClick={
+                                        () => {
+                                          haptic(
+                                            'light'
+                                          );
+
+                                          setTerm(
+                                            item
+                                          );
+
+                                          setView(
+                                            'lessons'
+                                          );
+                                        }
+                                      }
+                                    >
+                                      <span
+                                        style={
+                                          styles.navIcon
+                                        }
+                                      >
+                                        🎓
+                                      </span>
+
+                                      <strong>
+                                        {
+                                          item.name
+                                          || 'ترم بدون نام'
+                                        }
+                                      </strong>
+
+                                      <span
+                                        style={
+                                          styles.navMeta
+                                        }
+                                      >
+                                        {
+                                          Number(
+                                            item.lesson_count
+                                          ) || 0
+                                        }{' '}
+                                        درس
+                                      </span>
+                                    </button>
+                                  )
+                                )
+                              }
+                            </div>
+                          </section>
+                        )
+              }
+            </>
+          )
+        }
+
+        {
+          view === 'lessons'
+          && (
+            lessonsLoading
+              ? (
+                <LoadingList />
+              )
+              : lessonsError
+                ? (
+                  renderError(
+                    'دریافت درس‌ها انجام نشد.',
+                    refetchLessons
+                  )
+                )
+                : safeArray(
+                  lessons
+                ).length === 0
+                  ? (
+                    <EmptyState
+                      text="برای این ترم درسی ثبت نشده است."
+                    />
+                  )
+                  : (
+                    <div
+                      style={styles.list}
+                    >
+                      {
+                        safeArray(
+                          lessons
+                        ).map(
+                          (
+                            item,
+                            index
+                          ) => (
+                            <button
+                              key={
+                                `${
+                                  item._id
+                                }-${index}`
+                              }
+                              type="button"
+                              className="card card-tap"
+                              style={
+                                styles.rowCard
+                              }
+                              onClick={
+                                () => {
+                                  haptic(
+                                    'light'
+                                  );
+
+                                  setLesson(
+                                    item
+                                  );
+
+                                  setView(
+                                    'sessions'
+                                  );
+                                }
+                              }
+                            >
+                              <span
+                                style={
+                                  styles.rowIcon
+                                }
+                              >
+                                📘
+                              </span>
+
+                              <span
+                                style={
+                                  styles.rowBody
+                                }
+                              >
+                                <strong>
+                                  {
+                                    item.name
+                                    || 'درس بدون نام'
+                                  }
+                                </strong>
+
+                                <small>
+                                  {
+                                    item.teacher
+                                    || 'استاد ثبت نشده'
+                                  }
+                                </small>
+                              </span>
+
+                              <span
+                                className="badge b-acc"
+                              >
+                                {
+                                  Number(
+                                    item.session_count
+                                  ) || 0
+                                }{' '}
+                                جلسه
+                              </span>
+
+                              <span
+                                style={
+                                  styles.arrow
+                                }
+                              >
+                                ‹
+                              </span>
+                            </button>
+                          )
+                        )
+                      }
+                    </div>
+                  )
+          )
+        }
+
+        {
+          view === 'sessions'
+          && (
+            sessionsLoading
+              ? (
+                <LoadingList />
+              )
+              : sessionsError
+                ? (
+                  renderError(
+                    'دریافت جلسات انجام نشد.',
+                    refetchSessions
+                  )
+                )
+                : safeArray(
+                  sessions
+                ).length === 0
+                  ? (
+                    <EmptyState
+                      text="برای این درس جلسه‌ای ثبت نشده است."
+                    />
+                  )
+                  : (
+                    <div
+                      style={styles.list}
+                    >
+                      {
+                        safeArray(
+                          sessions
+                        ).map(
+                          (
+                            item,
+                            index
+                          ) => (
+                            <button
+                              key={
+                                `${
+                                  item._id
+                                }-${index}`
+                              }
+                              type="button"
+                              className="card card-tap"
+                              style={
+                                styles.rowCard
+                              }
+                              onClick={
+                                () => {
+                                  haptic(
+                                    'light'
+                                  );
+
+                                  setSession(
+                                    item
+                                  );
+
+                                  setView(
+                                    'files'
+                                  );
+                                }
+                              }
+                            >
+                              <span
+                                style={
+                                  styles.sessionNumber
+                                }
+                              >
+                                {
+                                  Number(
+                                    item.number
+                                  )
+                                  || index + 1
+                                }
+                              </span>
+
+                              <span
+                                style={
+                                  styles.rowBody
+                                }
+                              >
+                                <strong>
+                                  {
+                                    item.topic
+                                    || `جلسه ${
+                                      index + 1
+                                    }`
+                                  }
+                                </strong>
+
+                                <small>
+                                  {
+                                    item.teacher
+                                    || lesson?.teacher
+                                    || 'استاد ثبت نشده'
+                                  }
+                                </small>
+                              </span>
+
+                              <span
+                                className="badge b-gray"
+                              >
+                                {
+                                  Number(
+                                    item.file_count
+                                  ) || 0
+                                }{' '}
+                                فایل
+                              </span>
+
+                              <span
+                                style={
+                                  styles.arrow
+                                }
+                              >
+                                ‹
+                              </span>
+                            </button>
+                          )
+                        )
+                      }
+                    </div>
+                  )
+          )
+        }
+
+        {
+          view === 'files'
+          && (
+            filesLoading
+              ? (
+                <LoadingList />
+              )
+              : filesError
+                ? (
+                  renderError(
+                    'دریافت فایل‌های جلسه انجام نشد.',
+                    refetchFiles
+                  )
+                )
+                : safeArray(
+                  files
+                ).length === 0
+                  ? (
+                    <EmptyState
+                      text="برای این جلسه فایلی ثبت نشده است."
+                    />
+                  )
+                  : (
+                    <>
+                      <div
+                        className="sec-title"
+                      >
+                        فایل‌های این جلسه
+                      </div>
+
+                      <div
+                        className="card"
+                        style={
+                          styles.notice
+                        }
+                      >
+                        <span>ℹ️</span>
+
+                        با زدن «ارسال»، فقط همان ردیف انتخاب‌شده در ربات فرستاده می‌شود.
+                      </div>
+
+                      <div
+                        style={styles.list}
+                      >
+                        {
+                          safeArray(
+                            files
+                          ).map(
+                            (
+                              item,
+                              index
+                            ) => {
+                              const rowKey =
+                                `file-${
+                                  item.id
+                                }-${index}`;
+
+                              return (
+                                <ResourceFile
+                                  key={
+                                    rowKey
+                                  }
+                                  item={
+                                    item
+                                  }
+                                  rowKey={
+                                    rowKey
+                                  }
+                                  sendingKey={
+                                    sendingKey
+                                  }
+                                  sendDisabled={
+                                    downloadMutation
+                                      .isPending
+                                  }
+                                  onSend={
+                                    sendFile
+                                  }
+                                />
+                              );
+                            }
+                          )
+                        }
+                      </div>
+                    </>
+                  )
+          )
+        }
       </main>
     </>
   );
 }
+
+
+const styles = {
+  page: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 13,
+    paddingInline: 13,
+  },
+
+  hero: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 13,
+    padding: 16,
+
+    background:
+      'linear-gradient(145deg,rgba(29,78,216,.2),rgba(16,24,39,.96) 58%,rgba(34,211,238,.08))',
+  },
+
+  heroIcon: {
+    display: 'grid',
+    placeItems: 'center',
+    flex: '0 0 52px',
+    width: 52,
+    height: 52,
+    fontSize: 25,
+    borderRadius: 16,
+
+    background:
+      'var(--grad-brand)',
+
+    boxShadow:
+      'var(--shd-glow)',
+  },
+
+  heroTitle: {
+    fontSize: 15,
+  },
+
+  heroText: {
+    marginTop: 4,
+    color: 'var(--tx2)',
+    fontSize: 10.5,
+    lineHeight: 1.9,
+  },
+
+  searchBox: {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+  },
+
+  searchInput: {
+    paddingInline:
+      '34px 36px',
+  },
+
+  clearSearch: {
+    position: 'absolute',
+    left: 8,
+    width: 27,
+    height: 27,
+    color: 'var(--tx2)',
+    cursor: 'pointer',
+    border: 0,
+    borderRadius: 8,
+    background: 'var(--ovr)',
+  },
+
+  list: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 9,
+  },
+
+  grid: {
+    display: 'grid',
+
+    gridTemplateColumns:
+      'repeat(2,minmax(0,1fr))',
+
+    gap: 9,
+  },
+
+  navCard: {
+    display: 'flex',
+    alignItems: 'center',
+    flexDirection: 'column',
+    gap: 6,
+    minHeight: 124,
+    fontFamily: 'inherit',
+    cursor: 'pointer',
+  },
+
+  navIcon: {
+    fontSize: 29,
+  },
+
+  navMeta: {
+    color: 'var(--tx2)',
+    fontSize: 10,
+  },
+
+  rowCard: {
+    display: 'flex',
+    alignItems: 'center',
+    width: '100%',
+    gap: 10,
+    fontFamily: 'inherit',
+    textAlign: 'right',
+    cursor: 'pointer',
+  },
+
+  rowIcon: {
+    display: 'grid',
+    placeItems: 'center',
+    flex: '0 0 42px',
+    height: 42,
+    fontSize: 21,
+    borderRadius: 12,
+    background: 'var(--acc-soft)',
+  },
+
+  sessionNumber: {
+    display: 'grid',
+    placeItems: 'center',
+    flex: '0 0 38px',
+    height: 38,
+    color: '#70A7FF',
+    fontWeight: 900,
+    borderRadius: 12,
+    background: 'var(--acc-soft)',
+  },
+
+  rowBody: {
+    display: 'flex',
+    flex: 1,
+    minWidth: 0,
+    flexDirection: 'column',
+    gap: 3,
+  },
+
+  arrow: {
+    color: 'var(--txm)',
+    fontSize: 23,
+  },
+
+  fileCard: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    padding: 11,
+  },
+
+  fileIcon: {
+    display: 'grid',
+    placeItems: 'center',
+    flex: '0 0 43px',
+    width: 43,
+    height: 43,
+    fontSize: 21,
+    borderRadius: 12,
+  },
+
+  fileBody: {
+    display: 'flex',
+    flex: 1,
+    minWidth: 0,
+    flexDirection: 'column',
+    gap: 2,
+  },
+
+  fileTitle: {
+    overflow: 'hidden',
+    fontSize: 11.5,
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+
+  fileMeta: {
+    color: 'var(--tx2)',
+    fontSize: 9.5,
+  },
+
+  fileDescription: {
+    marginTop: 3,
+    color: 'var(--txm)',
+    fontSize: 9,
+    lineHeight: 1.7,
+  },
+
+  sendButton: {
+    flex: '0 0 auto',
+    minWidth: 68,
+    minHeight: 34,
+    padding: '6px 9px',
+    fontSize: 10,
+  },
+
+  notice: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 7,
+    padding: 10,
+    color: 'var(--tx2)',
+    fontSize: 9.5,
+    lineHeight: 1.8,
+  },
+
+  empty: {
+    padding: '45px 14px',
+  },
+
+  emptyIcon: {
+    display: 'block',
+    marginBottom: 8,
+    fontSize: 31,
+  },
+
+  errorCard: {
+    display: 'flex',
+    alignItems: 'center',
+    flexDirection: 'column',
+    gap: 10,
+    padding: 25,
+    color: 'var(--tx2)',
+    textAlign: 'center',
+  },
+};
