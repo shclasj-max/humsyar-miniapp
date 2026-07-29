@@ -1,50 +1,435 @@
-import { useState, useEffect } from 'react';
-import { haptic } from '../../lib/telegram';
+import {
+  useEffect,
+  useState,
+} from 'react';
 
-const LETTERS = ['الف', 'ب', 'ج', 'د'];
+import {
+  haptic,
+} from '../../lib/telegram';
 
-export default function QuestionCard({ question, onAnswer, answered, showReport, onReport }) {
-  const [selected, setSelected] = useState(null);
-  useEffect(() => { setSelected(null); }, [question?.id]);
 
-  function pick(idx) {
-    if (answered != null || selected != null) return;
-    setSelected(idx);
-    haptic('medium');
-    onAnswer?.(question.id, idx);
+const LETTERS = [
+  'الف',
+  'ب',
+  'ج',
+  'د',
+  'هـ',
+  'و',
+];
+
+
+export default function QuestionCard({
+  question,
+  onAnswer,
+  answered,
+  showReport = false,
+  onReport,
+}) {
+  const [
+    selected,
+    setSelected,
+  ] = useState(null);
+
+
+  useEffect(() => {
+    setSelected(null);
+  }, [question?.id]);
+
+
+  if (!question) {
+    return null;
   }
 
+
+  const options =
+    Array.isArray(
+      question.options
+    )
+      ? question.options
+      : [];
+
+
+  const choose = (index) => {
+    if (
+      answered != null ||
+      selected != null
+    ) {
+      return;
+    }
+
+    setSelected(index);
+
+    haptic('medium');
+
+    onAnswer?.(
+      question.id,
+      index
+    );
+  };
+
+
   return (
-    <div className="card card-glow fade-up" style={{ marginBottom:12 }}>
-      <div style={{ display:'flex',gap:5,marginBottom:11,flexWrap:'wrap' }}>
-        <span className="badge b-acc">{question.lesson}</span>
-        {question.topic && <span className="badge b-acc">{question.topic}</span>}
-        <span className={`badge ${question.difficulty?.includes('آسان')?'b-grn':question.difficulty?.includes('سخت')?'b-red':'b-yel'}`} style={{ marginRight:'auto' }}>
-          {question.difficulty || 'متوسط'}
+    <article
+      className={
+        'card card-glow fade-up'
+      }
+      style={{
+        padding:
+          15,
+
+        marginBottom:
+          12,
+
+        background:
+          'linear-gradient(155deg,rgba(59,130,246,.08),rgba(16,24,39,.97) 42%)',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+
+          flexWrap: 'wrap',
+
+          gap:
+            5,
+
+          marginBottom:
+            12,
+        }}
+      >
+        <span className="badge b-acc">
+          📚{' '}
+
+          {question.lesson ||
+            'درس'}
+        </span>
+
+        {question.topic && (
+          <span className="badge b-gray">
+            📌 {question.topic}
+          </span>
+        )}
+
+        <span
+          className={`badge ${
+            question.difficulty
+              ?.includes('سخت')
+              ? 'b-red'
+
+              : question.difficulty
+                  ?.includes('آسان')
+                ? 'b-grn'
+
+                : 'b-yel'
+          }`}
+          style={{
+            marginRight:
+              'auto',
+          }}
+        >
+          {question.difficulty ||
+            'متوسط 🟡'}
         </span>
       </div>
-      <div style={{ fontSize:14.5,lineHeight:1.7,color:'var(--tx)',marginBottom:14 }}>{question.question}</div>
-      <div style={{ display:'flex',flexDirection:'column',gap:7 }}>
-        {question.options?.map((opt, idx) => {
-          let bg='var(--elev)',bd='var(--bd)',cl='var(--tx)';
-          if (answered != null) {
-            if (idx === answered.correct_answer) { bg='rgba(16,185,129,.12)'; bd='var(--ok)'; cl='var(--ok)'; }
-            else if (idx === selected && idx !== answered.correct_answer) { bg='rgba(239,68,68,.12)'; bd='var(--err)'; cl='var(--err)'; }
-          } else if (selected === idx) { bg='var(--acc-glow)'; bd='var(--acc)'; }
-          return (
-            <button key={idx} onClick={() => pick(idx)} style={{ display:'flex',alignItems:'flex-start',gap:9,padding:'9px 12px',borderRadius:'var(--r-md)',background:bg,border:`1px solid ${bd}`,color:cl,fontFamily:'var(--font)',fontSize:13,textAlign:'right',cursor:answered!=null?'default':'pointer',transition:'all .15s',lineHeight:1.5,width:'100%' }}>
-              <span style={{ fontWeight:700,flexShrink:0,color:'var(--txm)' }}>{LETTERS[idx]}</span>
-              <span>{opt}</span>
-              {answered != null && idx === answered.correct_answer && <span style={{ marginRight:'auto',flexShrink:0 }}>✅</span>}
-            </button>
-          );
-        })}
+
+
+      <div
+        style={{
+          display: 'flex',
+
+          alignItems:
+            'flex-start',
+
+          gap:
+            9,
+
+          marginBottom:
+            15,
+        }}
+      >
+        <span
+          style={{
+            display: 'grid',
+
+            flex:
+              '0 0 31px',
+
+            height:
+              31,
+
+            placeItems:
+              'center',
+
+            color:
+              '#fff',
+
+            background:
+              'var(--grad-brand)',
+
+            borderRadius:
+              10,
+
+            fontSize:
+              11,
+
+            fontWeight:
+              900,
+          }}
+        >
+          ؟
+        </span>
+
+        <div
+          style={{
+            color:
+              'var(--tx)',
+
+            fontSize:
+              13.5,
+
+            fontWeight:
+              700,
+
+            lineHeight:
+              1.9,
+          }}
+        >
+          {question.question ||
+            'متن سؤال موجود نیست'}
+        </div>
       </div>
-      {answered != null && showReport && (
-        <button onClick={onReport} style={{ marginTop:8,background:'none',border:'none',cursor:'pointer',color:'var(--txm)',fontSize:10.5,display:'flex',alignItems:'center',gap:3,padding:0,fontFamily:'var(--font)' }}>
-          🚩 گزارش ایراد در این سوال
+
+
+      <div
+        style={{
+          display:
+            'grid',
+
+          gap:
+            8,
+        }}
+      >
+        {options.map(
+          (
+            option,
+            index
+          ) => {
+            const correct =
+              answered != null &&
+              index ===
+                answered
+                  .correct_answer;
+
+            const wrongSelected =
+              answered != null &&
+              index === selected &&
+              !correct;
+
+            const chosen =
+              selected === index;
+
+
+            const border =
+              correct
+                ? 'rgba(16,185,129,.45)'
+
+                : wrongSelected
+                  ? 'rgba(239,68,68,.45)'
+
+                  : chosen
+                    ? 'var(--acc)'
+
+                    : 'var(--bd)';
+
+
+            const background =
+              correct
+                ? 'rgba(16,185,129,.12)'
+
+                : wrongSelected
+                  ? 'rgba(239,68,68,.12)'
+
+                  : chosen
+                    ? 'var(--acc-soft)'
+
+                    : 'rgba(24,34,53,.72)';
+
+
+            const color =
+              correct
+                ? 'var(--ok)'
+
+                : wrongSelected
+                  ? 'var(--err)'
+
+                  : 'var(--tx)';
+
+
+            return (
+              <button
+                type="button"
+                key={index}
+                onClick={() =>
+                  choose(index)
+                }
+                disabled={
+                  answered != null ||
+                  selected != null
+                }
+                style={{
+                  display:
+                    'flex',
+
+                  alignItems:
+                    'flex-start',
+
+                  width:
+                    '100%',
+
+                  gap:
+                    10,
+
+                  padding:
+                    '10px 11px',
+
+                  color,
+
+                  textAlign:
+                    'right',
+
+                  background,
+
+                  border:
+                    `1px solid ${border}`,
+
+                  borderRadius:
+                    13,
+
+                  cursor:
+                    answered != null
+                      ? 'default'
+                      : 'pointer',
+
+                  transition:
+                    'transform .15s var(--ease-spring), border-color .2s, background .2s',
+                }}
+              >
+                <span
+                  style={{
+                    display:
+                      'grid',
+
+                    flex:
+                      '0 0 27px',
+
+                    height:
+                      27,
+
+                    placeItems:
+                      'center',
+
+                    color:
+                      correct ||
+                      wrongSelected ||
+                      chosen
+                        ? color
+                        : 'var(--txm)',
+
+                    background:
+                      correct
+                        ? 'rgba(16,185,129,.15)'
+
+                        : wrongSelected
+                          ? 'rgba(239,68,68,.15)'
+
+                          : 'var(--elev)',
+
+                    borderRadius:
+                      9,
+
+                    fontSize:
+                      10,
+
+                    fontWeight:
+                      900,
+                  }}
+                >
+                  {LETTERS[index] ||
+                    index + 1}
+                </span>
+
+                <span
+                  style={{
+                    flex:
+                      1,
+
+                    paddingTop:
+                      3,
+
+                    fontSize:
+                      11.5,
+
+                    lineHeight:
+                      1.7,
+                  }}
+                >
+                  {option}
+                </span>
+
+                {correct && (
+                  <span>✓</span>
+                )}
+
+                {wrongSelected && (
+                  <span>✕</span>
+                )}
+              </button>
+            );
+          }
+        )}
+      </div>
+
+
+      {answered != null &&
+        showReport && (
+        <button
+          type="button"
+          onClick={onReport}
+          style={{
+            display:
+              'flex',
+
+            alignItems:
+              'center',
+
+            gap:
+              4,
+
+            marginTop:
+              10,
+
+            padding:
+              0,
+
+            color:
+              'var(--txm)',
+
+            background:
+              'none',
+
+            border:
+              0,
+
+            fontSize:
+              9.5,
+
+            cursor:
+              'pointer',
+          }}
+        >
+          🚩 گزارش ایراد در این سؤال
         </button>
       )}
-    </div>
+    </article>
   );
 }
