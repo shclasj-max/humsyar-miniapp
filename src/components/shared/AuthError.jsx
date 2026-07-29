@@ -1,105 +1,452 @@
-export default function AuthError({ error }) {
-  const isNotReg = error === 'not_registered';
-  const isPending = error === 'pending_approval';
-  const isSuspended = error === 'suspended';
-  const isTelegramRequired = error === 'telegram_required';
-  const isNetwork = error === 'network_error';
+import {
+  tg,
+  haptic,
+} from '../../lib/telegram';
 
-  const icon =
-    isNotReg
-      ? '🩺'
-      : isPending
-        ? '⏳'
-        : isSuspended
-          ? '🚫'
-          : isTelegramRequired
-            ? '📱'
-            : isNetwork
-              ? '🌐'
-              : '❌';
 
-  const title =
-    isNotReg
-      ? 'ثبت‌نام نشده‌اید'
-      : isPending
-        ? 'در انتظار تأیید'
-        : isSuspended
-          ? 'حساب تعلیق شده'
-          : isTelegramRequired
-            ? 'بازکردن از داخل تلگرام'
-            : isNetwork
-              ? 'اتصال برقرار نشد'
-              : 'خطا در احراز هویت';
+const STATES = {
+  telegram_required: {
+    icon:
+      '📱',
 
-  const message =
-    isNotReg
-      ? 'برای استفاده از Mini App هامزیار باید ابتدا در ربات تلگرام ثبت‌نام کنید.'
-      : isPending
-        ? 'ثبت‌نام شما دریافت شده و منتظر تأیید ادمین است.'
-        : isSuspended
-          ? 'حساب کاربری شما تعلیق شده. برای رفع مشکل با پشتیبانی تماس بگیرید.'
-          : isTelegramRequired
-            ? 'این برنامه باید از طریق دکمهٔ Mini App داخل ربات هامزیار باز شود.'
-            : isNetwork
-              ? 'اتصال به سرور برقرار نشد. اینترنت و آدرس API را بررسی کنید و دوباره تلاش کنید.'
-              : 'اطلاعات ورود معتبر نیست یا نشست شما منقضی شده است. Mini App را از داخل ربات دوباره باز کنید.';
+    title:
+      'از داخل تلگرام باز کنید',
+
+    message:
+      'این Mini App باید از طریق دکمهٔ مخصوص داخل ربات هامزیار باز شود.',
+
+    color:
+      '#70A7FF',
+
+    soft:
+      'rgba(59,130,246,.13)',
+
+    retry:
+      false,
+  },
+
+  not_registered: {
+    icon:
+      '👤',
+
+    title:
+      'ابتدا در ربات ثبت‌نام کنید',
+
+    message:
+      'حساب تلگرام شما هنوز در هامزیار ثبت نشده است. به ربات برگردید، دستور /start را بزنید و مراحل ثبت‌نام را انجام دهید.',
+
+    color:
+      '#FCD34D',
+
+    soft:
+      'rgba(245,158,11,.13)',
+
+    retry:
+      true,
+  },
+
+  pending_approval: {
+    icon:
+      '⏳',
+
+    title:
+      'در انتظار تأیید مدیریت',
+
+    message:
+      'ثبت‌نام شما انجام شده اما حساب هنوز توسط مدیریت تأیید نشده است. بعد از تأیید دوباره تلاش کنید.',
+
+    color:
+      '#FCD34D',
+
+    soft:
+      'rgba(245,158,11,.13)',
+
+    retry:
+      true,
+  },
+
+  suspended: {
+    icon:
+      '🚫',
+
+    title:
+      'دسترسی حساب تعلیق شده',
+
+    message:
+      'دسترسی این حساب موقتاً غیرفعال شده است. برای پیگیری با مدیریت یا پشتیبانی هامزیار تماس بگیرید.',
+
+    color:
+      '#FB7185',
+
+    soft:
+      'rgba(239,68,68,.13)',
+
+    retry:
+      false,
+  },
+
+  network_error: {
+    icon:
+      '🌐',
+
+    title:
+      'ارتباط با سرور برقرار نشد',
+
+    message:
+      'اتصال اینترنت یا سرور هامزیار در دسترس نیست. اینترنت خود را بررسی کنید و دوباره تلاش کنید.',
+
+    color:
+      '#22D3EE',
+
+    soft:
+      'rgba(34,211,238,.13)',
+
+    retry:
+      true,
+  },
+
+  init_data_expired: {
+    icon:
+      '⌛',
+
+    title:
+      'نشست شما منقضی شده',
+
+    message:
+      'برای حفظ امنیت، نشست Mini App منقضی شده است. برنامه را ببندید و دوباره از داخل ربات باز کنید.',
+
+    color:
+      '#FCD34D',
+
+    soft:
+      'rgba(245,158,11,.13)',
+
+    retry:
+      false,
+  },
+
+  invalid_init_data: {
+    icon:
+      '🔐',
+
+    title:
+      'اطلاعات ورود معتبر نیست',
+
+    message:
+      'احراز هویت تلگرام انجام نشد. Mini App را ببندید و مجدداً از داخل ربات هامزیار باز کنید.',
+
+    color:
+      '#FB7185',
+
+    soft:
+      'rgba(239,68,68,.13)',
+
+    retry:
+      false,
+  },
+};
+
+
+export default function AuthError({
+  error,
+}) {
+  const state =
+    STATES[error] || {
+      icon:
+        '⚠️',
+
+      title:
+        'مشکلی پیش آمده است',
+
+      message:
+        'امکان ورود به هامزیار وجود ندارد. چند لحظه بعد دوباره تلاش کنید.',
+
+      color:
+        '#FB7185',
+
+      soft:
+        'rgba(239,68,68,.13)',
+
+      retry:
+        true,
+    };
+
+
+  const reload = () => {
+    haptic('light');
+
+    window.location.reload();
+  };
+
+
+  const close = () => {
+    haptic('light');
+
+    try {
+      tg?.close?.();
+
+    } catch (_) {
+      window.history.back();
+    }
+  };
+
 
   return (
-    <div
+    <main
+      dir="rtl"
       style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100dvh',
-        padding: 24,
-        textAlign: 'center',
-        background: 'var(--bg)',
-        gap: 20,
+        position:
+          'relative',
+
+        display:
+          'flex',
+
+        alignItems:
+          'center',
+
+        justifyContent:
+          'center',
+
+        width:
+          '100%',
+
+        minHeight:
+          '100dvh',
+
+        padding:
+          '24px 16px',
+
+        overflow:
+          'hidden',
+
+        color:
+          'var(--tx)',
+
+        background:
+          'var(--grad-page),linear-gradient(180deg,var(--bg-soft),var(--bg))',
       }}
     >
-      <div style={{ fontSize: 64 }}>
-        {icon}
-      </div>
-
       <div
         style={{
-          fontSize: 20,
-          fontWeight: 800,
-          color: 'var(--tx)',
-        }}
-      >
-        {title}
-      </div>
+          position:
+            'absolute',
 
-      <div
+          top:
+            '12%',
+
+          width:
+            250,
+
+          height:
+            250,
+
+          borderRadius:
+            '50%',
+
+          background:
+            state.soft,
+
+          filter:
+            'blur(55px)',
+        }}
+      />
+
+      <section
+        className={
+          'card card-glow fade-up'
+        }
         style={{
-          color: 'var(--tx2)',
-          lineHeight: 1.8,
-          maxWidth: 280,
-          fontSize: 13,
+          position:
+            'relative',
+
+          width:
+            '100%',
+
+          maxWidth:
+            390,
+
+          padding:
+            22,
+
+          textAlign:
+            'center',
         }}
       >
-        {message}
-      </div>
-
-      {isNotReg && (
         <div
           style={{
-            background: 'var(--acc-soft)',
-            border: '1px solid var(--bdg)',
-            borderRadius: 'var(--r-lg)',
-            padding: 14,
-            maxWidth: 280,
-            width: '100%',
-            fontSize: 13,
-            color: 'var(--tx2)',
-            lineHeight: 1.7,
+            display:
+              'grid',
+
+            width:
+              72,
+
+            height:
+              72,
+
+            placeItems:
+              'center',
+
+            margin:
+              '0 auto',
+
+            background:
+              state.soft,
+
+            border:
+              `1px solid ${
+                state.color
+              }35`,
+
+            borderRadius:
+              23,
+
+            boxShadow:
+              `0 10px 30px ${
+                state.color
+              }18`,
+
+            fontSize:
+              35,
           }}
         >
-          👈 ربات هامزیار را پیدا کن و /start بزن
+          {state.icon}
         </div>
-      )}
-    </div>
+
+        <h1
+          style={{
+            marginTop:
+              16,
+
+            fontSize:
+              18,
+
+            fontWeight:
+              900,
+          }}
+        >
+          {state.title}
+        </h1>
+
+        <p
+          style={{
+            marginTop:
+              8,
+
+            color:
+              'var(--tx2)',
+
+            fontSize:
+              11,
+
+            lineHeight:
+              1.9,
+          }}
+        >
+          {state.message}
+        </p>
+
+
+        {error ===
+          'not_registered' && (
+          <div
+            style={{
+              marginTop:
+                14,
+
+              padding:
+                '10px 11px',
+
+              color:
+                'var(--tx2)',
+
+              background:
+                'rgba(100,116,139,.08)',
+
+              borderRadius:
+                12,
+
+              fontSize:
+                10,
+
+              lineHeight:
+                1.8,
+            }}
+          >
+            ۱. به گفت‌وگوی ربات
+            برگردید
+
+            <br />
+
+            ۲. دستور{' '}
+
+            <b>/start</b>{' '}
+
+            را ارسال کنید
+
+            <br />
+
+            ۳. بعد از ثبت‌نام Mini App
+            را دوباره باز کنید
+          </div>
+        )}
+
+
+        <div
+          style={{
+            display:
+              'grid',
+
+            gap:
+              8,
+
+            marginTop:
+              18,
+          }}
+        >
+          {state.retry && (
+            <button
+              type="button"
+              className={
+                'btn btn-p btn-full'
+              }
+              onClick={reload}
+            >
+              ↻ تلاش دوباره
+            </button>
+          )}
+
+          <button
+            type="button"
+            className={
+              'btn btn-dark btn-full'
+            }
+            onClick={close}
+          >
+            {tg
+              ? 'بازگشت به تلگرام'
+              : 'بازگشت'}
+          </button>
+        </div>
+
+
+        <div
+          style={{
+            marginTop:
+              15,
+
+            color:
+              'var(--txm)',
+
+            fontSize:
+              8.5,
+          }}
+        >
+          کد وضعیت:{' '}
+
+          {error ||
+            'unknown_error'}
+        </div>
+      </section>
+    </main>
   );
 }
