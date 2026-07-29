@@ -25,7 +25,7 @@ import { Faq, Reports } from './pages/Me/FaqReports';
 // Admin
 import { AdminPanel, AdminUsers, AdminUserDetail, AdminIntakes, AdminContentAdmins, AdminBlacklist, AdminTickets } from './pages/Admin/AdminPanel';
 import { ContentAdminPanel, ContentQuestions, ContentSchedule, ContentFaq } from './pages/Admin/ContentAdmin';
-import { BasicScienceAdmin, ReferencesAdmin, QbankAdmin, ContentReportsAdmin } from './pages/Admin/ContentLibrary';
+import { BasicScienceAdmin, ReferencesAdmin, QbankAdmin, ContentReportsAdmin, GradesAdmin } from './pages/Admin/ContentLibrary';
 
 // Guards
 function AdminRoute({ children }) {
@@ -91,6 +91,7 @@ export default function App() {
         <Route path="/admin/content/references"    element={<ContentAdminRoute><ReferencesAdmin /></ContentAdminRoute>} />
         <Route path="/admin/content/qbank"          element={<ContentAdminRoute><QbankAdmin /></ContentAdminRoute>} />
         <Route path="/admin/content/reports"        element={<ContentAdminRoute><ContentReportsAdmin /></ContentAdminRoute>} />
+        <Route path="/admin/content/grades"          element={<ContentAdminRoute><GradesAdmin /></ContentAdminRoute>} />
 
         {/* ریدایرکت‌های سازگاری */}
         <Route path="/questions"   element={<Navigate to="/learn/questions" replace />} />
