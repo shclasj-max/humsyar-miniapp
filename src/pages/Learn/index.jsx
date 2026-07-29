@@ -27,7 +27,7 @@ export default function Learn() {
 
   return (
     <>
-      <Header title="یادگیری" subtitle="منابع، رفرنس‌ها و تمرین" />
+      <Header title="یادگیری" subtitle="منابع، رفرنس‌ها و تمرین" back={false} />
       <div className="page fade-up">
 
         {/* شروع سریع */}
