@@ -1,16 +1,19 @@
-export const tg = window.Telegram?.WebApp;
+export const tg =
+  typeof window !== 'undefined'
+    ? window.Telegram?.WebApp
+    : undefined;
 
-// تلگرام دسکتاپ نسخه‌ی WebApp قدیمی‌تری داره و روی متدهایی که موبایل
-// پشتیبانی می‌کنه (مثلاً setHeaderColor با کد رنگ دلخواه) اکسپشن پرت می‌کنه.
-// چون initTelegram توی useEffect اصلی App صدا زده می‌شه، یه خطای catch‌نشده
-// اینجا کل رندر اپ رو متوقف می‌کنه و کاربر با صفحه‌ی سفید/لود دائمی می‌مونه.
-// برای همین هر متد جدا try/catch می‌شه تا یکی خراب بشه بقیه اجرا بشن.
 function safeCall(fn) {
-  try { fn(); } catch (e) { console.warn('[telegram webapp]', e); }
+  try {
+    fn();
+  } catch (error) {
+    console.warn('[telegram webapp]', error);
+  }
 }
 
 export function initTelegram() {
   if (!tg) return;
+
   safeCall(() => tg.ready());
   safeCall(() => tg.expand());
   safeCall(() => tg.setHeaderColor('#0A0E1A'));
@@ -19,7 +22,18 @@ export function initTelegram() {
 }
 
 export const getInitData = () => tg?.initData || '';
-export const getTgUser   = () => tg?.initDataUnsafe?.user || null;
-export const haptic      = (t='light') => tg?.HapticFeedback?.impactOccurred(t);
-export const hapticNotif = (t='success') => tg?.HapticFeedback?.notificationOccurred(t);
-export const isTelegram  = !!tg;
+
+export const getTgUser = () =>
+  tg?.initDataUnsafe?.user || null;
+
+export const haptic = (type = 'light') => {
+  safeCall(() => tg?.HapticFeedback?.impactOccurred(type));
+};
+
+export const hapticNotif = (type = 'success') => {
+  safeCall(() =>
+    tg?.HapticFeedback?.notificationOccurred(type)
+  );
+};
+
+export const isTelegram = Boolean(tg);
