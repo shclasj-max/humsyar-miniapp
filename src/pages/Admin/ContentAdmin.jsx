@@ -38,12 +38,35 @@ export function ContentAdminPanel() {
           </div>
         )}
 
+        <div className="sec-title">🧬 علوم پایه</div>
+        <div className="card" style={{ padding:'0 14px',marginBottom:14 }}>
+          <button className="menu-row" onClick={() => navigate('/admin/content/basic-science')} style={{ borderBottom:'none' }}>
+            <span style={{ fontSize:18,width:24,textAlign:'center' }}>🧬</span>
+            <div style={{ flex:1 }}><div style={{ fontWeight:600,fontSize:13.5 }}>مدیریت درس‌ها و محتوا</div><div style={{ fontSize:11,color:'var(--txm)' }}>ترم، درس، جلسه، آپلود فایل</div></div>
+            <span style={{ color:'var(--txm)' }}>←</span>
+          </button>
+        </div>
+
+        <div className="sec-title">📖 رفرنس‌ها</div>
+        <div className="card" style={{ padding:'0 14px',marginBottom:14 }}>
+          <button className="menu-row" onClick={() => navigate('/admin/content/references')} style={{ borderBottom:'none' }}>
+            <span style={{ fontSize:18,width:24,textAlign:'center' }}>📖</span>
+            <div style={{ flex:1 }}><div style={{ fontWeight:600,fontSize:13.5 }}>مدیریت رفرنس‌ها</div><div style={{ fontSize:11,color:'var(--txm)' }}>موضوع، کتاب، آپلود جلد</div></div>
+            <span style={{ color:'var(--txm)' }}>←</span>
+          </button>
+        </div>
+
         <div className="sec-title">🧪 بانک سوال</div>
         <div className="card" style={{ padding:'0 14px',marginBottom:14 }}>
           <button className="menu-row" onClick={() => navigate('/admin/content/questions')}>
             <span style={{ fontSize:18,width:24,textAlign:'center' }}>⏳</span>
             <div style={{ flex:1 }}><div style={{ fontWeight:600,fontSize:13.5 }}>سوالات منتظر تأیید</div><div style={{ fontSize:11,color:'var(--txm)' }}>بررسی و تأیید یا رد</div></div>
             {data?.pending_questions>0&&<span className="badge b-yel">{data.pending_questions}</span>}
+            <span style={{ color:'var(--txm)' }}>←</span>
+          </button>
+          <button className="menu-row" onClick={() => navigate('/admin/content/qbank')} style={{ borderBottom:'none' }}>
+            <span style={{ fontSize:18,width:24,textAlign:'center' }}>📁</span>
+            <div style={{ flex:1 }}><div style={{ fontWeight:600,fontSize:13.5 }}>فایل‌های بانک سوال</div><div style={{ fontSize:11,color:'var(--txm)' }}>آپلود و مدیریت فایل</div></div>
             <span style={{ color:'var(--txm)' }}>←</span>
           </button>
         </div>
@@ -62,6 +85,15 @@ export function ContentAdminPanel() {
           <button className="menu-row" onClick={() => navigate('/admin/content/faq')} style={{ borderBottom:'none' }}>
             <span style={{ fontSize:18,width:24,textAlign:'center' }}>❓</span>
             <div style={{ flex:1 }}><div style={{ fontWeight:600,fontSize:13.5 }}>مدیریت FAQ</div><div style={{ fontSize:11,color:'var(--txm)' }}>افزودن و حذف سوالات متداول</div></div>
+            <span style={{ color:'var(--txm)' }}>←</span>
+          </button>
+        </div>
+
+        <div className="sec-title">🚩 گزارش‌های ایراد</div>
+        <div className="card" style={{ padding:'0 14px',marginBottom:14 }}>
+          <button className="menu-row" onClick={() => navigate('/admin/content/reports')} style={{ borderBottom:'none' }}>
+            <span style={{ fontSize:18,width:24,textAlign:'center' }}>🚩</span>
+            <div style={{ flex:1 }}><div style={{ fontWeight:600,fontSize:13.5 }}>گزارشات سوال/جزوه</div><div style={{ fontSize:11,color:'var(--txm)' }}>بررسی و رسیدگی</div></div>
             <span style={{ color:'var(--txm)' }}>←</span>
           </button>
         </div>
