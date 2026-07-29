@@ -81,20 +81,14 @@ import {
 } from './pages/Admin/UserManagement';
 
 
-/* مدیریت تیکت‌ها */
+/* عملیات مدیریتی */
 
 import {
   AdminTickets,
-} from './pages/Admin/AdminPanel';
-
-
-/* مدیریت ارتباطات */
-
-import {
   BroadcastAdmin,
   PollAdmin,
   NotificationsAdmin,
-} from './pages/Admin/Communication';
+} from './pages/Admin/AdminOperations';
 
 
 /* مدیریت سؤال و FAQ */
@@ -295,7 +289,7 @@ export default function App() {
         />
 
 
-        {/* حساب کاربری */}
+        {/* صفحات حساب کاربری */}
 
         <Route
           path="/me"
@@ -406,6 +400,9 @@ export default function App() {
           }
         />
 
+
+        {/* تیکت‌ها و ارتباطات مدیریتی */}
+
         <Route
           path="/admin/tickets"
           element={
@@ -414,9 +411,6 @@ export default function App() {
             </AdminRoute>
           }
         />
-
-
-        {/* ارتباطات مدیریتی */}
 
         <Route
           path="/admin/broadcast"
