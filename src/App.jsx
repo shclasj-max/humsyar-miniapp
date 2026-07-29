@@ -39,7 +39,12 @@ import Grades from './pages/Grades';
 import AiChat from './pages/Ai/AiChat';
 
 
-/* یادگیری */
+/* جست‌وجوی سراسری */
+
+import GlobalSearch from './pages/Search/GlobalSearch';
+
+
+/* صفحات یادگیری */
 
 import Questions from './pages/Learn/Questions';
 import ExamCenter from './pages/Learn/ExamCenter';
@@ -51,7 +56,7 @@ import Resources from './pages/Learn/Resources';
 import References from './pages/Learn/References';
 
 
-/* حساب کاربری */
+/* صفحات حساب کاربری */
 
 import Me from './pages/Me';
 import Profile from './pages/Me/Profile';
@@ -259,6 +264,16 @@ export default function App() {
         />
 
 
+        {/* جست‌وجوی سراسری */}
+
+        <Route
+          path="/search"
+          element={
+            <GlobalSearch />
+          }
+        />
+
+
         {/* صفحات یادگیری */}
 
         <Route
@@ -356,7 +371,7 @@ export default function App() {
         />
 
 
-        {/* خانهٔ مدیریت */}
+        {/* خانه پنل مدیریت */}
 
         <Route
           path="/admin"
@@ -368,7 +383,7 @@ export default function App() {
         />
 
 
-        {/* کاربران */}
+        {/* مدیریت کاربران */}
 
         <Route
           path="/admin/users"
@@ -455,7 +470,7 @@ export default function App() {
         />
 
 
-        {/* خانهٔ مدیریت محتوا */}
+        {/* خانه مدیریت محتوا */}
 
         <Route
           path="/admin/content"
@@ -548,7 +563,7 @@ export default function App() {
         />
 
 
-        {/* مسیرهای قدیمی */}
+        {/* مسیرهای قدیمی سازگار */}
 
         <Route
           path="/questions"
@@ -585,6 +600,16 @@ export default function App() {
           element={
             <Navigate
               to="/ai"
+              replace
+            />
+          }
+        />
+
+        <Route
+          path="/find"
+          element={
+            <Navigate
+              to="/search"
               replace
             />
           }
