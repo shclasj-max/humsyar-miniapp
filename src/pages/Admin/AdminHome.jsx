@@ -45,8 +45,7 @@ function Stat({
       style={{
         padding: 12,
 
-        display:
-          'flex',
+        display: 'flex',
 
         alignItems:
           'center',
@@ -57,14 +56,10 @@ function Stat({
     >
       <span
         style={{
-          display:
-            'grid',
+          display: 'grid',
 
-          width:
-            38,
-
-          height:
-            38,
+          width: 38,
+          height: 38,
 
           placeItems:
             'center',
@@ -117,9 +112,11 @@ function Stat({
 const SECTIONS = [
   {
     icon: '👥',
-    title: 'مدیریت کاربران',
 
-    desc:
+    title:
+      'مدیریت کاربران',
+
+    description:
       'جست‌وجو، تأیید، ویرایش و تعلیق',
 
     route:
@@ -133,10 +130,31 @@ const SECTIONS = [
   },
 
   {
-    icon: '📅',
-    title: 'مدیریت ورودی‌ها',
+    icon: '💳',
 
-    desc:
+    title:
+      'اشتراک و پرداخت',
+
+    description:
+      'پلن‌ها، رسیدها، مشترکین و تخفیف',
+
+    route:
+      '/admin/subscription',
+
+    color:
+      '#34D399',
+
+    soft:
+      'rgba(16,185,129,.12)',
+  },
+
+  {
+    icon: '📅',
+
+    title:
+      'مدیریت ورودی‌ها',
+
+    description:
       'ورودی‌ها، گروه‌ها و آمار دانشجویان',
 
     route:
@@ -151,9 +169,11 @@ const SECTIONS = [
 
   {
     icon: '🎓',
-    title: 'مدیران محتوا',
 
-    desc:
+    title:
+      'مدیران محتوا',
+
+    description:
       'اعطا و لغو دسترسی محتوا',
 
     route:
@@ -168,9 +188,11 @@ const SECTIONS = [
 
   {
     icon: '🎫',
-    title: 'تیکت‌های پشتیبانی',
 
-    desc:
+    title:
+      'تیکت‌های پشتیبانی',
+
+    description:
       'پاسخ، بستن و بازگشایی تیکت',
 
     route:
@@ -185,9 +207,11 @@ const SECTIONS = [
 
   {
     icon: '📣',
-    title: 'ارسال همگانی',
 
-    desc:
+    title:
+      'ارسال همگانی',
+
+    description:
       'ارسال هدفمند به کاربران',
 
     route:
@@ -202,9 +226,11 @@ const SECTIONS = [
 
   {
     icon: '📊',
-    title: 'نظرسنجی',
 
-    desc:
+    title:
+      'نظرسنجی',
+
+    description:
       'ساخت نظرسنجی در کانال',
 
     route:
@@ -219,9 +245,11 @@ const SECTIONS = [
 
   {
     icon: '🔔',
-    title: 'مدیریت اعلان‌ها',
 
-    desc:
+    title:
+      'مدیریت اعلان‌ها',
+
+    description:
       'تنظیم، تاریخچه و ارسال مجدد',
 
     route:
@@ -236,9 +264,11 @@ const SECTIONS = [
 
   {
     icon: '🚫',
-    title: 'فهرست مسدودها',
 
-    desc:
+    title:
+      'فهرست مسدودها',
+
+    description:
       'مشاهده و رفع مسدودیت کاربران',
 
     route:
@@ -253,9 +283,11 @@ const SECTIONS = [
 
   {
     icon: '📚',
-    title: 'پنل محتوا',
 
-    desc:
+    title:
+      'پنل محتوا',
+
+    description:
       'سؤال، منابع، برنامه و نمرات',
 
     route:
@@ -286,15 +318,12 @@ export default function AdminHome() {
     refetch,
     isRefetching,
   } = useQuery({
-    queryKey: [
-      'admin-stats',
-    ],
+    queryKey:
+      ['admin-stats'],
 
     queryFn: () =>
       api
-        .get(
-          '/api/admin/stats'
-        )
+        .get('/api/admin/stats')
         .then(
           (response) =>
             response.data
@@ -308,14 +337,34 @@ export default function AdminHome() {
   const {
     data: bot,
   } = useQuery({
-    queryKey: [
-      'admin-bot-status',
-    ],
+    queryKey:
+      ['admin-bot-status'],
 
     queryFn: () =>
       api
         .get(
           '/api/admin/bot-status'
+        )
+        .then(
+          (response) =>
+            response.data
+        ),
+
+    staleTime:
+      30_000,
+  });
+
+
+  const {
+    data: subscription,
+  } = useQuery({
+    queryKey:
+      ['subscription-admin-overview'],
+
+    queryFn: () =>
+      api
+        .get(
+          '/api/subscription-admin/overview'
         )
         .then(
           (response) =>
@@ -364,21 +413,26 @@ export default function AdminHome() {
   };
 
 
-  const pending =
+  const pendingUsers =
     number(
       stats?.users?.pending
     );
-
 
   const openTickets =
     number(
       stats?.tickets?.open
     );
 
-
   const openReports =
     number(
       stats?.reports?.open
+    );
+
+  const pendingPayments =
+    number(
+      subscription
+        ?.stats
+        ?.pending
     );
 
 
@@ -400,11 +454,8 @@ export default function AdminHome() {
             }
             aria-label="به‌روزرسانی"
             style={{
-              width:
-                36,
-
-              height:
-                36,
+              width: 36,
+              height: 36,
 
               borderRadius:
                 12,
@@ -442,52 +493,29 @@ export default function AdminHome() {
         >
           <div
             style={{
-              display:
-                'flex',
-
-              alignItems:
-                'center',
-
-              gap:
-                13,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 13,
             }}
           >
             <span
               style={{
-                display:
-                  'grid',
-
-                width:
-                  56,
-
-                height:
-                  56,
-
-                placeItems:
-                  'center',
-
-                borderRadius:
-                  18,
+                display: 'grid',
+                width: 56,
+                height: 56,
+                placeItems: 'center',
+                borderRadius: 18,
 
                 background:
                   'linear-gradient(135deg,#D97706,#F59E0B)',
 
-                boxShadow:
-                  '0 8px 26px rgba(245,158,11,.2)',
-
-                fontSize:
-                  27,
+                fontSize: 27,
               }}
             >
               👑
             </span>
 
-            <div
-              style={{
-                flex:
-                  1,
-              }}
-            >
+            <div>
               <div
                 style={{
                   color:
@@ -555,10 +583,6 @@ export default function AdminHome() {
 
             <button
               className="btn btn-p"
-              style={{
-                marginTop:
-                  12,
-              }}
               onClick={() =>
                 refetch()
               }
@@ -582,7 +606,7 @@ export default function AdminHome() {
                     ?.total
                 )
               }
-              label="کاربر تأییدشده"
+              label="کاربر فعال"
               color="#70A7FF"
               soft={
                 'rgba(59,130,246,.12)'
@@ -591,8 +615,10 @@ export default function AdminHome() {
 
             <Stat
               icon="⏳"
-              value={pending}
-              label="در انتظار تأیید"
+              value={
+                pendingUsers
+              }
+              label="کاربر منتظر"
               color="#FCD34D"
               soft={
                 'rgba(245,158,11,.12)'
@@ -600,15 +626,15 @@ export default function AdminHome() {
             />
 
             <Stat
-              icon="🧪"
+              icon="💎"
               value={
                 number(
-                  stats
-                    ?.questions
-                    ?.approved
+                  subscription
+                    ?.stats
+                    ?.active
                 )
               }
-              label="سؤال تأییدشده"
+              label="مشترک فعال"
               color="#34D399"
               soft={
                 'rgba(16,185,129,.12)'
@@ -616,9 +642,11 @@ export default function AdminHome() {
             />
 
             <Stat
-              icon="🎫"
-              value={openTickets}
-              label="تیکت باز"
+              icon="💳"
+              value={
+                pendingPayments
+              }
+              label="رسید منتظر"
               color="#FB7185"
               soft={
                 'rgba(239,68,68,.12)'
@@ -629,9 +657,10 @@ export default function AdminHome() {
 
 
         {(
-          pending > 0 ||
+          pendingUsers > 0 ||
           openTickets > 0 ||
-          openReports > 0
+          openReports > 0 ||
+          pendingPayments > 0
         ) && (
           <section
             className="card"
@@ -649,31 +678,37 @@ export default function AdminHome() {
 
             <div
               style={{
-                display:
-                  'flex',
-
-                flexWrap:
-                  'wrap',
-
-                gap:
-                  6,
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 6,
               }}
             >
-              {pending > 0 && (
+              {pendingUsers >
+                0 && (
                 <span className="badge b-yel">
-                  {pending} کاربر جدید
+                  {pendingUsers} کاربر جدید
                 </span>
               )}
 
-              {openTickets > 0 && (
+              {openTickets >
+                0 && (
                 <span className="badge b-red">
                   {openTickets} تیکت باز
                 </span>
               )}
 
-              {openReports > 0 && (
+              {openReports >
+                0 && (
                 <span className="badge b-pur">
-                  {openReports} گزارش محتوا
+                  {openReports} گزارش
+                </span>
+              )}
+
+              {pendingPayments >
+                0 && (
+                <span className="badge b-grn">
+                  {pendingPayments} رسید
+                  منتظر
                 </span>
               )}
             </div>
@@ -705,50 +740,24 @@ export default function AdminHome() {
                 open(item.route)
               }
               style={{
-                display:
-                  'flex',
-
-                alignItems:
-                  'center',
-
-                width:
-                  '100%',
-
-                gap:
-                  11,
-
-                padding:
-                  13,
-
-                textAlign:
-                  'right',
+                display: 'flex',
+                alignItems: 'center',
+                width: '100%',
+                gap: 11,
+                padding: 13,
+                textAlign: 'right',
               }}
             >
               <span
                 style={{
-                  display:
-                    'grid',
-
-                  width:
-                    44,
-
-                  height:
-                    44,
-
-                  placeItems:
-                    'center',
-
-                  borderRadius:
-                    14,
-
-                  color:
-                    item.color,
-
-                  background:
-                    item.soft,
-
-                  fontSize:
-                    20,
+                  display: 'grid',
+                  width: 44,
+                  height: 44,
+                  placeItems: 'center',
+                  borderRadius: 14,
+                  color: item.color,
+                  background: item.soft,
+                  fontSize: 20,
                 }}
               >
                 {item.icon}
@@ -756,8 +765,7 @@ export default function AdminHome() {
 
               <span
                 style={{
-                  flex:
-                    1,
+                  flex: 1,
                 }}
               >
                 <b
@@ -787,9 +795,18 @@ export default function AdminHome() {
                       3,
                   }}
                 >
-                  {item.desc}
+                  {item.description}
                 </span>
               </span>
+
+              {item.route ===
+                '/admin/subscription' &&
+                pendingPayments >
+                  0 && (
+                <span className="badge b-red">
+                  {pendingPayments}
+                </span>
+              )}
 
               <span
                 style={{
@@ -801,181 +818,6 @@ export default function AdminHome() {
               </span>
             </button>
           ))}
-        </section>
-
-
-        <section
-          className="card"
-          style={{
-            marginTop:
-              14,
-          }}
-        >
-          <div className="sec-title">
-            📡 وضعیت سرور
-          </div>
-
-          <div className="grid2">
-            <div
-              style={{
-                padding:
-                  9,
-
-                background:
-                  'rgba(100,116,139,.07)',
-
-                borderRadius:
-                  11,
-              }}
-            >
-              <span
-                style={{
-                  color:
-                    'var(--txm)',
-
-                  fontSize:
-                    9,
-                }}
-              >
-                حافظه ربات
-              </span>
-
-              <b
-                style={{
-                  display:
-                    'block',
-
-                  marginTop:
-                    3,
-                }}
-              >
-                {bot?.sys
-                  ?.bot_ram_mb ||
-                  '—'}{' '}
-
-                MB
-              </b>
-            </div>
-
-            <div
-              style={{
-                padding:
-                  9,
-
-                background:
-                  'rgba(100,116,139,.07)',
-
-                borderRadius:
-                  11,
-              }}
-            >
-              <span
-                style={{
-                  color:
-                    'var(--txm)',
-
-                  fontSize:
-                    9,
-                }}
-              >
-                CPU
-              </span>
-
-              <b
-                style={{
-                  display:
-                    'block',
-
-                  marginTop:
-                    3,
-                }}
-              >
-                {bot?.sys
-                  ?.cpu_pct ??
-                  '—'}
-                ٪
-              </b>
-            </div>
-
-            <div
-              style={{
-                padding:
-                  9,
-
-                background:
-                  'rgba(100,116,139,.07)',
-
-                borderRadius:
-                  11,
-              }}
-            >
-              <span
-                style={{
-                  color:
-                    'var(--txm)',
-
-                  fontSize:
-                    9,
-                }}
-              >
-                RAM سیستم
-              </span>
-
-              <b
-                style={{
-                  display:
-                    'block',
-
-                  marginTop:
-                    3,
-                }}
-              >
-                {bot?.sys
-                  ?.used_ram_pct ??
-                  '—'}
-                ٪
-              </b>
-            </div>
-
-            <div
-              style={{
-                padding:
-                  9,
-
-                background:
-                  'rgba(100,116,139,.07)',
-
-                borderRadius:
-                  11,
-              }}
-            >
-              <span
-                style={{
-                  color:
-                    'var(--txm)',
-
-                  fontSize:
-                    9,
-                }}
-              >
-                زمان فعالیت
-              </span>
-
-              <b
-                style={{
-                  display:
-                    'block',
-
-                  marginTop:
-                    3,
-                }}
-              >
-                {bot?.sys
-                  ?.uptime ||
-                  '—'}
-              </b>
-            </div>
-          </div>
         </section>
 
 
@@ -995,7 +837,8 @@ export default function AdminHome() {
             exportMutation.mutate()
           }
         >
-          {exportMutation.isPending ? (
+          {exportMutation
+            .isPending ? (
             <Spinner size={15} />
           ) : (
             '📥 دریافت خروجی Excel در ربات'
