@@ -15,7 +15,7 @@ export default function Grades() {
 
   return (
     <>
-      <Header title="📊 نمرات من" />
+      <Header title="📊 نمرات من" back={false} />
       <div className="page fade-up">
         {isLoading ? (
           <div style={{ display:'flex',flexDirection:'column',gap:10 }}>
