@@ -15,6 +15,18 @@ function EmptyState({ icon, text }) {
   return <div className="empty"><div style={{ fontSize:36,marginBottom:10 }}>{icon}</div><div>{text}</div></div>;
 }
 
+function ErrorState({ error, onRetry }) {
+  const msg = error?.response?.data?.detail || error?.message || 'خطای ناشناخته';
+  return (
+    <div className="empty" style={{ color:'var(--err)' }}>
+      <div style={{ fontSize:36,marginBottom:10 }}>⚠️</div>
+      <div>خطا در دریافت اطلاعات</div>
+      <div style={{ fontSize:11,color:'var(--txm)',marginTop:6 }}>{String(msg)}</div>
+      {onRetry && <button className="btn btn-p" style={{ marginTop:12 }} onClick={onRetry}>🔄 تلاش دوباره</button>}
+    </div>
+  );
+}
+
 function AddForm({ fields, onSubmit, submitting, submitLabel = '➕ افزودن' }) {
   const [values, setValues] = useState(() => Object.fromEntries(fields.map(f => [f.key, f.default ?? ''])));
   const set = (k, v) => setValues(s => ({ ...s, [k]: v }));
@@ -69,19 +81,22 @@ export function BasicScienceAdmin() {
 
   const level = session ? 'content' : lesson ? 'sessions' : term ? 'lessons' : 'terms';
 
-  const { data: terms } = useQuery({ queryKey:['bs-terms'], queryFn:() => api.get('/api/content/basic-science/terms').then(r=>r.data.terms) });
+  const { data: terms, isLoading: loadingTerms, isError: errTerms, error: errTermsObj, refetch: refetchTerms } = useQuery({
+    queryKey:['bs-terms'], queryFn:() => api.get('/api/content/basic-science/terms').then(r=>r.data.terms),
+    retry: 1,
+  });
 
-  const { data: lessons, isLoading: loadingLessons } = useQuery({
+  const { data: lessons, isLoading: loadingLessons, isError: errLessons, error: errLessonsObj, refetch: refetchLessons } = useQuery({
     queryKey: ['bs-lessons', term], queryFn: () => api.get(`/api/content/basic-science/lessons?term=${encodeURIComponent(term)}`).then(r=>r.data.lessons),
-    enabled: level==='lessons',
+    enabled: level==='lessons', retry: 1,
   });
-  const { data: sessions, isLoading: loadingSessions } = useQuery({
+  const { data: sessions, isLoading: loadingSessions, isError: errSessions, error: errSessionsObj, refetch: refetchSessions } = useQuery({
     queryKey: ['bs-sessions', lesson?.id], queryFn: () => api.get(`/api/content/basic-science/lessons/${lesson.id}/sessions`).then(r=>r.data.sessions),
-    enabled: level==='sessions',
+    enabled: level==='sessions', retry: 1,
   });
-  const { data: contents, isLoading: loadingContent } = useQuery({
+  const { data: contents, isLoading: loadingContent, isError: errContent, error: errContentObj, refetch: refetchContent } = useQuery({
     queryKey: ['bs-content', session?.id], queryFn: () => api.get(`/api/content/basic-science/sessions/${session.id}/content`).then(r=>r.data.content),
-    enabled: level==='content',
+    enabled: level==='content', retry: 1,
   });
 
   const addLesson = useMutation({
@@ -127,16 +142,22 @@ export function BasicScienceAdmin() {
     <>
       <Header title={titles[level]} onBack={backFns[level]} />
       <div className="page fade-up">
-        {level === 'terms' && (!terms ? <SkeletonCard /> : terms.map(t => (
-          <ListRow key={t} title={t} onClick={() => { haptic(); setTerm(t); }} />
-        )))}
+        {level === 'terms' && (
+          loadingTerms ? <SkeletonCard /> :
+          errTerms ? <ErrorState error={errTermsObj} onRetry={refetchTerms} /> :
+          terms.map(t => (
+            <ListRow key={t} title={t} onClick={() => { haptic(); setTerm(t); }} />
+          ))
+        )}
 
         {level === 'lessons' && (
           <>
             <AddForm submitting={addLesson.isPending}
               fields={[{key:'name',label:'نام درس',placeholder:'مثلاً فیزیولوژی',required:true},{key:'teacher',label:'استاد (اختیاری)'}]}
               onSubmit={(v,reset) => addLesson.mutate(v, { onSuccess: reset })} />
-            {loadingLessons ? <SkeletonCard /> : !lessons?.length ? <EmptyState icon="📚" text="هنوز درسی اضافه نشده" /> :
+            {loadingLessons ? <SkeletonCard /> :
+             errLessons ? <ErrorState error={errLessonsObj} onRetry={refetchLessons} /> :
+             !lessons?.length ? <EmptyState icon="📚" text="هنوز درسی اضافه نشده" /> :
               lessons.map(l => (
                 <ListRow key={l.id} title={l.name} subtitle={l.teacher||'—'}
                   onClick={() => { haptic(); setLesson(l); }}
@@ -150,7 +171,9 @@ export function BasicScienceAdmin() {
             <AddForm submitting={addSession.isPending}
               fields={[{key:'number',label:'شماره جلسه',type:'number',required:true},{key:'topic',label:'موضوع',required:true},{key:'teacher',label:'استاد (اختیاری)'}]}
               onSubmit={(v,reset) => addSession.mutate(v, { onSuccess: reset })} />
-            {loadingSessions ? <SkeletonCard /> : !sessions?.length ? <EmptyState icon="📌" text="هنوز جلسه‌ای اضافه نشده" /> :
+            {loadingSessions ? <SkeletonCard /> :
+             errSessions ? <ErrorState error={errSessionsObj} onRetry={refetchSessions} /> :
+             !sessions?.length ? <EmptyState icon="📌" text="هنوز جلسه‌ای اضافه نشده" /> :
               sessions.map(s => (
                 <ListRow key={s.id} title={`جلسه ${s.number} — ${s.topic}`} subtitle={s.teacher||'—'}
                   onClick={() => { haptic(); setSession(s); }}
@@ -169,7 +192,9 @@ export function BasicScienceAdmin() {
                 {key:'file',label:'فایل',type:'file',required:true},
               ]}
               onSubmit={(v,reset) => { if(!v.file){toast('فایل رو انتخاب کن','error');return;} addContent.mutate(v, { onSuccess: reset }); }} />
-            {loadingContent ? <SkeletonCard /> : !contents?.length ? <EmptyState icon="📎" text="هنوز فایلی آپلود نشده" /> :
+            {loadingContent ? <SkeletonCard /> :
+             errContent ? <ErrorState error={errContentObj} onRetry={refetchContent} /> :
+             !contents?.length ? <EmptyState icon="📎" text="هنوز فایلی آپلود نشده" /> :
               contents.map(c => (
                 <ListRow key={c.id} title={CONTENT_TYPE_LABELS[c.type]||c.type} subtitle={`${c.description||'—'} • 📥 ${c.downloads} دانلود`}
                   onDelete={() => { if (confirm('این فایل حذف بشه؟')) delContent.mutate(c.id); }} />
