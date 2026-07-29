@@ -1,148 +1,195 @@
 import {
-  useEffect,
-  useState,
-} from 'react';
+  useNavigate,
+} from 'react-router-dom';
 
 import {
-  useMutation,
   useQuery,
-  useQueryClient,
 } from '@tanstack/react-query';
 
 import api from '../../lib/api';
 import Header from '../../components/layout/Header';
-import QuestionCard from '../../components/shared/QuestionCard';
 
 import {
-  SkeletonCard,
-  Spinner,
-} from '../../components/shared/Loading';
-
-import {
-  hapticNotif,
+  haptic,
 } from '../../lib/telegram';
 
-import {
-  useUIStore,
-} from '../../stores/uiStore';
 
-
-const formatTime = (seconds) => {
-  if (seconds == null) {
-    return 'بدون محدودیت';
-  }
-
-  const safe = Math.max(
+const safePercent = (value) =>
+  Math.max(
     0,
-    Number(seconds) || 0
+    Math.min(
+      100,
+      Number(value) || 0
+    )
   );
 
-  const minutes = Math.floor(
-    safe / 60
-  );
 
-  const remainingSeconds =
-    safe % 60;
+const QUICK_LINKS = [
+  {
+    icon: '⚡',
+    label: 'نقاط ضعف',
 
-  return (
-    `${String(minutes).padStart(
-      2,
-      '0'
-    )}:` +
-    `${String(
-      remainingSeconds
-    ).padStart(2, '0')}`
-  );
-};
+    route:
+      '/learn/questions?mode=weak',
+
+    color:
+      '#FCD34D',
+
+    soft:
+      'rgba(245,158,11,.12)',
+  },
+
+  {
+    icon: '📝',
+    label: 'آزمون',
+
+    route:
+      '/learn/exams',
+
+    color:
+      '#70A7FF',
+
+    soft:
+      'rgba(59,130,246,.12)',
+  },
+
+  {
+    icon: '🔴',
+    label: 'سطح سخت',
+
+    route:
+      '/learn/questions?mode=hard',
+
+    color:
+      '#FB7185',
+
+    soft:
+      'rgba(239,68,68,.12)',
+  },
+
+  {
+    icon: '✏️',
+    label: 'طراحی سؤال',
+
+    route:
+      '/learn/questions?mode=design',
+
+    color:
+      '#C4B5FD',
+
+    soft:
+      'rgba(139,92,246,.13)',
+  },
+];
 
 
-const statusLabel = {
-  active: 'در حال انجام',
-  finished: 'تمام‌شده',
-  expired: 'زمان تمام‌شده',
-  abandoned: 'رهاشده',
-};
+const LIBRARY = [
+  {
+    icon: '📗',
+
+    title:
+      'منابع علوم پایه',
+
+    desc:
+      'جزوه، ویدیو، صوت و تست جلسه‌به‌جلسه',
+
+    meta:
+      'کتابخانه آموزشی',
+
+    route:
+      '/learn/resources',
+
+    soft:
+      'rgba(16,185,129,.12)',
+
+    color:
+      '#34D399',
+  },
+
+  {
+    icon: '📘',
+
+    title:
+      'رفرنس‌های درسی',
+
+    desc:
+      'کتاب‌های مرجع فارسی و لاتین',
+
+    meta:
+      'منابع معتبر',
+
+    route:
+      '/learn/references',
+
+    soft:
+      'rgba(59,130,246,.12)',
+
+    color:
+      '#70A7FF',
+  },
+
+  {
+    icon: '🕘',
+
+    title:
+      'تاریخچه پاسخ‌ها',
+
+    desc:
+      'مرور پاسخ‌های صحیح و اشتباه گذشته',
+
+    meta:
+      'تحلیل عملکرد',
+
+    route:
+      '/learn/question-history',
+
+    soft:
+      'rgba(245,158,11,.12)',
+
+    color:
+      '#FCD34D',
+  },
+
+  {
+    icon: '✍️',
+
+    title:
+      'سؤال‌های من',
+
+    desc:
+      'وضعیت تأیید، ویرایش و مدیریت سؤال‌ها',
+
+    meta:
+      'مشارکت علمی',
+
+    route:
+      '/learn/my-questions',
+
+    soft:
+      'rgba(139,92,246,.13)',
+
+    color:
+      '#C4B5FD',
+  },
+];
 
 
-const apiError = (
-  error,
-  fallback
-) => {
-  const detail =
-    error?.response?.data?.detail;
-
-  return typeof detail === 'string'
-    ? detail
-    : fallback;
-};
-
-
-export default function ExamCenter() {
-  const [
-    view,
-    setView,
-  ] = useState('setup');
-
-  const [
-    config,
-    setConfig,
-  ] = useState({
-    lesson: '',
-    topic: 'همه',
-    count: 10,
-    minutes: 20,
-  });
-
-  const [
-    session,
-    setSession,
-  ] = useState(null);
-
-  const [
-    question,
-    setQuestion,
-  ] = useState(null);
-
-  const [
-    answer,
-    setAnswer,
-  ] = useState(null);
-
-  const [
-    result,
-    setResult,
-  ] = useState(null);
-
-  const [
-    progress,
-    setProgress,
-  ] = useState(0);
-
-  const [
-    secondsLeft,
-    setSecondsLeft,
-  ] = useState(null);
-
-  const toast = useUIStore(
-    (state) => state.toast
-  );
-
-  const queryClient =
-    useQueryClient();
+export default function Learn() {
+  const navigate =
+    useNavigate();
 
 
   const {
-    data: lessons = [],
-    isLoading: lessonsLoading,
+    data: statsData = [],
   } = useQuery({
     queryKey: [
-      'question-lessons',
+      'stats-by-lesson',
     ],
 
     queryFn: () =>
       api
         .get(
-          '/api/questions/lessons'
+          '/api/questions/stats/by-lesson'
         )
         .then(
           (response) =>
@@ -151,963 +198,676 @@ export default function ExamCenter() {
         ),
 
     staleTime:
-      10 * 60 * 1000,
+      5 * 60 * 1000,
   });
 
 
-  const {
-    data: topics = [],
-  } = useQuery({
-    queryKey: [
-      'question-topics',
-      config.lesson,
-    ],
+  const stats =
+    Array.isArray(statsData)
+      ? statsData
+      : [];
 
-    queryFn: () =>
-      api
-        .get(
-          `/api/questions/topics/${
-            encodeURIComponent(
-              config.lesson
-            )
-          }`
+
+  const totalAnswers =
+    stats.reduce(
+      (sum, item) =>
+        sum +
+        (
+          Number(item.total) ||
+          0
+        ),
+
+      0
+    );
+
+
+  const totalCorrect =
+    stats.reduce(
+      (sum, item) =>
+        sum +
+        (
+          Number(
+            item.correct
+          ) || 0
+        ),
+
+      0
+    );
+
+
+  const overall =
+    totalAnswers
+      ? Math.round(
+          (
+            totalCorrect /
+            totalAnswers
+          ) * 100
         )
-        .then(
-          (response) =>
-            response.data
-              ?.topics || []
-        ),
-
-    enabled:
-      Boolean(config.lesson),
-
-    staleTime:
-      10 * 60 * 1000,
-  });
+      : 0;
 
 
-  const {
-    data: history = [],
-    isLoading: historyLoading,
-    isError: historyError,
-    refetch: refetchHistory,
-  } = useQuery({
-    queryKey: [
-      'exam-history',
-    ],
-
-    queryFn: () =>
-      api
-        .get(
-          '/api/questions/custom-exam/history'
-        )
-        .then(
-          (response) =>
-            response.data
-              ?.exams || []
-        ),
-
-    enabled:
-      view === 'history',
-  });
-
-
-  const refreshHistory = () =>
-    queryClient.invalidateQueries({
-      queryKey: [
-        'exam-history',
-      ],
-    });
-
-
-  const loadNext = async (
-    sessionId
-  ) => {
-    setQuestion(null);
-    setAnswer(null);
-
-    try {
-      const response =
-        await api.get(
-          `/api/questions/custom-exam/${sessionId}/next`
-        );
-
-      if (
-        response.data.finished
-      ) {
-        setResult(
-          response.data
-        );
-
-        setView('result');
-
-        await refreshHistory();
-
-        return;
-      }
-
-      setQuestion(
-        response.data.question
-      );
-
-      setProgress(
-        response.data.progress ||
-        0
-      );
-
-      setSecondsLeft(
-        response.data
-          .seconds_left ?? null
-      );
-
-      setView('active');
-
-    } catch (error) {
-      toast(
-        apiError(
-          error,
-          'دریافت آزمون انجام نشد'
-        ),
-        'error'
-      );
-
-      setView('history');
-    }
+  const open = (route) => {
+    haptic('light');
+    navigate(route);
   };
-
-
-  const startMutation =
-    useMutation({
-      mutationFn: () =>
-        api.post(
-          '/api/questions/custom-exam/start',
-          {
-            lesson:
-              config.lesson,
-
-            topic:
-              config.topic ===
-              'همه'
-                ? null
-                : config.topic,
-
-            count:
-              Number(
-                config.count
-              ),
-
-            minutes:
-              Number(
-                config.minutes
-              ),
-          }
-        ),
-
-      onSuccess: async (
-        response
-      ) => {
-        setSession(
-          response.data
-        );
-
-        setResult(null);
-
-        await loadNext(
-          response.data
-            .session_id
-        );
-      },
-
-      onError: (error) =>
-        toast(
-          apiError(
-            error,
-            'ساخت آزمون انجام نشد'
-          ),
-          'error'
-        ),
-    });
-
-
-  const answerMutation =
-    useMutation({
-      mutationFn: ({
-        questionId,
-        selected,
-      }) =>
-        api.post(
-          `/api/questions/custom-exam/${session.session_id}/answer`,
-          {
-            selected,
-
-            question_id:
-              questionId,
-          }
-        ),
-
-      onSuccess: (
-        response
-      ) => {
-        setAnswer(
-          response.data
-        );
-
-        hapticNotif(
-          response.data
-            .is_correct
-            ? 'success'
-            : 'error'
-        );
-      },
-
-      onError: (error) =>
-        toast(
-          apiError(
-            error,
-            'ثبت پاسخ انجام نشد'
-          ),
-          'error'
-        ),
-    });
-
-
-  const abandonMutation =
-    useMutation({
-      mutationFn: () =>
-        api.delete(
-          `/api/questions/custom-exam/${session.session_id}`
-        ),
-
-      onSuccess: async () => {
-        setSession(null);
-        setQuestion(null);
-        setAnswer(null);
-        setView('history');
-
-        await refreshHistory();
-      },
-
-      onError: (error) =>
-        toast(
-          apiError(
-            error,
-            'رهاکردن آزمون انجام نشد'
-          ),
-          'error'
-        ),
-    });
-
-
-  useEffect(() => {
-    if (
-      view !== 'active' ||
-      secondsLeft == null
-    ) {
-      return undefined;
-    }
-
-    if (secondsLeft <= 0) {
-      if (session?.session_id) {
-        loadNext(
-          session.session_id
-        );
-      }
-
-      return undefined;
-    }
-
-    const timer =
-      window.setTimeout(
-        () => {
-          setSecondsLeft(
-            (current) =>
-              Math.max(
-                0,
-                (current || 0) - 1
-              )
-          );
-        },
-        1000
-      );
-
-    return () =>
-      window.clearTimeout(
-        timer
-      );
-
-  }, [
-    view,
-    session?.session_id,
-    secondsLeft,
-  ]);
-
-
-  const resume = async (
-    item
-  ) => {
-    setSession({
-      session_id:
-        item.session_id,
-
-      total:
-        item.total,
-
-      minutes:
-        item.minutes,
-    });
-
-    setResult(null);
-
-    await loadNext(
-      item.session_id
-    );
-  };
-
-
-  if (view === 'active') {
-    return (
-      <>
-        <Header
-          title="آزمون سفارشی"
-          onBack={() =>
-            setView('history')
-          }
-        />
-
-        <div className="page fade-up">
-          <div
-            className="card"
-            style={{
-              display: 'flex',
-              justifyContent:
-                'space-between',
-              alignItems: 'center',
-              marginBottom: 12,
-            }}
-          >
-            <span>
-              سؤال {progress} از{' '}
-              {session?.total ||
-                '—'}
-            </span>
-
-            <span className="badge b-yel">
-              ⏱{' '}
-              {formatTime(
-                secondsLeft
-              )}
-            </span>
-          </div>
-
-          {!question ? (
-            <div
-              style={{
-                display: 'flex',
-                justifyContent:
-                  'center',
-                padding: 40,
-              }}
-            >
-              <Spinner size={30} />
-            </div>
-          ) : (
-            <>
-              <QuestionCard
-                question={question}
-                answered={answer}
-                onAnswer={(
-                  questionId,
-                  selected
-                ) =>
-                  answerMutation.mutate({
-                    questionId,
-                    selected,
-                  })
-                }
-                showReport={false}
-              />
-
-              {answer && (
-                <div
-                  className="card fade-up"
-                  style={{
-                    borderColor:
-                      answer.is_correct
-                        ? 'var(--ok)'
-                        : 'var(--err)',
-                  }}
-                >
-                  <div
-                    style={{
-                      color:
-                        answer.is_correct
-                          ? 'var(--ok)'
-                          : 'var(--err)',
-
-                      fontWeight: 800,
-                    }}
-                  >
-                    {answer.is_correct
-                      ? '✅ پاسخ صحیح'
-                      : '❌ پاسخ اشتباه'}
-                  </div>
-
-                  {answer.explanation && (
-                    <div
-                      style={{
-                        marginTop: 8,
-
-                        lineHeight:
-                          1.8,
-
-                        color:
-                          'var(--tx2)',
-                      }}
-                    >
-                      {
-                        answer.explanation
-                      }
-                    </div>
-                  )}
-
-                  <button
-                    className="btn btn-p btn-full"
-                    style={{
-                      marginTop: 12,
-                    }}
-                    onClick={() =>
-                      loadNext(
-                        session.session_id
-                      )
-                    }
-                  >
-                    {answer.finished
-                      ? 'مشاهده نتیجه'
-                      : 'سؤال بعدی'}
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-
-          <button
-            className="btn btn-d btn-full"
-            style={{
-              marginTop: 12,
-            }}
-            disabled={
-              abandonMutation
-                .isPending
-            }
-            onClick={() => {
-              const confirmed =
-                window.confirm(
-                  'آزمون رها شود؟'
-                );
-
-              if (confirmed) {
-                abandonMutation
-                  .mutate();
-              }
-            }}
-          >
-            {abandonMutation
-              .isPending
-              ? 'در حال ثبت...'
-              : 'رهاکردن آزمون'}
-          </button>
-        </div>
-      </>
-    );
-  }
-
-
-  if (view === 'result') {
-    return (
-      <>
-        <Header
-          title="نتیجه آزمون"
-          onBack={() =>
-            setView('history')
-          }
-        />
-
-        <div className="page fade-up">
-          <div
-            className="card card-glow"
-            style={{
-              textAlign: 'center',
-              padding: 26,
-            }}
-          >
-            <div
-              style={{
-                fontSize: 48,
-              }}
-            >
-              {(result?.percentage ||
-                0) >= 70
-                ? '🎉'
-                : '📚'}
-            </div>
-
-            <div
-              style={{
-                fontSize: 28,
-                fontWeight: 800,
-                color: 'var(--acc)',
-                marginTop: 8,
-              }}
-            >
-              {result?.percentage ||
-                0}
-              ٪
-            </div>
-
-            <div
-              style={{
-                marginTop: 12,
-              }}
-            >
-              {result?.correct || 0}{' '}
-              پاسخ صحیح از{' '}
-              {result?.answered || 0}
-            </div>
-
-            <div
-              style={{
-                fontSize: 11,
-                color: 'var(--txm)',
-                marginTop: 6,
-              }}
-            >
-              وضعیت:{' '}
-              {statusLabel[
-                result?.status
-              ] ||
-                'تمام‌شده'}
-            </div>
-
-            <button
-              className="btn btn-p btn-full"
-              style={{
-                marginTop: 18,
-              }}
-              onClick={() =>
-                setView('history')
-              }
-            >
-              مشاهده تاریخچه
-            </button>
-          </div>
-        </div>
-      </>
-    );
-  }
-
-
-  if (view === 'history') {
-    const safeHistory =
-      Array.isArray(history)
-        ? history
-        : [];
-
-    return (
-      <>
-        <Header
-          title="تاریخچه آزمون‌ها"
-          onBack={() =>
-            setView('setup')
-          }
-        />
-
-        <div className="page fade-up">
-          <button
-            className="btn btn-p btn-full"
-            style={{
-              marginBottom: 14,
-            }}
-            onClick={() =>
-              setView('setup')
-            }
-          >
-            + آزمون جدید
-          </button>
-
-          {historyLoading ? (
-            <>
-              <SkeletonCard />
-              <SkeletonCard />
-            </>
-          ) : historyError ? (
-            <div className="empty">
-              <div>
-                دریافت تاریخچه انجام نشد.
-              </div>
-
-              <button
-                className="btn btn-p"
-                style={{
-                  marginTop: 12,
-                }}
-                onClick={() =>
-                  refetchHistory()
-                }
-              >
-                تلاش دوباره
-              </button>
-            </div>
-          ) : safeHistory.length ===
-            0 ? (
-            <div className="empty">
-              هنوز آزمونی ثبت نشده است.
-            </div>
-          ) : (
-            safeHistory.map(
-              (item) => (
-                <div
-                  key={
-                    item.session_id
-                  }
-                  className="card"
-                  style={{
-                    marginBottom: 9,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: 'flex',
-
-                      justifyContent:
-                        'space-between',
-
-                      gap: 8,
-                    }}
-                  >
-                    <div>
-                      <div
-                        style={{
-                          fontWeight:
-                            700,
-                        }}
-                      >
-                        {item.lesson ||
-                          'آزمون'}
-                      </div>
-
-                      <div
-                        style={{
-                          fontSize: 11,
-
-                          color:
-                            'var(--txm)',
-
-                          marginTop: 3,
-                        }}
-                      >
-                        {item.topic ||
-                          'همه مباحث'}
-
-                        {' • '}
-
-                        {item.answered ||
-                          0}
-                        /
-                        {item.total ||
-                          0}{' '}
-                        پاسخ
-                      </div>
-                    </div>
-
-                    <span
-                      className={`badge ${
-                        item.status ===
-                        'active'
-                          ? 'b-yel'
-                          : (
-                                item.percentage ||
-                                0
-                              ) >= 70
-                            ? 'b-grn'
-                            : 'b-gray'
-                      }`}
-                    >
-                      {item.status ===
-                      'active'
-                        ? statusLabel
-                            .active
-                        : `${
-                            item.percentage ||
-                            0
-                          }٪`}
-                    </span>
-                  </div>
-
-                  {item.status ===
-                    'active' && (
-                    <button
-                      className="btn btn-p btn-full"
-                      style={{
-                        marginTop: 10,
-                      }}
-                      onClick={() =>
-                        resume(item)
-                      }
-                    >
-                      ادامه آزمون
-                    </button>
-                  )}
-
-                  {item.status !==
-                    'active' && (
-                    <div
-                      style={{
-                        fontSize:
-                          10.5,
-
-                        color:
-                          'var(--txm)',
-
-                        marginTop:
-                          7,
-                      }}
-                    >
-                      {statusLabel[
-                        item.status
-                      ] ||
-                        item.status}
-                    </div>
-                  )}
-                </div>
-              )
-            )
-          )}
-        </div>
-      </>
-    );
-  }
 
 
   return (
     <>
-      <Header title="آزمون سفارشی" />
+      <Header
+        title="یادگیری"
+        subtitle={
+          'مسیر شخصی‌سازی‌شدهٔ مطالعه'
+        }
+        back={false}
+      />
 
-      <div className="page fade-up">
-        <button
-          className="btn btn-dark btn-full"
-          style={{
-            marginBottom: 14,
-          }}
-          onClick={() =>
-            setView('history')
+      <main className="page fade-up">
+        <section
+          className={
+            'card card-glow'
           }
-        >
-          📋 تاریخچه و ادامه آزمون
-        </button>
-
-        <div
-          className="card"
           style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 10,
+            padding: 18,
+            marginBottom: 16,
+
+            background:
+              'linear-gradient(145deg,rgba(29,78,216,.24),rgba(16,24,39,.94) 55%,rgba(34,211,238,.1))',
           }}
         >
-          <label
+          <div
             style={{
-              fontSize: 11,
-              color: 'var(--txm)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 13,
             }}
           >
-            درس
-          </label>
+            <div
+              style={{
+                width: 54,
+                height: 54,
 
-          {lessonsLoading ? (
-            <SkeletonCard />
-          ) : (
-            <select
-              className="inp"
-              value={config.lesson}
-              onChange={(event) =>
-                setConfig({
-                  ...config,
+                display: 'grid',
+                placeItems:
+                  'center',
 
-                  lesson:
-                    event.target.value,
+                borderRadius:
+                  17,
 
-                  topic:
-                    'همه',
-                })
-              }
+                background:
+                  'var(--grad-brand)',
+
+                boxShadow:
+                  'var(--shd-glow)',
+
+                fontSize: 26,
+              }}
             >
-              <option value="">
-                انتخاب درس
-              </option>
+              🧠
+            </div>
 
-              {lessons.map(
-                (item) => (
-                  <option
-                    key={item.name}
-                    value={item.name}
-                  >
-                    {item.name} (
-                    {item.count})
-                  </option>
-                )
-              )}
-            </select>
-          )}
+            <div
+              style={{
+                flex: 1,
+              }}
+            >
+              <div
+                style={{
+                  color:
+                    'var(--txm)',
+                  fontSize: 10.5,
+                }}
+              >
+                مرکز یادگیری هامزیار
+              </div>
 
-          <label
-            style={{
-              fontSize: 11,
-              color: 'var(--txm)',
-            }}
-          >
-            مبحث
-          </label>
+              <div
+                style={{
+                  fontSize: 17,
+                  fontWeight: 900,
+                  marginTop: 2,
+                }}
+              >
+                امروز چی یاد می‌گیری؟
+              </div>
 
-          <select
-            className="inp"
-            value={config.topic}
-            disabled={
-              !config.lesson
-            }
-            onChange={(event) =>
-              setConfig({
-                ...config,
+              <div
+                style={{
+                  color:
+                    'var(--tx2)',
 
-                topic:
-                  event.target.value,
-              })
-            }
-          >
-            <option value="همه">
-              همه مباحث
-            </option>
+                  fontSize:
+                    10.5,
 
-            {topics.map(
-              (item) => (
-                <option
-                  key={item.name}
-                  value={item.name}
+                  marginTop:
+                    3,
+                }}
+              >
+                منابع، آزمون و تحلیل
+                عملکرد در یک مسیر
+              </div>
+            </div>
+
+            {totalAnswers >
+              0 && (
+              <div
+                style={{
+                  textAlign:
+                    'center',
+                }}
+              >
+                <div
+                  style={{
+                    color:
+                      'var(--acc2)',
+
+                    fontSize:
+                      19,
+
+                    fontWeight:
+                      900,
+                  }}
                 >
-                  {item.name} (
-                  {item.count})
-                </option>
-              )
+                  {overall}٪
+                </div>
+
+                <div
+                  style={{
+                    color:
+                      'var(--txm)',
+
+                    fontSize:
+                      8.5,
+                  }}
+                >
+                  عملکرد کل
+                </div>
+              </div>
             )}
-          </select>
+          </div>
+        </section>
 
-          <label
-            style={{
-              fontSize: 11,
-              color: 'var(--txm)',
-            }}
-          >
-            تعداد سؤال
-          </label>
 
-          <select
-            className="inp"
-            value={config.count}
-            onChange={(event) =>
-              setConfig({
-                ...config,
-
-                count:
-                  Number(
-                    event.target
-                      .value
-                  ),
-              })
-            }
-          >
-            {[
-              5,
-              10,
-              15,
-              20,
-              30,
-              40,
-            ].map((count) => (
-              <option
-                key={count}
-                value={count}
-              >
-                {count} سؤال
-              </option>
-            ))}
-          </select>
-
-          <label
-            style={{
-              fontSize: 11,
-              color: 'var(--txm)',
-            }}
-          >
-            زمان
-          </label>
-
-          <select
-            className="inp"
-            value={
-              config.minutes
-            }
-            onChange={(event) =>
-              setConfig({
-                ...config,
-
-                minutes:
-                  Number(
-                    event.target
-                      .value
-                  ),
-              })
-            }
-          >
-            <option value={0}>
-              بدون محدودیت
-            </option>
-
-            {[
-              10,
-              20,
-              30,
-              60,
-              90,
-            ].map((minutes) => (
-              <option
-                key={minutes}
-                value={minutes}
-              >
-                {minutes} دقیقه
-              </option>
-            ))}
-          </select>
+        <div className="sec-title">
+          ⚡ شروع سریع
         </div>
 
-        <button
-          className="btn btn-p btn-full"
+        <section
           style={{
-            marginTop: 14,
+            display: 'grid',
+
+            gridTemplateColumns:
+              'repeat(4,minmax(0,1fr))',
+
+            gap: 7,
+
+            marginBottom:
+              18,
           }}
-          disabled={
-            !config.lesson ||
-            startMutation.isPending
+        >
+          {QUICK_LINKS.map(
+            (item) => (
+              <button
+                type="button"
+                key={item.label}
+
+                className={
+                  'card card-tap'
+                }
+
+                onClick={() =>
+                  open(item.route)
+                }
+
+                style={{
+                  padding:
+                    '11px 3px',
+
+                  minWidth:
+                    0,
+
+                  textAlign:
+                    'center',
+                }}
+              >
+                <span
+                  style={{
+                    display:
+                      'grid',
+
+                    width:
+                      38,
+
+                    height:
+                      38,
+
+                    placeItems:
+                      'center',
+
+                    margin:
+                      '0 auto 6px',
+
+                    borderRadius:
+                      12,
+
+                    background:
+                      item.soft,
+
+                    fontSize:
+                      19,
+                  }}
+                >
+                  {item.icon}
+                </span>
+
+                <span
+                  style={{
+                    display:
+                      'block',
+
+                    overflow:
+                      'hidden',
+
+                    color:
+                      item.color,
+
+                    fontSize:
+                      9.2,
+
+                    fontWeight:
+                      800,
+
+                    textOverflow:
+                      'ellipsis',
+
+                    whiteSpace:
+                      'nowrap',
+                  }}
+                >
+                  {item.label}
+                </span>
+              </button>
+            )
+          )}
+        </section>
+
+
+        <div className="sec-title">
+          📚 کتابخانه و ابزارها
+        </div>
+
+        <section
+          style={{
+            display: 'grid',
+            gap: 9,
+            marginBottom: 18,
+          }}
+        >
+          {LIBRARY.map(
+            (item) => (
+              <button
+                type="button"
+                key={item.title}
+
+                className={
+                  'card card-tap'
+                }
+
+                onClick={() =>
+                  open(item.route)
+                }
+
+                style={{
+                  display:
+                    'flex',
+
+                  alignItems:
+                    'center',
+
+                  width:
+                    '100%',
+
+                  gap:
+                    12,
+
+                  padding:
+                    13,
+
+                  textAlign:
+                    'right',
+                }}
+              >
+                <span
+                  style={{
+                    display:
+                      'grid',
+
+                    flex:
+                      '0 0 48px',
+
+                    height:
+                      48,
+
+                    placeItems:
+                      'center',
+
+                    borderRadius:
+                      15,
+
+                    background:
+                      item.soft,
+
+                    fontSize:
+                      23,
+                  }}
+                >
+                  {item.icon}
+                </span>
+
+                <span
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                  }}
+                >
+                  <span
+                    style={{
+                      display:
+                        'flex',
+
+                      alignItems:
+                        'center',
+
+                      gap: 7,
+                    }}
+                  >
+                    <b
+                      style={{
+                        fontSize:
+                          13.5,
+                      }}
+                    >
+                      {item.title}
+                    </b>
+
+                    <span
+                      style={{
+                        color:
+                          item.color,
+
+                        fontSize:
+                          8.5,
+                      }}
+                    >
+                      {item.meta}
+                    </span>
+                  </span>
+
+                  <span
+                    style={{
+                      display:
+                        'block',
+
+                      color:
+                        'var(--txm)',
+
+                      fontSize:
+                        10.5,
+
+                      marginTop:
+                        3,
+
+                      lineHeight:
+                        1.6,
+                    }}
+                  >
+                    {item.desc}
+                  </span>
+                </span>
+
+                <span
+                  style={{
+                    color:
+                      'var(--txm)',
+                  }}
+                >
+                  ←
+                </span>
+              </button>
+            )
+          )}
+        </section>
+
+
+        <section
+          className={
+            'card card-tap'
           }
           onClick={() =>
-            startMutation.mutate()
+            open(
+              '/learn/questions'
+            )
           }
+          onKeyDown={(event) => {
+            if (
+              event.key ===
+              'Enter'
+            ) {
+              open(
+                '/learn/questions'
+              );
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          style={{
+            padding: 16,
+            marginBottom: 18,
+            cursor: 'pointer',
+
+            background:
+              'linear-gradient(145deg,rgba(139,92,246,.13),rgba(16,24,39,.95))',
+
+            borderColor:
+              'rgba(139,92,246,.25)',
+          }}
         >
-          {startMutation
-            .isPending ? (
-            <Spinner size={16} />
-          ) : (
-            '🚀 شروع آزمون'
-          )}
-        </button>
-      </div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+            }}
+          >
+            <div
+              style={{
+                width: 52,
+                height: 52,
+
+                display:
+                  'grid',
+
+                placeItems:
+                  'center',
+
+                borderRadius:
+                  16,
+
+                background:
+                  'rgba(139,92,246,.15)',
+
+                fontSize:
+                  25,
+              }}
+            >
+              🧪
+            </div>
+
+            <div
+              style={{
+                flex: 1,
+              }}
+            >
+              <div
+                style={{
+                  fontWeight:
+                    900,
+
+                  fontSize:
+                    14.5,
+                }}
+              >
+                بانک سؤال و تمرین
+              </div>
+
+              <div
+                style={{
+                  color:
+                    'var(--txm)',
+
+                  fontSize:
+                    10.5,
+
+                  lineHeight:
+                    1.7,
+
+                  marginTop:
+                    3,
+                }}
+              >
+                تمرین آزاد، نقاط ضعف،
+                سطح سخت و طراحی سؤال
+              </div>
+            </div>
+
+            <span className="badge b-pur">
+              شروع
+            </span>
+          </div>
+        </section>
+
+
+        {stats.length > 0 && (
+          <section>
+            <div className="sec-title">
+              📊 عملکرد به تفکیک درس
+            </div>
+
+            <div className="card">
+              {stats.map(
+                (
+                  item,
+                  index
+                ) => {
+                  const value =
+                    safePercent(
+                      item.percentage
+                    );
+
+                  return (
+                    <div
+                      key={
+                        item.lesson ||
+                        index
+                      }
+                      style={{
+                        padding:
+                          '8px 0',
+
+                        borderBottom:
+                          index <
+                          stats.length -
+                            1
+                            ? '1px solid var(--bd)'
+                            : 0,
+                      }}
+                    >
+                      <div
+                        style={{
+                          display:
+                            'flex',
+
+                          justifyContent:
+                            'space-between',
+
+                          marginBottom:
+                            7,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize:
+                              12,
+
+                            fontWeight:
+                              700,
+                          }}
+                        >
+                          {item.lesson ||
+                            'نامشخص'}
+                        </span>
+
+                        <span
+                          style={{
+                            color:
+                              value >= 70
+                                ? 'var(--ok)'
+                                : value >=
+                                    40
+                                  ? 'var(--warn)'
+                                  : 'var(--err)',
+
+                            fontSize:
+                              10.5,
+
+                            fontWeight:
+                              800,
+                          }}
+                        >
+                          {value}٪
+                        </span>
+                      </div>
+
+                      <div className="pbar">
+                        <div
+                          className="pbar-f"
+                          style={{
+                            width:
+                              `${value}%`,
+                          }}
+                        />
+                      </div>
+
+                      <div
+                        style={{
+                          color:
+                            'var(--txm)',
+
+                          fontSize:
+                            8.5,
+
+                          marginTop:
+                            4,
+                        }}
+                      >
+                        {Number(
+                          item.correct
+                        ) || 0}{' '}
+
+                        پاسخ صحیح از{' '}
+
+                        {Number(
+                          item.total
+                        ) || 0}
+                      </div>
+                    </div>
+                  );
+                }
+              )}
+            </div>
+          </section>
+        )}
+      </main>
     </>
   );
 }
