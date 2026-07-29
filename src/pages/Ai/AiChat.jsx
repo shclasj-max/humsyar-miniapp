@@ -3,7 +3,6 @@ import {
   useRef,
   useState,
 } from 'react';
-
 import {
   useMutation,
   useQuery,
@@ -11,29 +10,19 @@ import {
 } from '@tanstack/react-query';
 
 import Header from '../../components/layout/Header';
-
 import {
   SkeletonCard,
   Spinner,
 } from '../../components/shared/Loading';
-
 import api from '../../lib/api';
-
 import {
   haptic,
   hapticNotif,
 } from '../../lib/telegram';
+import { useUIStore } from '../../stores/uiStore';
 
-import {
-  useUIStore,
-} from '../../stores/uiStore';
-
-
-const MAX_MEDIA_FALLBACK =
-  15 * 1024 * 1024;
-
-const MAX_INPUT_FALLBACK =
-  2000;
+const FALLBACK_MAX_MEDIA_BYTES = 15 * 1024 * 1024;
+const FALLBACK_MAX_INPUT_CHARS = 2000;
 
 const SUGGESTIONS = [
   'مبحث پتانسیل عمل را ساده توضیح بده',
@@ -58,73 +47,42 @@ const ACCEPTED_FILES = [
   'audio/x-wav',
 ].join(',');
 
+function getErrorMessage(error, fallback) {
+  const detail = error?.response?.data?.detail;
 
-function errorMessage(
-  error,
-  fallback,
-) {
-  const detail =
-    error?.response?.data?.detail;
-
-  if (
-    typeof detail === 'string'
-    && detail.trim()
-  ) {
+  if (typeof detail === 'string' && detail.trim()) {
     return detail;
   }
 
-  if (
-    Array.isArray(detail)
-    && detail[0]?.msg
-  ) {
-    return String(
-      detail[0].msg
-    );
+  if (Array.isArray(detail) && detail[0]?.msg) {
+    return String(detail[0].msg);
   }
 
-  if (
-    error?.code === 'ECONNABORTED'
-  ) {
-    return (
-      'پاسخ هوشیار بیش از حد طول کشید؛ '
-      + 'دوباره امتحان کنید'
-    );
+  if (error?.code === 'ECONNABORTED') {
+    return 'پاسخ هوشیار بیش از حد طول کشید؛ دوباره امتحان کنید';
   }
 
   return fallback;
 }
 
+function fileKind(file) {
+  const type = String(file?.type || '').toLowerCase();
+  const name = String(file?.name || '').toLowerCase();
 
-function detectFileKind(file) {
-  const type = String(
-    file?.type || ''
-  ).toLowerCase();
-
-  const name = String(
-    file?.name || ''
-  ).toLowerCase();
-
-  if (
-    type === 'application/pdf'
-    || name.endsWith('.pdf')
-  ) {
+  if (type === 'application/pdf' || name.endsWith('.pdf')) {
     return 'pdf';
   }
 
   if (
     type.startsWith('image/')
-    || /\.(jpe?g|png|webp)$/.test(
-      name
-    )
+    || /\.(jpe?g|png|webp)$/.test(name)
   ) {
     return 'image';
   }
 
   if (
     type.startsWith('audio/')
-    || /\.(aac|flac|m4a|mp3|mp4|oga|ogg|wav|webm)$/.test(
-      name
-    )
+    || /\.(aac|flac|m4a|mp3|mp4|oga|ogg|wav|webm)$/.test(name)
   ) {
     return 'audio';
   }
@@ -132,832 +90,493 @@ function detectFileKind(file) {
   return 'unknown';
 }
 
-
-function kindIcon(kind) {
-  if (kind === 'image') {
-    return '🖼️';
-  }
-
-  if (kind === 'pdf') {
-    return '📄';
-  }
-
-  if (kind === 'audio') {
-    return '🎙️';
-  }
-
+function fileIcon(kind) {
+  if (kind === 'image') return '🖼️';
+  if (kind === 'pdf') return '📄';
+  if (kind === 'audio') return '🎙️';
   return '📎';
 }
 
-
-function kindLabel(kind) {
-  if (kind === 'image') {
-    return 'تصویر سؤال';
-  }
-
-  if (kind === 'pdf') {
-    return 'سند مرجع PDF';
-  }
-
-  if (kind === 'audio') {
-    return 'پیام یا فایل صوتی';
-  }
-
+function fileLabel(kind) {
+  if (kind === 'image') return 'تصویر سؤال';
+  if (kind === 'pdf') return 'سند مرجع PDF';
+  if (kind === 'audio') return 'پیام یا فایل صوتی';
   return 'فایل';
 }
 
-
 function formatBytes(bytes) {
-  const value = Number(
-    bytes || 0
-  );
+  const value = Number(bytes || 0);
 
   if (value < 1024) {
     return `${value} بایت`;
   }
 
-  if (
-    value < 1024 * 1024
-  ) {
-    return (
-      `${Math.ceil(value / 1024)} کیلوبایت`
-    );
+  if (value < 1024 * 1024) {
+    return `${Math.ceil(value / 1024)} کیلوبایت`;
   }
 
-  return `${
-    (
-      value
-      / (1024 * 1024)
-    ).toLocaleString(
-      'fa-IR',
-      {
-        maximumFractionDigits: 1,
-      }
-    )
-  } مگابایت`;
+  return `${(value / (1024 * 1024)).toLocaleString('fa-IR', {
+    maximumFractionDigits: 1,
+  })} مگابایت`;
 }
-
 
 function formatDuration(seconds) {
-  const value = Math.max(
-    0,
-    Number(seconds || 0)
-  );
+  const value = Math.max(0, Number(seconds || 0));
+  const minutes = Math.floor(value / 60);
+  const rest = value % 60;
 
-  const minutes = Math.floor(
-    value / 60
-  );
-
-  const rest =
-    value % 60;
-
-  return `${
-    String(minutes).padStart(
-      2,
-      '0'
-    )
-  }:${
-    String(rest).padStart(
-      2,
-      '0'
-    )
-  }`;
+  return `${String(minutes).padStart(2, '0')}:${String(rest).padStart(2, '0')}`;
 }
-
 
 function formatDate(value) {
   if (!value) {
-    return (
-      'تا ۴۸ ساعت پس از بارگذاری'
-    );
+    return 'تا ۴۸ ساعت پس از بارگذاری';
   }
 
-  const date =
-    new Date(value);
+  const date = new Date(value);
 
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
-    return (
-      'تا ۴۸ ساعت پس از بارگذاری'
-    );
+  if (Number.isNaN(date.getTime())) {
+    return 'تا ۴۸ ساعت پس از بارگذاری';
   }
 
-  return date.toLocaleString(
-    'fa-IR',
-    {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }
-  );
+  return date.toLocaleString('fa-IR', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
-
-function makeId(prefix) {
-  return `${
-    prefix
-  }-${
-    Date.now()
-  }-${
-    Math.random()
-      .toString(36)
-      .slice(2, 8)
-  }`;
+function messageId(prefix) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
-
 
 export default function AiChat() {
-  const [
-    messages,
-    setMessages,
-  ] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [reported, setReported] = useState(() => new Set());
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [previewUrl, setPreviewUrl] = useState('');
 
-  const [
-    input,
-    setInput,
-  ] = useState('');
+  const endRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const recorderRef = useRef(null);
+  const recordingStreamRef = useRef(null);
+  const recordingChunksRef = useRef([]);
+  const recordingTimerRef = useRef(null);
 
-  const [
-    selectedFile,
-    setSelectedFile,
-  ] = useState(null);
-
-  const [
-    uploadProgress,
-    setUploadProgress,
-  ] = useState(0);
-
-  const [
-    reported,
-    setReported,
-  ] = useState(
-    () => new Set()
-  );
-
-  const [
-    isRecording,
-    setIsRecording,
-  ] = useState(false);
-
-  const [
-    recordingSeconds,
-    setRecordingSeconds,
-  ] = useState(0);
-
-  const [
-    previewUrl,
-    setPreviewUrl,
-  ] = useState('');
-
-  const endRef =
-    useRef(null);
-
-  const fileInputRef =
-    useRef(null);
-
-  const recorderRef =
-    useRef(null);
-
-  const recordingStreamRef =
-    useRef(null);
-
-  const recordingChunksRef =
-    useRef([]);
-
-  const recordingTimerRef =
-    useRef(null);
-
-  const toast =
-    useUIStore(
-      (state) => state.toast
-    );
-
-  const queryClient =
-    useQueryClient();
+  const toast = useUIStore((state) => state.toast);
+  const queryClient = useQueryClient();
 
   const {
     data: status,
     isLoading: statusLoading,
   } = useQuery({
-    queryKey: [
-      'ai-status',
-    ],
+    queryKey: ['ai-status'],
 
-    queryFn: () =>
-      api
-        .get(
-          '/api/ai/status'
-        )
-        .then(
-          (response) =>
-            response.data
-        ),
+    queryFn: () => api
+      .get('/api/ai/status')
+      .then((response) => response.data),
 
-    refetchInterval:
-      60_000,
+    refetchInterval: 60_000,
   });
 
   const {
     isLoading: historyLoading,
   } = useQuery({
-    queryKey: [
-      'ai-history',
-    ],
+    queryKey: ['ai-history'],
 
-    queryFn: () =>
-      api
-        .get(
-          '/api/ai/history'
-        )
-        .then(
-          (response) => {
-            const history =
-              Array.isArray(
-                response.data
-                  ?.messages
-              )
-                ? response.data
-                    .messages
-                : [];
+    queryFn: () => api
+      .get('/api/ai/history')
+      .then((response) => {
+        const history = Array.isArray(response.data?.messages)
+          ? response.data.messages
+          : [];
 
-            setMessages(
-              history.map(
-                (
-                  item,
-                  index
-                ) => ({
-                  ...item,
+        setMessages(
+          history.map((item, index) => ({
+            ...item,
+            id: `history-${index}`,
+          })),
+        );
 
-                  id:
-                    `history-${index}`,
-                })
-              )
-            );
-
-            return history;
-          }
-        ),
+        return history;
+      }),
   });
 
-  const maxMediaBytes =
-    Number(
-      status
-        ?.max_media_bytes
-    )
-    || MAX_MEDIA_FALLBACK;
+  const maxMediaBytes = (
+    Number(status?.max_media_bytes)
+    || FALLBACK_MAX_MEDIA_BYTES
+  );
 
-  const maxInputChars =
-    Number(
-      status
-        ?.max_input_chars
-    )
-    || MAX_INPUT_FALLBACK;
+  const maxInputChars = (
+    Number(status?.max_input_chars)
+    || FALLBACK_MAX_INPUT_CHARS
+  );
 
-  const capabilities =
-    status?.capabilities
-    || {};
+  const capabilities = status?.capabilities || {};
+  const activeReference = status?.active_reference || null;
 
-  const activeReference =
-    status?.active_reference
-    || null;
-
-  const unavailable =
+  const unavailable = (
     !status?.enabled
-    || status?.banned;
+    || status?.banned
+  );
 
-  const selectedKind =
-    detectFileKind(
-      selectedFile
-    );
+  const selectedKind = fileKind(selectedFile);
 
   useEffect(() => {
     if (!selectedFile) {
       setPreviewUrl('');
-
       return undefined;
     }
 
-    const url =
-      URL.createObjectURL(
-        selectedFile
-      );
-
+    const url = URL.createObjectURL(selectedFile);
     setPreviewUrl(url);
 
-    return () => {
-      URL.revokeObjectURL(
-        url
-      );
-    };
-  }, [
-    selectedFile,
-  ]);
+    return () => URL.revokeObjectURL(url);
+  }, [selectedFile]);
 
   useEffect(() => {
-    endRef.current
-      ?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'end',
-      });
-  }, [
-    messages,
-    uploadProgress,
-  ]);
-
-  useEffect(
-    () => () => {
-      if (
-        recordingTimerRef
-          .current
-      ) {
-        window.clearInterval(
-          recordingTimerRef
-            .current
-        );
-      }
-
-      const recorder =
-        recorderRef.current;
-
-      if (
-        recorder
-        && recorder.state
-          !== 'inactive'
-      ) {
-        recorder.onstop = null;
-        recorder.stop();
-      }
-
-      recordingStreamRef
-        .current
-        ?.getTracks?.()
-        .forEach(
-          (track) =>
-            track.stop()
-        );
-    },
-    []
-  );
-
-  const askMutation =
-    useMutation({
-      mutationFn: ({
-        message,
-        file,
-      }) => {
-        if (!file) {
-          return api.post(
-            '/api/ai/ask',
-
-            {
-              message,
-            },
-
-            {
-              timeout:
-                120_000,
-            }
-          );
-        }
-
-        const form =
-          new FormData();
-
-        form.append(
-          'message',
-          message || ''
-        );
-
-        form.append(
-          'file',
-          file,
-          file.name
-        );
-
-        setUploadProgress(1);
-
-        return api.post(
-          '/api/ai/ask-media',
-          form,
-          {
-            timeout:
-              180_000,
-
-            onUploadProgress:
-              (event) => {
-                if (
-                  !event.total
-                ) {
-                  setUploadProgress(
-                    (current) =>
-                      Math.max(
-                        current,
-                        12
-                      )
-                  );
-
-                  return;
-                }
-
-                const percent =
-                  Math.round(
-                    (
-                      event.loaded
-                      * 100
-                    )
-                    / event.total
-                  );
-
-                setUploadProgress(
-                  Math.min(
-                    100,
-                    Math.max(
-                      1,
-                      percent
-                    )
-                  )
-                );
-              },
-          }
-        );
-      },
-
-      onSuccess: async (
-        response,
-        variables
-      ) => {
-        hapticNotif(
-          'success'
-        );
-
-        setMessages(
-          (current) => [
-            ...current.map(
-              (item) =>
-                item.id
-                  === variables
-                    .clientId
-                  ? {
-                      ...item,
-                      failed:
-                        false,
-                    }
-                  : item
-            ),
-
-            {
-              id: makeId(
-                'assistant'
-              ),
-
-              role:
-                'assistant',
-
-              text: String(
-                response.data
-                  ?.answer
-                || ''
-              ),
-            },
-          ]
-        );
-
-        await Promise.all([
-          queryClient
-            .invalidateQueries({
-              queryKey: [
-                'ai-status',
-              ],
-            }),
-
-          queryClient
-            .invalidateQueries({
-              queryKey: [
-                'ai-history',
-              ],
-            }),
-        ]);
-      },
-
-      onError: async (
-        error,
-        variables
-      ) => {
-        hapticNotif(
-          'error'
-        );
-
-        setMessages(
-          (current) =>
-            current.map(
-              (item) =>
-                item.id
-                  === variables
-                    .clientId
-                  ? {
-                      ...item,
-                      failed:
-                        true,
-                    }
-                  : item
-            )
-        );
-
-        toast(
-          errorMessage(
-            error,
-            'هوشیار نتوانست پاسخ دهد'
-          ),
-          'error',
-          4200
-        );
-
-        await queryClient
-          .invalidateQueries({
-            queryKey: [
-              'ai-status',
-            ],
-          });
-      },
-
-      onSettled: () => {
-        window.setTimeout(
-          () =>
-            setUploadProgress(
-              0
-            ),
-          350
-        );
-      },
+    endRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'end',
     });
+  }, [messages, uploadProgress]);
 
-  const clearMutation =
-    useMutation({
-      mutationFn: () =>
-        api.delete(
-          '/api/ai/history',
+  useEffect(() => () => {
+    if (recordingTimerRef.current) {
+      window.clearInterval(recordingTimerRef.current);
+    }
 
-          {
-            params: {
-              clear_reference:
-                true,
-            },
-          }
-        ),
+    const recorder = recorderRef.current;
 
-      onSuccess:
-        async () => {
-          setMessages([]);
-          setSelectedFile(null);
-          setInput('');
-          setReported(
-            new Set()
-          );
+    if (recorder && recorder.state !== 'inactive') {
+      recorder.onstop = null;
+      recorder.stop();
+    }
 
-          hapticNotif(
-            'success'
-          );
+    recordingStreamRef.current
+      ?.getTracks?.()
+      .forEach((track) => track.stop());
+  }, []);
 
-          toast(
-            'گفت‌وگوی جدید شروع شد و سند مرجع قبلی پاک شد',
-            'info'
-          );
-
-          await Promise.all([
-            queryClient
-              .invalidateQueries({
-                queryKey: [
-                  'ai-history',
-                ],
-              }),
-
-            queryClient
-              .invalidateQueries({
-                queryKey: [
-                  'ai-status',
-                ],
-              }),
-          ]);
-        },
-
-      onError: (error) => {
-        toast(
-          errorMessage(
-            error,
-            'شروع گفت‌وگوی جدید انجام نشد'
-          ),
-          'error'
-        );
-      },
-    });
-
-  const clearReferenceMutation =
-    useMutation({
-      mutationFn: () =>
-        api.delete(
-          '/api/ai/reference'
-        ),
-
-      onSuccess:
-        async () => {
-          hapticNotif(
-            'success'
-          );
-
-          toast(
-            'سند مرجع پاک شد',
-            'success'
-          );
-
-          await queryClient
-            .invalidateQueries({
-              queryKey: [
-                'ai-status',
-              ],
-            });
-        },
-
-      onError: (error) => {
-        toast(
-          errorMessage(
-            error,
-            'پاک‌کردن سند مرجع انجام نشد'
-          ),
-          'error'
-        );
-      },
-    });
-
-  const reportMutation =
-    useMutation({
-      mutationFn: ({
-        question,
-        answer,
-      }) =>
-        api.post(
-          '/api/ai/report',
-
-          {
-            question,
-            answer,
-          }
-        ),
-
-      onSuccess: (
-        _,
-        variables
-      ) => {
-        setReported(
-          (current) =>
-            new Set([
-              ...current,
-              variables
-                .answerId,
-            ])
-        );
-
-        hapticNotif(
-          'success'
-        );
-
-        toast(
-          'گزارش پاسخ ثبت شد',
-          'success'
-        );
-      },
-
-      onError: () => {
-        toast(
-          'ثبت گزارش انجام نشد',
-          'error'
-        );
-      },
-    });
-
-  const remaining =
-    status?.unlimited
-      ? 'نامحدود'
-      : `${
-          status?.remaining
-          ?? 0
-        } از ${
-          status
-            ?.daily_limit
-          ?? 0
-        }`;
-
-  const canSend =
-    !unavailable
-    && !statusLoading
-    && !askMutation
-      .isPending
-    && !isRecording
-    && (
-      Boolean(
-        input.trim()
-      )
-      || Boolean(
-        selectedFile
-      )
-    );
-
-  const chooseFile =
-    (file) => {
+  const askMutation = useMutation({
+    mutationFn: ({ message, file }) => {
       if (!file) {
-        return;
+        return api.post(
+          '/api/ai/ask',
+          { message },
+          { timeout: 120_000 },
+        );
       }
 
-      const kind =
-        detectFileKind(
-          file
-        );
+      const form = new FormData();
 
-      if (
-        kind === 'unknown'
-      ) {
-        toast(
-          'فقط عکس، PDF یا فایل صوتی پشتیبانی می‌شود',
-          'warning'
-        );
-
-        return;
-      }
-
-      if (
-        file.size
-        > maxMediaBytes
-      ) {
-        toast(
-          `حجم فایل باید کمتر از ${
-            formatBytes(
-              maxMediaBytes
-            )
-          } باشد`,
-          'warning'
-        );
-
-        return;
-      }
-
-      if (
-        kind === 'image'
-        && capabilities
-          .image === false
-      ) {
-        toast(
-          'مدل فعلی امکان بررسی تصویر را ندارد',
-          'warning'
-        );
-
-        return;
-      }
-
-      if (
-        kind === 'pdf'
-        && capabilities
-          .pdf === false
-      ) {
-        toast(
-          'PDF فقط با ارائه‌دهنده Gemini قابل استفاده است',
-          'warning'
-        );
-
-        return;
-      }
-
-      if (
-        kind === 'audio'
-        && capabilities
-          .audio === false
-      ) {
-        toast(
-          'صدا فقط با ارائه‌دهنده Gemini قابل استفاده است',
-          'warning'
-        );
-
-        return;
-      }
-
-      setSelectedFile(file);
-      haptic('light');
-    };
-
-  const handleFileInput =
-    (event) => {
-      chooseFile(
-        event.target
-          .files?.[0]
+      form.append(
+        'message',
+        message || '',
       );
 
-      event.target.value =
-        '';
-    };
+      form.append(
+        'file',
+        file,
+        file.name,
+      );
 
-  const removeFile = () => {
+      setUploadProgress(1);
+
+      return api.post(
+        '/api/ai/ask-media',
+        form,
+        {
+          timeout: 180_000,
+
+          onUploadProgress: (event) => {
+            if (!event.total) {
+              setUploadProgress(
+                (current) => Math.max(current, 12),
+              );
+
+              return;
+            }
+
+            const percent = Math.round(
+              (event.loaded * 100) / event.total,
+            );
+
+            setUploadProgress(
+              Math.min(
+                100,
+                Math.max(1, percent),
+              ),
+            );
+          },
+        },
+      );
+    },
+
+    onSuccess: async (response, variables) => {
+      hapticNotif('success');
+
+      setMessages((current) => [
+        ...current.map((item) => (
+          item.id === variables.clientId
+            ? {
+                ...item,
+                failed: false,
+              }
+            : item
+        )),
+
+        {
+          id: messageId('assistant'),
+          role: 'assistant',
+          text: String(response.data?.answer || ''),
+        },
+      ]);
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['ai-status'],
+        }),
+
+        queryClient.invalidateQueries({
+          queryKey: ['ai-history'],
+        }),
+      ]);
+    },
+
+    onError: async (error, variables) => {
+      hapticNotif('error');
+
+      setMessages((current) => current.map((item) => (
+        item.id === variables.clientId
+          ? {
+              ...item,
+              failed: true,
+            }
+          : item
+      )));
+
+      toast(
+        getErrorMessage(
+          error,
+          'هوشیار نتوانست پاسخ دهد',
+        ),
+        'error',
+        4200,
+      );
+
+      await queryClient.invalidateQueries({
+        queryKey: ['ai-status'],
+      });
+    },
+
+    onSettled: () => {
+      window.setTimeout(
+        () => setUploadProgress(0),
+        350,
+      );
+    },
+  });
+
+  const clearMutation = useMutation({
+    mutationFn: () => api.delete(
+      '/api/ai/history',
+      {
+        params: {
+          clear_reference: true,
+        },
+      },
+    ),
+
+    onSuccess: async () => {
+      setMessages([]);
+      setSelectedFile(null);
+      setInput('');
+      setReported(new Set());
+
+      hapticNotif('success');
+
+      toast(
+        'گفت‌وگوی جدید شروع شد و سند مرجع قبلی پاک شد',
+        'info',
+      );
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['ai-history'],
+        }),
+
+        queryClient.invalidateQueries({
+          queryKey: ['ai-status'],
+        }),
+      ]);
+    },
+
+    onError: (error) => {
+      toast(
+        getErrorMessage(
+          error,
+          'شروع گفت‌وگوی جدید انجام نشد',
+        ),
+        'error',
+      );
+    },
+  });
+
+  const clearReferenceMutation = useMutation({
+    mutationFn: () => api.delete('/api/ai/reference'),
+
+    onSuccess: async () => {
+      hapticNotif('success');
+
+      toast(
+        'سند مرجع پاک شد',
+        'success',
+      );
+
+      await queryClient.invalidateQueries({
+        queryKey: ['ai-status'],
+      });
+    },
+
+    onError: (error) => {
+      toast(
+        getErrorMessage(
+          error,
+          'پاک‌کردن سند مرجع انجام نشد',
+        ),
+        'error',
+      );
+    },
+  });
+
+  const reportMutation = useMutation({
+    mutationFn: ({ question, answer }) => api.post(
+      '/api/ai/report',
+      {
+        question,
+        answer,
+      },
+    ),
+
+    onSuccess: (_, variables) => {
+      setReported(
+        (current) => new Set([
+          ...current,
+          variables.answerId,
+        ]),
+      );
+
+      hapticNotif('success');
+
+      toast(
+        'گزارش پاسخ ثبت شد',
+        'success',
+      );
+    },
+
+    onError: () => {
+      toast(
+        'ثبت گزارش انجام نشد',
+        'error',
+      );
+    },
+  });
+
+  const remaining = status?.unlimited
+    ? 'نامحدود'
+    : `${status?.remaining ?? 0} از ${status?.daily_limit ?? 0}`;
+
+  const canSend = (
+    !unavailable
+    && !statusLoading
+    && !askMutation.isPending
+    && !isRecording
+    && (
+      Boolean(input.trim())
+      || Boolean(selectedFile)
+    )
+  );
+
+  const chooseFile = (file) => {
+    if (!file) {
+      return;
+    }
+
+    const kind = fileKind(file);
+
+    if (kind === 'unknown') {
+      toast(
+        'فقط عکس، PDF یا فایل صوتی پشتیبانی می‌شود',
+        'warning',
+      );
+
+      return;
+    }
+
+    if (file.size > maxMediaBytes) {
+      toast(
+        `حجم فایل باید کمتر از ${formatBytes(maxMediaBytes)} باشد`,
+        'warning',
+      );
+
+      return;
+    }
+
+    if (
+      kind === 'image'
+      && capabilities.image === false
+    ) {
+      toast(
+        'مدل فعلی امکان بررسی تصویر را ندارد',
+        'warning',
+      );
+
+      return;
+    }
+
+    if (
+      kind === 'pdf'
+      && capabilities.pdf === false
+    ) {
+      toast(
+        'PDF فقط با ارائه‌دهنده Gemini قابل استفاده است',
+        'warning',
+      );
+
+      return;
+    }
+
+    if (
+      kind === 'audio'
+      && capabilities.audio === false
+    ) {
+      toast(
+        'صدا فقط با ارائه‌دهنده Gemini قابل استفاده است',
+        'warning',
+      );
+
+      return;
+    }
+
+    setSelectedFile(file);
+    haptic('light');
+  };
+
+  const handleFileInput = (event) => {
+    chooseFile(
+      event.target.files?.[0],
+    );
+
+    event.target.value = '';
+  };
+
+  const removeSelectedFile = () => {
     setSelectedFile(null);
     setUploadProgress(0);
     haptic('light');
@@ -965,76 +584,56 @@ export default function AiChat() {
 
   const send = (
     customMessage,
-    options = {}
+    options = {},
   ) => {
-    const message =
-      String(
-        customMessage
-        ?? input
-      ).trim();
+    const message = String(
+      customMessage ?? input,
+    ).trim();
 
-    const file =
-      options.ignoreFile
-        ? null
-        : selectedFile;
+    const file = options.ignoreFile
+      ? null
+      : selectedFile;
 
     if (
-      (
-        !message
-        && !file
-      )
-      || askMutation
-        .isPending
+      (!message && !file)
+      || askMutation.isPending
       || unavailable
     ) {
       return;
     }
 
-    const id =
-      makeId('user');
-
-    const kind =
-      detectFileKind(
-        file
-      );
+    const id = messageId('user');
+    const kind = fileKind(file);
 
     haptic('medium');
 
-    setMessages(
-      (current) => [
-        ...current,
+    setMessages((current) => [
+      ...current,
 
-        {
-          id,
-          role: 'user',
+      {
+        id,
+        role: 'user',
 
-          text:
-            message
-            || (
-              file
-                ? `[${
-                    kindLabel(
-                      kind
-                    )
-                  } فرستاده شد]`
-                : ''
-            ),
-
-          attachment:
+        text: (
+          message
+          || (
             file
-              ? {
-                  kind,
-                  name:
-                    file.name,
-                  size:
-                    file.size,
-                }
-              : null,
+              ? `[${fileLabel(kind)} فرستاده شد]`
+              : ''
+          )
+        ),
 
-          failed: false,
-        },
-      ]
-    );
+        attachment: file
+          ? {
+              kind,
+              name: file.name,
+              size: file.size,
+            }
+          : null,
+
+        failed: false,
+      },
+    ]);
 
     setInput('');
 
@@ -1049,352 +648,253 @@ export default function AiChat() {
     });
   };
 
-  const followUp =
-    (type) => {
-      const prompts = {
-        example:
-          'برای پاسخ قبلی یک مثال بالینی ساده بزن.',
+  const followUp = (type) => {
+    const prompts = {
+      example:
+        'برای پاسخ قبلی یک مثال بالینی ساده بزن.',
 
-        summary:
-          'پاسخ قبلی را خیلی کوتاه و نکته‌ای خلاصه کن.',
+      summary:
+        'پاسخ قبلی را خیلی کوتاه و نکته‌ای خلاصه کن.',
 
-        similar:
-          'براساس پاسخ قبلی یک سؤال چهارگزینه‌ای مشابه بساز.',
-      };
-
-      send(
-        prompts[type],
-        {
-          ignoreFile:
-            true,
-        }
-      );
+      similar:
+        'براساس پاسخ قبلی یک سؤال چهارگزینه‌ای مشابه بساز.',
     };
+
+    send(
+      prompts[type],
+      {
+        ignoreFile: true,
+      },
+    );
+  };
 
   const reportAnswer = (
     answer,
-    index
+    index,
   ) => {
     const previousUser = [
-      ...messages.slice(
-        0,
-        index
-      ),
+      ...messages.slice(0, index),
     ]
       .reverse()
       .find(
-        (item) =>
-          item.role
-          === 'user'
+        (item) => item.role === 'user',
       );
 
     reportMutation.mutate({
-      question:
-        String(
-          previousUser
-            ?.text
-          || 'پرسش کاربر'
-        ).slice(
-          0,
-          maxInputChars
-        ),
+      question: String(
+        previousUser?.text
+        || 'پرسش کاربر',
+      ).slice(
+        0,
+        maxInputChars,
+      ),
 
-      answer:
-        String(
-          answer.text
-          || ''
-        ).slice(
-          0,
-          12000
-        ),
+      answer: String(
+        answer.text || '',
+      ).slice(
+        0,
+        12000,
+      ),
 
-      answerId:
-        answer.id,
+      answerId: answer.id,
     });
   };
 
-  const stopRecording =
-    () => {
-      const recorder =
-        recorderRef.current;
+  const stopRecording = () => {
+    const recorder = recorderRef.current;
 
-      if (
-        recorder
-        && recorder.state
-          !== 'inactive'
-      ) {
-        recorder.stop();
-      }
-    };
+    if (
+      recorder
+      && recorder.state !== 'inactive'
+    ) {
+      recorder.stop();
+    }
+  };
 
-  const startRecording =
-    async () => {
-      if (
-        askMutation
-          .isPending
-        || isRecording
-      ) {
-        return;
-      }
+  const startRecording = async () => {
+    if (
+      askMutation.isPending
+      || isRecording
+    ) {
+      return;
+    }
 
-      if (
-        capabilities
-          .audio === false
-      ) {
-        toast(
-          'ضبط صدا فقط با ارائه‌دهنده Gemini قابل استفاده است',
-          'warning'
-        );
+    if (capabilities.audio === false) {
+      toast(
+        'ضبط صدا فقط با ارائه‌دهنده Gemini قابل استفاده است',
+        'warning',
+      );
 
-        return;
-      }
+      return;
+    }
 
-      if (
-        !navigator
-          .mediaDevices
-          ?.getUserMedia
-        || typeof window
-          .MediaRecorder
-          === 'undefined'
-      ) {
-        toast(
-          'مرورگر این دستگاه ضبط صدا را پشتیبانی نمی‌کند؛ فایل صوتی انتخاب کنید',
-          'warning',
-          4200
-        );
+    if (
+      !navigator.mediaDevices?.getUserMedia
+      || typeof window.MediaRecorder === 'undefined'
+    ) {
+      toast(
+        'مرورگر این دستگاه ضبط صدا را پشتیبانی نمی‌کند؛ فایل صوتی انتخاب کنید',
+        'warning',
+        4200,
+      );
 
-        return;
-      }
+      return;
+    }
 
-      try {
-        const stream =
-          await navigator
-            .mediaDevices
-            .getUserMedia({
-              audio: {
-                echoCancellation:
-                  true,
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          channelCount: 1,
+        },
+      });
 
-                noiseSuppression:
-                  true,
+      recordingStreamRef.current = stream;
+      recordingChunksRef.current = [];
 
-                channelCount:
-                  1,
-              },
-            });
+      const preferredTypes = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/mp4',
+      ];
 
-        recordingStreamRef
-          .current = stream;
+      const mimeType = preferredTypes.find((type) => (
+        window.MediaRecorder.isTypeSupported?.(type)
+      ));
 
-        recordingChunksRef
-          .current = [];
-
-        const preferredTypes = [
-          'audio/webm;codecs=opus',
-          'audio/webm',
-          'audio/mp4',
-        ];
-
-        const mimeType =
-          preferredTypes.find(
-            (type) =>
-              window
-                .MediaRecorder
-                .isTypeSupported
-                ? (
-                  type
-                )
+      const recorder = mimeType
+        ? new window.MediaRecorder(
+            stream,
+            { mimeType },
+          )
+        : new window.MediaRecorder(
+            stream,
           );
 
-        const recorder =
-          mimeType
-            ? new window
-                .MediaRecorder(
-                  stream,
-                  {
-                    mimeType,
-                  }
-                )
-            : new window
-                .MediaRecorder(
-                  stream
-                );
+      recorderRef.current = recorder;
 
-        recorderRef.current =
-          recorder;
-
-        recorder.ondataavailable =
-          (event) => {
-            if (
-              event.data?.size
-            ) {
-              recordingChunksRef
-                .current
-                .push(
-                  event.data
-                );
-            }
-          };
-
-        recorder.onerror =
-          () => {
-            toast(
-              'ضبط صدا با خطا متوقف شد',
-              'error'
-            );
-          };
-
-        recorder.onstop =
-          () => {
-            if (
-              recordingTimerRef
-                .current
-            ) {
-              window.clearInterval(
-                recordingTimerRef
-                  .current
-              );
-
-              recordingTimerRef
-                .current = null;
-            }
-
-            stream
-              .getTracks()
-              .forEach(
-                (track) =>
-                  track.stop()
-              );
-
-            recordingStreamRef
-              .current = null;
-
-            setIsRecording(
-              false
-            );
-
-            setRecordingSeconds(
-              0
-            );
-
-            const finalType =
-              recorder.mimeType
-              || mimeType
-              || 'audio/webm';
-
-            const blob =
-              new Blob(
-                recordingChunksRef
-                  .current,
-                {
-                  type:
-                    finalType,
-                }
-              );
-
-            recordingChunksRef
-              .current = [];
-
-            if (!blob.size) {
-              toast(
-                'صدایی ضبط نشد؛ دوباره امتحان کنید',
-                'warning'
-              );
-
-              return;
-            }
-
-            if (
-              blob.size
-              > maxMediaBytes
-            ) {
-              toast(
-                `حجم صدای ضبط‌شده بیشتر از ${
-                  formatBytes(
-                    maxMediaBytes
-                  )
-                } است`,
-                'warning'
-              );
-
-              return;
-            }
-
-            const extension =
-              finalType.includes(
-                'mp4'
-              )
-                ? 'm4a'
-                : 'webm';
-
-            chooseFile(
-              new File(
-                [blob],
-
-                `voice-${
-                  Date.now()
-                }.${extension}`,
-
-                {
-                  type:
-                    finalType,
-                }
-              )
-            );
-          };
-
-        recorder.start(500);
-
-        setRecordingSeconds(
-          0
-        );
-
-        setIsRecording(
-          true
-        );
-
-        recordingTimerRef
-          .current =
-          window.setInterval(
-            () => {
-              setRecordingSeconds(
-                (current) =>
-                  current + 1
-              );
-            },
-            1000
-          );
-
-        haptic('medium');
-      } catch (error) {
-        recordingStreamRef
-          .current
-          ?.getTracks?.()
-          .forEach(
-            (track) =>
-              track.stop()
-          );
-
-        recordingStreamRef
-          .current = null;
-
-        if (
-          error?.name
-          === 'NotAllowedError'
-        ) {
-          toast(
-            'برای ضبط صدا باید دسترسی میکروفون را فعال کنید',
-            'warning',
-            4200
-          );
-        } else {
-          toast(
-            'شروع ضبط صدا انجام نشد',
-            'error'
+      recorder.ondataavailable = (event) => {
+        if (event.data?.size) {
+          recordingChunksRef.current.push(
+            event.data,
           );
         }
+      };
+
+      recorder.onerror = () => {
+        toast(
+          'ضبط صدا با خطا متوقف شد',
+          'error',
+        );
+      };
+
+      recorder.onstop = () => {
+        if (recordingTimerRef.current) {
+          window.clearInterval(
+            recordingTimerRef.current,
+          );
+
+          recordingTimerRef.current = null;
+        }
+
+        stream
+          .getTracks()
+          .forEach(
+            (track) => track.stop(),
+          );
+
+        recordingStreamRef.current = null;
+
+        setIsRecording(false);
+        setRecordingSeconds(0);
+
+        const finalType = (
+          recorder.mimeType
+          || mimeType
+          || 'audio/webm'
+        );
+
+        const blob = new Blob(
+          recordingChunksRef.current,
+          {
+            type: finalType,
+          },
+        );
+
+        recordingChunksRef.current = [];
+
+        if (!blob.size) {
+          toast(
+            'صدایی ضبط نشد؛ دوباره امتحان کنید',
+            'warning',
+          );
+
+          return;
+        }
+
+        if (blob.size > maxMediaBytes) {
+          toast(
+            `حجم صدای ضبط‌شده بیشتر از ${formatBytes(maxMediaBytes)} است`,
+            'warning',
+          );
+
+          return;
+        }
+
+        const extension = finalType.includes('mp4')
+          ? 'm4a'
+          : 'webm';
+
+        chooseFile(
+          new File(
+            [blob],
+            `voice-${Date.now()}.${extension}`,
+            {
+              type: finalType,
+            },
+          ),
+        );
+      };
+
+      recorder.start(500);
+
+      setRecordingSeconds(0);
+      setIsRecording(true);
+
+      recordingTimerRef.current = window.setInterval(
+        () => {
+          setRecordingSeconds(
+            (current) => current + 1,
+          );
+        },
+        1000,
+      );
+
+      haptic('medium');
+    } catch (error) {
+      recordingStreamRef.current
+        ?.getTracks?.()
+        .forEach(
+          (track) => track.stop(),
+        );
+
+      recordingStreamRef.current = null;
+
+      if (error?.name === 'NotAllowedError') {
+        toast(
+          'برای ضبط صدا باید دسترسی میکروفون را فعال کنید',
+          'warning',
+          4200,
+        );
+      } else {
+        toast(
+          'شروع ضبط صدا انجام نشد',
+          'error',
+        );
       }
-    };
+    }
+  };
 
   const headerAction = (
     <button
@@ -1402,26 +902,17 @@ export default function AiChat() {
       className="btn btn-dark"
       style={styles.headerButton}
       onClick={
-        () =>
-          clearMutation
-            .mutate()
+        () => clearMutation.mutate()
       }
       disabled={
-        clearMutation
-          .isPending
-        || askMutation
-          .isPending
+        clearMutation.isPending
+        || askMutation.isPending
       }
       aria-label="شروع گفت‌وگوی جدید"
     >
       {
-        clearMutation
-          .isPending
-          ? (
-            <Spinner
-              size={15}
-            />
-          )
+        clearMutation.isPending
+          ? <Spinner size={15} />
           : '＋'
       }
 
@@ -1445,31 +936,17 @@ export default function AiChat() {
           className="card card-glow"
           style={styles.statusCard}
         >
-          <div
-            style={styles.statusTop}
-          >
-            <div
-              style={styles.aiAvatar}
-            >
+          <div style={styles.statusTop}>
+            <div style={styles.aiAvatar}>
               ✦
             </div>
 
-            <div
-              style={styles.statusText}
-            >
-              <strong
-                style={
-                  styles.statusTitle
-                }
-              >
+            <div style={styles.statusText}>
+              <strong style={styles.statusTitle}>
                 هوشیار آماده کمک است
               </strong>
 
-              <span
-                style={
-                  styles.statusSubtitle
-                }
-              >
+              <span style={styles.statusSubtitle}>
                 متن، عکس، PDF و صدای سؤال را بفرست
               </span>
             </div>
@@ -1484,9 +961,7 @@ export default function AiChat() {
                 }`
               }
             >
-              <span
-                className="badge-dot"
-              />
+              <span className="badge-dot" />
 
               {
                 statusLoading
@@ -1500,9 +975,7 @@ export default function AiChat() {
             </span>
           </div>
 
-          <div
-            style={styles.statusMeta}
-          >
+          <div style={styles.statusMeta}>
             <span>
               سهمیه امروز:{' '}
               <b>{remaining}</b>
@@ -1511,10 +984,7 @@ export default function AiChat() {
             <span>
               مدل:{' '}
               <b>
-                {
-                  status?.provider
-                  || '—'
-                }
+                {status?.provider || '—'}
               </b>
             </span>
           </div>
@@ -1529,32 +999,26 @@ export default function AiChat() {
                 <div
                   className="pbar-f"
                   style={{
-                    width:
-                      `${
-                        Math.min(
-                          100,
-
-                          Math.max(
-                            0,
-
+                    width: `${
+                      Math.min(
+                        100,
+                        Math.max(
+                          0,
+                          (
                             (
-                              (
-                                status
-                                  ?.used_today
-                                || 0
-                              )
-                              / Math.max(
-                                1,
-
-                                status
-                                  ?.daily_limit
-                                || 1
-                              )
+                              status?.used_today
+                              || 0
                             )
-                            * 100
+                            / Math.max(
+                              1,
+                              status?.daily_limit
+                              || 1,
+                            )
                           )
-                        )
-                      }%`,
+                          * 100,
+                        ),
+                      )
+                    }%`,
                   }}
                 />
               </div>
@@ -1567,52 +1031,26 @@ export default function AiChat() {
           && (
             <section
               className="card"
-              style={
-                styles.referenceCard
-              }
+              style={styles.referenceCard}
             >
-              <div
-                style={
-                  styles.referenceIcon
-                }
-              >
+              <div style={styles.referenceIcon}>
                 PDF
               </div>
 
-              <div
-                style={
-                  styles.referenceText
-                }
-              >
-                <strong
-                  style={
-                    styles.referenceName
-                  }
-                >
-                  {
-                    activeReference
-                      .name
-                  }
+              <div style={styles.referenceText}>
+                <strong style={styles.referenceName}>
+                  {activeReference.name}
                 </strong>
 
-                <span
-                  style={
-                    styles.referenceHint
-                  }
-                >
+                <span style={styles.referenceHint}>
                   سند مرجع فعال است؛ سؤال‌های بعدی با توجه به آن پاسخ داده می‌شوند.
                 </span>
 
-                <span
-                  style={
-                    styles.referenceExpiry
-                  }
-                >
+                <span style={styles.referenceExpiry}>
                   انقضا:{' '}
                   {
                     formatDate(
-                      activeReference
-                        .expires_at
+                      activeReference.expires_at,
                     )
                   }
                 </span>
@@ -1621,30 +1059,19 @@ export default function AiChat() {
               <button
                 type="button"
                 className="btn btn-d"
-                style={
-                  styles.iconButton
-                }
+                style={styles.iconButton}
                 onClick={
-                  () =>
-                    clearReferenceMutation
-                      .mutate()
+                  () => clearReferenceMutation.mutate()
                 }
                 disabled={
-                  clearReferenceMutation
-                    .isPending
-                  || askMutation
-                    .isPending
+                  clearReferenceMutation.isPending
+                  || askMutation.isPending
                 }
                 aria-label="پاک‌کردن سند مرجع"
               >
                 {
-                  clearReferenceMutation
-                    .isPending
-                    ? (
-                      <Spinner
-                        size={16}
-                      />
-                    )
+                  clearReferenceMutation.isPending
+                    ? <Spinner size={16} />
                     : '×'
                 }
               </button>
@@ -1658,15 +1085,9 @@ export default function AiChat() {
           && (
             <div
               className="card"
-              style={
-                styles.unavailableCard
-              }
+              style={styles.unavailableCard}
             >
-              <span
-                style={
-                  styles.unavailableIcon
-                }
-              >
+              <span style={styles.unavailableIcon}>
                 {
                   status?.banned
                     ? '⛔'
@@ -1683,17 +1104,12 @@ export default function AiChat() {
                   }
                 </strong>
 
-                <p
-                  style={
-                    styles.unavailableText
-                  }
-                >
+                <p style={styles.unavailableText}>
                   {
                     status?.banned
                       ? 'برای پیگیری از بخش تیکت با پشتیبانی تماس بگیرید.'
                       : (
-                        status
-                          ?.disabled_message
+                        status?.disabled_message
                         || 'مدیریت در حال آماده‌سازی این بخش است.'
                       )
                   }
@@ -1713,18 +1129,9 @@ export default function AiChat() {
               || historyLoading
             )
             && (
-              <div
-                style={
-                  styles.loadingList
-                }
-              >
-                <SkeletonCard
-                  lines={2}
-                />
-
-                <SkeletonCard
-                  lines={3}
-                />
+              <div style={styles.loadingList}>
+                <SkeletonCard lines={2} />
+                <SkeletonCard lines={3} />
               </div>
             )
           }
@@ -1734,107 +1141,56 @@ export default function AiChat() {
             && !historyLoading
             && messages.length === 0
             && (
-              <div
-                style={styles.welcome}
-              >
-                <div
-                  style={
-                    styles.welcomeOrb
-                  }
-                >
+              <div style={styles.welcome}>
+                <div style={styles.welcomeOrb}>
                   ✦
                 </div>
 
-                <h2
-                  style={
-                    styles.welcomeTitle
-                  }
-                >
+                <h2 style={styles.welcomeTitle}>
                   از هوشیار بپرس
                 </h2>
 
-                <p
-                  style={
-                    styles.welcomeText
-                  }
-                >
+                <p style={styles.welcomeText}>
                   سؤال را تایپ کن، از برگه عکس بگیر، جزوه PDF را مرجع کن یا سؤال را با صدا بگو.
                 </p>
 
-                <div
-                  style={
-                    styles.capabilityGrid
-                  }
-                >
-                  <span
-                    style={
-                      styles.capabilityChip
-                    }
-                  >
+                <div style={styles.capabilityGrid}>
+                  <span style={styles.capabilityChip}>
                     📝 متن
                   </span>
 
-                  <span
-                    style={
-                      styles.capabilityChip
-                    }
-                  >
+                  <span style={styles.capabilityChip}>
                     🖼️ عکس
                   </span>
 
-                  <span
-                    style={
-                      styles.capabilityChip
-                    }
-                  >
+                  <span style={styles.capabilityChip}>
                     📄 PDF
                   </span>
 
-                  <span
-                    style={
-                      styles.capabilityChip
-                    }
-                  >
+                  <span style={styles.capabilityChip}>
                     🎙️ صدا
                   </span>
                 </div>
 
-                <div
-                  style={
-                    styles.suggestions
-                  }
-                >
+                <div style={styles.suggestions}>
                   {
-                    SUGGESTIONS.map(
-                      (suggestion) => (
-                        <button
-                          key={
-                            suggestion
-                          }
-                          type="button"
-                          style={
-                            styles.suggestion
-                          }
-                          onClick={
-                            () =>
-                              send(
-                                suggestion
-                              )
-                          }
-                          disabled={
-                            unavailable
-                            || askMutation
-                              .isPending
-                          }
-                        >
-                          <span>
-                            ↗
-                          </span>
-
-                          {suggestion}
-                        </button>
-                      )
-                    )
+                    SUGGESTIONS.map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        type="button"
+                        style={styles.suggestion}
+                        onClick={
+                          () => send(suggestion)
+                        }
+                        disabled={
+                          unavailable
+                          || askMutation.isPending
+                        }
+                      >
+                        <span>↗</span>
+                        {suggestion}
+                      </button>
+                    ))
                   }
                 </div>
               </div>
@@ -1842,256 +1198,178 @@ export default function AiChat() {
           }
 
           {
-            messages.map(
-              (
-                item,
-                index
-              ) => {
-                const isUser =
-                  item.role
-                  === 'user';
+            messages.map((item, index) => {
+              const isUser = item.role === 'user';
+              const isReported = reported.has(item.id);
 
-                const isReported =
-                  reported.has(
+              return (
+                <article
+                  key={
                     item.id
-                  );
+                    || `${item.role}-${index}`
+                  }
+                  style={{
+                    ...styles.messageRow,
 
-                return (
-                  <article
-                    key={
-                      item.id
-                      || `${
-                        item.role
-                      }-${index}`
-                    }
+                    justifyContent: isUser
+                      ? 'flex-start'
+                      : 'flex-end',
+                  }}
+                >
+                  <div
                     style={{
-                      ...styles
-                        .messageRow,
+                      ...styles.bubble,
 
-                      justifyContent:
+                      ...(
                         isUser
-                          ? 'flex-start'
-                          : 'flex-end',
+                          ? styles.userBubble
+                          : styles.assistantBubble
+                      ),
+
+                      ...(
+                        item.failed
+                          ? styles.failedBubble
+                          : {}
+                      ),
                     }}
                   >
-                    <div
-                      style={{
-                        ...styles
-                          .bubble,
-
-                        ...(
-                          isUser
-                            ? styles
-                                .userBubble
-                            : styles
-                                .assistantBubble
-                        ),
-
-                        ...(
-                          item.failed
-                            ? styles
-                                .failedBubble
-                            : {}
-                        ),
-                      }}
-                    >
-                      <div
-                        style={
-                          styles.bubbleHead
-                        }
-                      >
-                        <span>
-                          {
-                            isUser
-                              ? 'شما'
-                              : '✦ هوشیار'
-                          }
-                        </span>
-
+                    <div style={styles.bubbleHead}>
+                      <span>
                         {
-                          item.failed
-                          && (
-                            <span
-                              style={
-                                styles.failedText
-                              }
-                            >
-                              ارسال ناموفق
-                            </span>
-                          )
+                          isUser
+                            ? 'شما'
+                            : '✦ هوشیار'
                         }
-                      </div>
+                      </span>
 
                       {
-                        item.attachment
+                        item.failed
                         && (
-                          <div
-                            style={
-                              styles.messageAttachment
-                            }
-                          >
-                            <span
-                              style={
-                                styles.messageAttachmentIcon
-                              }
-                            >
-                              {
-                                kindIcon(
-                                  item
-                                    .attachment
-                                    .kind
-                                )
-                              }
-                            </span>
-
-                            <span
-                              style={
-                                styles.messageAttachmentText
-                              }
-                            >
-                              <b>
-                                {
-                                  item
-                                    .attachment
-                                    .name
-                                  || kindLabel(
-                                    item
-                                      .attachment
-                                      .kind
-                                  )
-                                }
-                              </b>
-
-                              {
-                                item
-                                  .attachment
-                                  .size
-                                  ? formatBytes(
-                                    item
-                                      .attachment
-                                      .size
-                                  )
-                                  : ''
-                              }
-                            </span>
-                          </div>
-                        )
-                      }
-
-                      <div
-                        dir="auto"
-                        style={
-                          styles.messageText
-                        }
-                      >
-                        {item.text}
-                      </div>
-
-                      {
-                        !isUser
-                        && item.text
-                        && (
-                          <div
-                            style={
-                              styles.answerActions
-                            }
-                          >
-                            <button
-                              type="button"
-                              style={
-                                styles.miniAction
-                              }
-                              onClick={
-                                () =>
-                                  followUp(
-                                    'example'
-                                  )
-                              }
-                              disabled={
-                                askMutation
-                                  .isPending
-                                || unavailable
-                              }
-                            >
-                              مثال
-                            </button>
-
-                            <button
-                              type="button"
-                              style={
-                                styles.miniAction
-                              }
-                              onClick={
-                                () =>
-                                  followUp(
-                                    'summary'
-                                  )
-                              }
-                              disabled={
-                                askMutation
-                                  .isPending
-                                || unavailable
-                              }
-                            >
-                              خلاصه
-                            </button>
-
-                            <button
-                              type="button"
-                              style={
-                                styles.miniAction
-                              }
-                              onClick={
-                                () =>
-                                  followUp(
-                                    'similar'
-                                  )
-                              }
-                              disabled={
-                                askMutation
-                                  .isPending
-                                || unavailable
-                              }
-                            >
-                              سؤال مشابه
-                            </button>
-
-                            <button
-                              type="button"
-                              style={{
-                                ...styles
-                                  .miniAction,
-
-                                ...styles
-                                  .reportAction,
-                              }}
-                              onClick={
-                                () =>
-                                  reportAnswer(
-                                    item,
-                                    index
-                                  )
-                              }
-                              disabled={
-                                isReported
-                                || reportMutation
-                                  .isPending
-                              }
-                            >
-                              {
-                                isReported
-                                  ? 'گزارش شد ✓'
-                                  : 'گزارش'
-                              }
-                            </button>
-                          </div>
+                          <span style={styles.failedText}>
+                            ارسال ناموفق
+                          </span>
                         )
                       }
                     </div>
-                  </article>
-                );
-              }
-            )
+
+                    {
+                      item.attachment
+                      && (
+                        <div style={styles.messageAttachment}>
+                          <span style={styles.messageAttachmentIcon}>
+                            {
+                              fileIcon(
+                                item.attachment.kind,
+                              )
+                            }
+                          </span>
+
+                          <span style={styles.messageAttachmentText}>
+                            <b>
+                              {
+                                item.attachment.name
+                                || fileLabel(
+                                  item.attachment.kind,
+                                )
+                              }
+                            </b>
+
+                            {
+                              item.attachment.size
+                                ? formatBytes(
+                                    item.attachment.size,
+                                  )
+                                : ''
+                            }
+                          </span>
+                        </div>
+                      )
+                    }
+
+                    <div
+                      dir="auto"
+                      style={styles.messageText}
+                    >
+                      {item.text}
+                    </div>
+
+                    {
+                      !isUser
+                      && item.text
+                      && (
+                        <div style={styles.answerActions}>
+                          <button
+                            type="button"
+                            style={styles.miniAction}
+                            onClick={
+                              () => followUp('example')
+                            }
+                            disabled={
+                              askMutation.isPending
+                              || unavailable
+                            }
+                          >
+                            مثال
+                          </button>
+
+                          <button
+                            type="button"
+                            style={styles.miniAction}
+                            onClick={
+                              () => followUp('summary')
+                            }
+                            disabled={
+                              askMutation.isPending
+                              || unavailable
+                            }
+                          >
+                            خلاصه
+                          </button>
+
+                          <button
+                            type="button"
+                            style={styles.miniAction}
+                            onClick={
+                              () => followUp('similar')
+                            }
+                            disabled={
+                              askMutation.isPending
+                              || unavailable
+                            }
+                          >
+                            سؤال مشابه
+                          </button>
+
+                          <button
+                            type="button"
+                            style={{
+                              ...styles.miniAction,
+                              ...styles.reportAction,
+                            }}
+                            onClick={
+                              () => reportAnswer(
+                                item,
+                                index,
+                              )
+                            }
+                            disabled={
+                              isReported
+                              || reportMutation.isPending
+                            }
+                          >
+                            {
+                              isReported
+                                ? 'گزارش شد ✓'
+                                : 'گزارش'
+                            }
+                          </button>
+                        </div>
+                      )
+                    }
+                  </div>
+                </article>
+              );
+            })
           }
 
           {
@@ -2100,38 +1378,24 @@ export default function AiChat() {
               <div
                 style={{
                   ...styles.messageRow,
-
-                  justifyContent:
-                    'flex-end',
+                  justifyContent: 'flex-end',
                 }}
               >
                 <div
                   style={{
                     ...styles.bubble,
-                    ...styles
-                      .assistantBubble,
-                    ...styles
-                      .thinkingBubble,
+                    ...styles.assistantBubble,
+                    ...styles.thinkingBubble,
                   }}
                 >
-                  <Spinner
-                    size={18}
-                  />
+                  <Spinner size={18} />
 
                   <span>
                     {
                       uploadProgress > 0
                       && uploadProgress < 100
-                        ? (
-                          `در حال بارگذاری فایل... ${
-                            uploadProgress
-                              .toLocaleString(
-                                'fa-IR'
-                              )
-                          }٪`
-                        )
-                        : uploadProgress
-                          === 100
+                        ? `در حال بارگذاری فایل... ${uploadProgress.toLocaleString('fa-IR')}٪`
+                        : uploadProgress === 100
                           ? 'فایل رسید؛ هوشیار در حال بررسی است...'
                           : 'هوشیار در حال فکر کردن است...'
                     }
@@ -2151,65 +1415,37 @@ export default function AiChat() {
           {
             selectedFile
             && (
-              <div
-                style={
-                  styles.selectedFile
-                }
-              >
+              <div style={styles.selectedFile}>
                 {
-                  selectedKind
-                    === 'image'
+                  selectedKind === 'image'
                   && previewUrl
                     ? (
                       <img
-                        src={
-                          previewUrl
-                        }
+                        src={previewUrl}
                         alt="پیش‌نمایش فایل انتخابی"
-                        style={
-                          styles.imagePreview
-                        }
+                        style={styles.imagePreview}
                       />
                     )
                     : (
-                      <div
-                        style={
-                          styles.filePreviewIcon
-                        }
-                      >
+                      <div style={styles.filePreviewIcon}>
                         {
-                          kindIcon(
-                            selectedKind
+                          fileIcon(
+                            selectedKind,
                           )
                         }
                       </div>
                     )
                 }
 
-                <div
-                  style={
-                    styles.selectedFileInfo
-                  }
-                >
-                  <strong
-                    style={
-                      styles.selectedFileName
-                    }
-                  >
-                    {
-                      selectedFile
-                        .name
-                    }
+                <div style={styles.selectedFileInfo}>
+                  <strong style={styles.selectedFileName}>
+                    {selectedFile.name}
                   </strong>
 
-                  <span
-                    style={
-                      styles.selectedFileMeta
-                    }
-                  >
+                  <span style={styles.selectedFileMeta}>
                     {
-                      kindLabel(
-                        selectedKind
+                      fileLabel(
+                        selectedKind,
                       )
                     }
 
@@ -2217,31 +1453,26 @@ export default function AiChat() {
 
                     {
                       formatBytes(
-                        selectedFile
-                          .size
+                        selectedFile.size,
                       )
                     }
 
                     {
-                      selectedKind
-                        === 'pdf'
+                      selectedKind === 'pdf'
                         ? ' · مرجع ۴۸ ساعته'
                         : ''
                     }
                   </span>
 
                   {
-                    selectedKind
-                      === 'audio'
+                    selectedKind === 'audio'
                     && previewUrl
                     && (
                       <audio
                         controls
                         preload="metadata"
                         src={previewUrl}
-                        style={
-                          styles.audioPreview
-                        }
+                        style={styles.audioPreview}
                       />
                     )
                   }
@@ -2249,16 +1480,9 @@ export default function AiChat() {
 
                 <button
                   type="button"
-                  style={
-                    styles.removeFile
-                  }
-                  onClick={
-                    removeFile
-                  }
-                  disabled={
-                    askMutation
-                      .isPending
-                  }
+                  style={styles.removeFile}
+                  onClick={removeSelectedFile}
+                  disabled={askMutation.isPending}
                   aria-label="حذف فایل انتخابی"
                 >
                   ×
@@ -2270,22 +1494,10 @@ export default function AiChat() {
           {
             isRecording
               ? (
-                <div
-                  style={
-                    styles.recordingBar
-                  }
-                >
-                  <span
-                    style={
-                      styles.recordingDot
-                    }
-                  />
+                <div style={styles.recordingBar}>
+                  <span style={styles.recordingDot} />
 
-                  <div
-                    style={
-                      styles.recordingText
-                    }
-                  >
+                  <div style={styles.recordingText}>
                     <strong>
                       در حال ضبط صدا
                     </strong>
@@ -2293,7 +1505,7 @@ export default function AiChat() {
                     <span>
                       {
                         formatDuration(
-                          recordingSeconds
+                          recordingSeconds,
                         )
                       }
                     </span>
@@ -2302,12 +1514,8 @@ export default function AiChat() {
                   <button
                     type="button"
                     className="btn btn-d"
-                    onClick={
-                      stopRecording
-                    }
-                    style={
-                      styles.stopButton
-                    }
+                    onClick={stopRecording}
+                    style={styles.stopButton}
                   >
                     ■ پایان ضبط
                   </button>
@@ -2319,59 +1527,38 @@ export default function AiChat() {
                     className="inp"
                     value={input}
                     onChange={
-                      (event) =>
-                        setInput(
-                          event
-                            .target
-                            .value
-                            .slice(
-                              0,
-                              maxInputChars
-                            )
-                        )
+                      (event) => setInput(
+                        event.target.value.slice(
+                          0,
+                          maxInputChars,
+                        ),
+                      )
                     }
                     onKeyDown={
                       (event) => {
                         if (
-                          event.key
-                            === 'Enter'
-                          && !event
-                            .shiftKey
+                          event.key === 'Enter'
+                          && !event.shiftKey
                         ) {
-                          event
-                            .preventDefault();
-
+                          event.preventDefault();
                           send();
                         }
                       }
                     }
                     onInput={
                       (event) => {
-                        event
-                          .currentTarget
-                          .style
-                          .height =
-                          'auto';
+                        event.currentTarget.style.height = 'auto';
 
-                        event
-                          .currentTarget
-                          .style
-                          .height =
-                          `${
-                            Math.min(
-                              event
-                                .currentTarget
-                                .scrollHeight,
-
-                              120
-                            )
-                          }px`;
+                        event.currentTarget.style.height = `${
+                          Math.min(
+                            event.currentTarget.scrollHeight,
+                            120,
+                          )
+                        }px`;
                       }
                     }
                     rows={1}
-                    maxLength={
-                      maxInputChars
-                    }
+                    maxLength={maxInputChars}
                     placeholder={
                       selectedFile
                         ? 'توضیح یا سؤال درباره فایل (اختیاری)'
@@ -2379,131 +1566,78 @@ export default function AiChat() {
                     }
                     disabled={
                       unavailable
-                      || askMutation
-                        .isPending
+                      || askMutation.isPending
                     }
-                    style={
-                      styles.textarea
-                    }
+                    style={styles.textarea}
                     aria-label="متن سؤال"
                   />
 
-                  <div
-                    style={
-                      styles.composerActions
-                    }
-                  >
-                    <div
-                      style={
-                        styles.mediaActions
-                      }
-                    >
+                  <div style={styles.composerActions}>
+                    <div style={styles.mediaActions}>
                       <input
-                        ref={
-                          fileInputRef
-                        }
+                        ref={fileInputRef}
                         type="file"
-                        accept={
-                          ACCEPTED_FILES
-                        }
-                        onChange={
-                          handleFileInput
-                        }
-                        style={
-                          styles.hiddenInput
-                        }
+                        accept={ACCEPTED_FILES}
+                        onChange={handleFileInput}
+                        style={styles.hiddenInput}
                         tabIndex={-1}
                       />
 
                       <button
                         type="button"
-                        style={
-                          styles.mediaButton
-                        }
+                        style={styles.mediaButton}
                         onClick={
-                          () =>
-                            fileInputRef
-                              .current
-                              ?.click()
+                          () => fileInputRef.current?.click()
                         }
                         disabled={
                           unavailable
-                          || askMutation
-                            .isPending
+                          || askMutation.isPending
                         }
                         aria-label="انتخاب عکس، PDF یا فایل صوتی"
                         title="انتخاب عکس، PDF یا فایل صوتی"
                       >
                         ＋
-                        <span>
-                          فایل
-                        </span>
+                        <span>فایل</span>
                       </button>
 
                       <button
                         type="button"
-                        style={
-                          styles.mediaButton
-                        }
-                        onClick={
-                          startRecording
-                        }
+                        style={styles.mediaButton}
+                        onClick={startRecording}
                         disabled={
                           unavailable
-                          || askMutation
-                            .isPending
-                          || capabilities
-                            .audio
-                            === false
+                          || askMutation.isPending
+                          || capabilities.audio === false
                         }
                         aria-label="ضبط پیام صوتی"
                         title="ضبط پیام صوتی"
                       >
                         🎙️
-                        <span>
-                          ضبط
-                        </span>
+                        <span>ضبط</span>
                       </button>
                     </div>
 
-                    <span
-                      style={
-                        styles.characterCount
-                      }
-                    >
+                    <span style={styles.characterCount}>
                       {
-                        input.length
-                          .toLocaleString(
-                            'fa-IR'
-                          )
+                        input.length.toLocaleString('fa-IR')
                       }
 
                       /
 
                       {
-                        maxInputChars
-                          .toLocaleString(
-                            'fa-IR'
-                          )
+                        maxInputChars.toLocaleString('fa-IR')
                       }
                     </span>
 
                     <button
                       type="button"
                       className="btn btn-p"
-                      onClick={
-                        () => send()
-                      }
-                      disabled={
-                        !canSend
-                      }
-                      style={
-                        styles.sendButton
-                      }
+                      onClick={() => send()}
+                      disabled={!canSend}
+                      style={styles.sendButton}
                     >
                       {
-                        askMutation
-                          .isPending
+                        askMutation.isPending
                           ? (
                             <Spinner
                               size={18}
@@ -2520,31 +1654,23 @@ export default function AiChat() {
 
           {
             uploadProgress > 0
-            && askMutation
-              .isPending
+            && askMutation.isPending
             && (
               <div
                 className="pbar"
-                style={
-                  styles.uploadBar
-                }
+                style={styles.uploadBar}
               >
                 <div
                   className="pbar-f"
                   style={{
-                    width:
-                      `${uploadProgress}%`,
+                    width: `${uploadProgress}%`,
                   }}
                 />
               </div>
             )
           }
 
-          <p
-            style={
-              styles.disclaimer
-            }
-          >
+          <p style={styles.disclaimer}>
             هوشیار ابزار کمک‌آموزشی است؛ پاسخ‌های حساس پزشکی را با منبع درسی بررسی کن.
           </p>
         </section>
@@ -2552,7 +1678,6 @@ export default function AiChat() {
     </>
   );
 }
-
 
 const styles = {
   page: {
@@ -2590,10 +1715,8 @@ const styles = {
     color: '#fff',
     fontSize: 22,
     borderRadius: 14,
-    background:
-      'var(--grad-brand)',
-    boxShadow:
-      'var(--shd-glow)',
+    background: 'var(--grad-brand)',
+    boxShadow: 'var(--shd-glow)',
   },
 
   statusText: {
@@ -2615,8 +1738,7 @@ const styles = {
 
   statusMeta: {
     display: 'flex',
-    justifyContent:
-      'space-between',
+    justifyContent: 'space-between',
     gap: 10,
     marginTop: 12,
     color: 'var(--tx2)',
@@ -2734,8 +1856,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     flexDirection: 'column',
-    padding:
-      '24px 6px 14px',
+    padding: '24px 6px 14px',
     textAlign: 'center',
   },
 
@@ -2752,9 +1873,7 @@ const styles = {
       '1px solid rgba(34,211,238,.4)',
 
     borderRadius: 22,
-
-    background:
-      'var(--grad-brand)',
+    background: 'var(--grad-brand)',
 
     boxShadow:
       '0 12px 38px rgba(59,130,246,.34)',
@@ -2836,9 +1955,7 @@ const styles = {
       '1px solid var(--bd)',
 
     borderRadius: 16,
-
-    boxShadow:
-      'var(--shd-1)',
+    boxShadow: 'var(--shd-1)',
   },
 
   userBubble: {
@@ -2869,8 +1986,7 @@ const styles = {
   bubbleHead: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent:
-      'space-between',
+    justifyContent: 'space-between',
     gap: 12,
     marginBottom: 5,
 
