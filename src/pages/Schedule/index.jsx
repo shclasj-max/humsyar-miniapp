@@ -25,7 +25,7 @@ export default function Schedule() {
 
   return (
     <>
-      <Header title="برنامه" subtitle="ترم جاری" />
+      <Header title="برنامه" subtitle="ترم جاری" back={false} />
       <div className="page fade-up">
         <div className="tab-bar">
           {Object.entries(TYPE_CFG).map(([k, v]) => (
