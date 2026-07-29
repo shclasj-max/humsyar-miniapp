@@ -1,13 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '../../lib/api';
 import Header from '../../components/layout/Header';
+
 import {
   SkeletonCard,
   Spinner,
 } from '../../components/shared/Loading';
+
 import { haptic } from '../../lib/telegram';
 
-const finiteNumber = (value) => {
+
+const finite = (value) => {
   if (
     value === null ||
     value === undefined ||
@@ -16,61 +19,413 @@ const finiteNumber = (value) => {
     return null;
   }
 
-  const number = Number(value);
+  const parsed = Number(value);
 
-  return Number.isFinite(number)
-    ? number
+  return Number.isFinite(parsed)
+    ? parsed
     : null;
 };
 
-const clampPercentage = (value) => {
-  const number = finiteNumber(value);
 
-  if (number === null) {
+const percentage = (value) => {
+  const parsed = finite(value);
+
+  if (parsed === null) {
     return null;
   }
 
   return Math.max(
     0,
-    Math.min(100, number)
+    Math.min(
+      100,
+      parsed
+    )
   );
 };
 
-const gradeStyle = (percentage) => {
-  const value = clampPercentage(
-    percentage
-  );
 
-  if (value === null) {
+const visual = (value) => {
+  const safe =
+    percentage(value);
+
+  if (safe === null) {
     return {
       color: 'var(--txm)',
-      soft: 'rgba(100,116,139,.12)',
-      label: 'در انتظار',
+
+      soft:
+        'rgba(100,116,139,.12)',
+
+      label:
+        'در انتظار',
+
+      icon:
+        '⏳',
     };
   }
 
-  if (value >= 85) {
+  if (safe >= 85) {
     return {
-      color: 'var(--ok)',
-      soft: 'rgba(16,185,129,.12)',
-      label: 'عالی',
+      color:
+        '#34D399',
+
+      soft:
+        'rgba(16,185,129,.12)',
+
+      label:
+        'عالی',
+
+      icon:
+        '🌟',
     };
   }
 
-  if (value >= 70) {
+  if (safe >= 70) {
     return {
-      color: 'var(--warn)',
-      soft: 'rgba(245,158,11,.12)',
-      label: 'خوب',
+      color:
+        '#70A7FF',
+
+      soft:
+        'rgba(59,130,246,.12)',
+
+      label:
+        'خوب',
+
+      icon:
+        '👍',
+    };
+  }
+
+  if (safe >= 50) {
+    return {
+      color:
+        '#FCD34D',
+
+      soft:
+        'rgba(245,158,11,.12)',
+
+      label:
+        'متوسط',
+
+      icon:
+        '📖',
     };
   }
 
   return {
-    color: 'var(--err)',
-    soft: 'rgba(239,68,68,.11)',
-    label: 'نیاز به تلاش',
+    color:
+      '#FB7185',
+
+    soft:
+      'rgba(239,68,68,.12)',
+
+    label:
+      'نیازمند تلاش',
+
+    icon:
+      '💪',
   };
 };
+
+
+function GradeRow({
+  grade,
+  index,
+}) {
+  const score =
+    finite(grade.score);
+
+  const maxScore =
+    finite(
+      grade.max_score
+    ) || 20;
+
+  const value =
+    percentage(
+      grade.percentage ??
+      (
+        score === null
+          ? null
+          : (
+              score /
+              maxScore
+            ) * 100
+      )
+    );
+
+  const style =
+    visual(value);
+
+  return (
+    <article
+      className="card pop-in"
+      style={{
+        padding: 13,
+
+        animationDelay:
+          `${
+            Math.min(
+              index,
+              8
+            ) * 35
+          }ms`,
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 11,
+        }}
+      >
+        <div
+          style={{
+            display: 'grid',
+
+            flex:
+              '0 0 54px',
+
+            height:
+              54,
+
+            placeItems:
+              'center',
+
+            borderRadius:
+              16,
+
+            background:
+              style.soft,
+
+            border:
+              `1px solid ${style.soft}`,
+
+            textAlign:
+              'center',
+          }}
+        >
+          <div>
+            <div
+              style={{
+                color:
+                  style.color,
+
+                fontSize:
+                  17,
+
+                fontWeight:
+                  900,
+
+                lineHeight:
+                  1.1,
+              }}
+            >
+              {score ?? '—'}
+            </div>
+
+            <div
+              style={{
+                color:
+                  'var(--txm)',
+
+                fontSize:
+                  8,
+
+                marginTop:
+                  2,
+              }}
+            >
+              از {maxScore}
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+          }}
+        >
+          <h3
+            style={{
+              overflow:
+                'hidden',
+
+              fontSize:
+                13.5,
+
+              fontWeight:
+                850,
+
+              textOverflow:
+                'ellipsis',
+
+              whiteSpace:
+                'nowrap',
+            }}
+          >
+            {grade.lesson ||
+              'درس بدون عنوان'}
+          </h3>
+
+          <div
+            style={{
+              color:
+                'var(--tx2)',
+
+              fontSize:
+                10.5,
+
+              marginTop:
+                3,
+            }}
+          >
+            {grade.exam_title ||
+              'امتحان'}
+          </div>
+
+          <div
+            style={{
+              color:
+                'var(--txm)',
+
+              fontSize:
+                9.5,
+
+              marginTop:
+                3,
+            }}
+          >
+            📆{' '}
+
+            {grade.exam_date ||
+              'تاریخ نامشخص'}
+          </div>
+        </div>
+
+        <div
+          style={{
+            textAlign:
+              'center',
+          }}
+        >
+          <div
+            style={{
+              fontSize:
+                19,
+            }}
+          >
+            {style.icon}
+          </div>
+
+          <span
+            style={{
+              color:
+                style.color,
+
+              fontSize:
+                9.5,
+
+              fontWeight:
+                800,
+            }}
+          >
+            {style.label}
+          </span>
+        </div>
+      </div>
+
+      <div
+        style={{
+          marginTop:
+            11,
+        }}
+      >
+        <div
+          style={{
+            display:
+              'flex',
+
+            justifyContent:
+              'space-between',
+
+            marginBottom:
+              5,
+          }}
+        >
+          <span
+            style={{
+              color:
+                'var(--txm)',
+
+              fontSize:
+                9,
+            }}
+          >
+            درصد کسب‌شده
+          </span>
+
+          <span
+            style={{
+              color:
+                style.color,
+
+              fontSize:
+                10,
+
+              fontWeight:
+                800,
+            }}
+          >
+            {value ?? 0}٪
+          </span>
+        </div>
+
+        <div className="pbar">
+          <div
+            className="pbar-f"
+            style={{
+              width:
+                `${value ?? 0}%`,
+
+              background:
+                style.color,
+            }}
+          />
+        </div>
+      </div>
+
+      {grade.note && (
+        <div
+          style={{
+            marginTop:
+              9,
+
+            padding:
+              '8px 10px',
+
+            color:
+              'var(--tx2)',
+
+            background:
+              'rgba(100,116,139,.08)',
+
+            borderRadius:
+              11,
+
+            fontSize:
+              10.5,
+
+            lineHeight:
+              1.7,
+          }}
+        >
+          📝 {grade.note}
+        </div>
+      )}
+    </article>
+  );
+}
+
 
 export default function Grades() {
   const {
@@ -80,478 +435,627 @@ export default function Grades() {
     refetch,
     isRefetching,
   } = useQuery({
-    queryKey: ['grades'],
+    queryKey: [
+      'grades',
+    ],
 
     queryFn: () =>
       api
         .get('/api/grades')
         .then(
-          (response) => response.data
+          (response) =>
+            response.data
         ),
 
-    staleTime: 1000 * 60 * 5,
+    staleTime:
+      5 * 60 * 1000,
   });
 
-  const grades = Array.isArray(
-    data?.grades
-  )
-    ? data.grades
-    : [];
 
-  const average = finiteNumber(
-    data?.avg
-  );
+  const grades =
+    Array.isArray(
+      data?.grades
+    )
+      ? data.grades
+      : [];
 
-  const averagePercentage =
-    clampPercentage(
+
+  const average =
+    finite(data?.avg);
+
+
+  const averagePercent =
+    percentage(
       data?.avg_percentage ??
-        (
-          average === null
-            ? null
-            : (average / 20) * 100
-        )
+      (
+        average === null
+          ? null
+          : (
+              average /
+              20
+            ) * 100
+      )
     );
 
-  const averageVisual = gradeStyle(
-    averagePercentage
-  );
 
-  const totalValue = Number(
-    data?.total
-  );
+  const averageStyle =
+    visual(
+      averagePercent
+    );
 
-  const total = Number.isFinite(
-    totalValue
-  )
-    ? Math.max(0, totalValue)
-    : grades.length;
 
-  const gradedCountValue = Number(
-    data?.graded_count
-  );
+  const totalValue =
+    Number(data?.total);
 
-  const gradedCount = Number.isFinite(
-    gradedCountValue
-  )
-    ? Math.max(0, gradedCountValue)
-    : grades.filter(
-        (grade) =>
-          finiteNumber(
-            grade?.score
-          ) !== null
-      ).length;
+
+  const total =
+    Number.isFinite(
+      totalValue
+    )
+      ? Math.max(
+          0,
+          totalValue
+        )
+      : grades.length;
+
+
+  const countValue =
+    Number(
+      data?.graded_count
+    );
+
+
+  const graded =
+    Number.isFinite(
+      countValue
+    )
+      ? Math.max(
+          0,
+          countValue
+        )
+      : grades.filter(
+          (item) =>
+            finite(
+              item?.score
+            ) !== null
+        ).length;
+
+
+  const passed =
+    grades.filter(
+      (item) =>
+        (
+          percentage(
+            item.percentage
+          ) || 0
+        ) >= 50
+    ).length;
+
+
+  const best =
+    grades.reduce(
+      (
+        current,
+        item
+      ) =>
+        Math.max(
+          current,
+
+          percentage(
+            item.percentage
+          ) || 0
+        ),
+
+      0
+    );
+
 
   return (
     <>
       <Header
-        title="📊 نمرات من"
-        back={false}
+        title="کارنامه من"
         subtitle={
-          total > 0
+          total
             ? `${total} نمره ثبت‌شده`
-            : ''
+            : 'نمرات و ارزیابی‌ها'
         }
+        back={false}
         right={
           <button
+            type="button"
+            aria-label="به‌روزرسانی"
+            disabled={
+              isRefetching
+            }
             onClick={() => {
               haptic();
               refetch();
             }}
-            disabled={isRefetching}
-            aria-label="به‌روزرسانی نمرات"
             style={{
-              background: 'none',
-              border: 'none',
-              cursor: isRefetching
-                ? 'default'
-                : 'pointer',
-              fontSize: 18,
-              opacity: isRefetching
-                ? 0.5
-                : 1,
+              width: 36,
+              height: 36,
+
+              borderRadius:
+                12,
+
+              border:
+                '1px solid var(--bd)',
+
+              background:
+                'var(--elev)',
+
+              cursor:
+                'pointer',
+
+              opacity:
+                isRefetching
+                  ? .5
+                  : 1,
             }}
           >
-            🔄
+            ↻
           </button>
         }
       />
 
-      <div className="page fade-up">
+      <main className="page fade-up">
         {isLoading ? (
           <div
             style={{
-              display: 'flex',
-              flexDirection: 'column',
+              display: 'grid',
               gap: 10,
             }}
           >
-            {[1, 2, 3].map(
-              (item) => (
-                <SkeletonCard
-                  key={item}
-                />
-              )
-            )}
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
           </div>
         ) : isError ? (
-          <div className="empty">
+          <div className="empty card">
             <div
               style={{
                 fontSize: 42,
-                marginBottom: 10,
               }}
             >
               🌐
             </div>
 
-            <div>
-              دریافت نمرات با مشکل مواجه
-              شد.
+            <div
+              style={{
+                marginTop: 8,
+              }}
+            >
+              دریافت نمرات انجام نشد.
             </div>
 
             <button
               className="btn btn-p"
               style={{
-                marginTop: 14,
+                marginTop:
+                  13,
               }}
-              onClick={() => refetch()}
-              disabled={isRefetching}
+              onClick={() =>
+                refetch()
+              }
+              disabled={
+                isRefetching
+              }
             >
               {isRefetching ? (
-                <Spinner size={16} />
+                <Spinner size={15} />
               ) : (
                 'تلاش دوباره'
               )}
             </button>
           </div>
-        ) : grades.length === 0 ? (
-          <div className="empty">
+        ) : grades.length ===
+          0 ? (
+          <div className="empty card">
             <div
               style={{
-                fontSize: 44,
-                marginBottom: 12,
+                fontSize:
+                  44,
               }}
             >
               📊
             </div>
 
-            <div>
-              هنوز هیچ نمره‌ای ثبت نشده
-              است.
+            <div
+              style={{
+                marginTop:
+                  9,
+
+                color:
+                  'var(--tx2)',
+
+                fontWeight:
+                  700,
+              }}
+            >
+              هنوز نمره‌ای ثبت نشده است
             </div>
 
             <div
               style={{
-                fontSize: 12,
-                color: 'var(--txm)',
-                marginTop: 8,
+                fontSize:
+                  10.5,
+
+                marginTop:
+                  4,
               }}
             >
-              پس از ثبت نمره توسط مدیر
-              محتوا، نتیجه اینجا نمایش
-              داده می‌شود.
+              بعد از ثبت توسط مدیر محتوا،
+              نتیجه اینجا نمایش داده
+              می‌شود.
             </div>
           </div>
         ) : (
-          <>
-            <div
-              className="card card-glow"
+          <div
+            style={{
+              display:
+                'grid',
+
+              gap:
+                12,
+            }}
+          >
+            <section
+              className={
+                'card card-glow'
+              }
               style={{
-                textAlign: 'center',
-                padding: 22,
-                marginBottom: 12,
+                padding:
+                  19,
+
+                background:
+                  'linear-gradient(145deg,rgba(29,78,216,.2),rgba(16,24,39,.95) 50%,rgba(34,211,238,.09))',
               }}
             >
               <div
                 style={{
-                  fontSize: 38,
-                  fontWeight: 800,
-                  color:
-                    averageVisual.color,
-                }}
-              >
-                {average === null
-                  ? '—'
-                  : average.toFixed(2)}
-              </div>
+                  display:
+                    'flex',
 
-              <div
-                style={{
-                  color: 'var(--txm)',
-                  fontSize: 13,
-                  marginTop: 4,
-                }}
-              >
-                میانگین کل از ۲۰
-              </div>
+                  alignItems:
+                    'center',
 
-              <div
-                style={{
-                  marginTop: 12,
+                  gap:
+                    15,
                 }}
               >
-                <div className="pbar">
-                  <div
-                    className="pbar-f"
-                    style={{
-                      width: `${
-                        averagePercentage ||
+                <div
+                  style={{
+                    position:
+                      'relative',
+
+                    display:
+                      'grid',
+
+                    flex:
+                      '0 0 90px',
+
+                    height:
+                      90,
+
+                    placeItems:
+                      'center',
+
+                    borderRadius:
+                      '50%',
+
+                    background:
+                      `conic-gradient(${
+                        averageStyle.color
+                      } ${
+                        averagePercent ||
                         0
-                      }%`,
+                      }%,var(--ovr) 0)`,
+
+                    boxShadow:
+                      'var(--shd-glow)',
+                  }}
+                >
+                  <div
+                    style={{
+                      display:
+                        'grid',
+
+                      width:
+                        72,
+
+                      height:
+                        72,
+
+                      placeItems:
+                        'center',
 
                       background:
-                        averageVisual.color,
+                        'var(--surf)',
+
+                      borderRadius:
+                        '50%',
+
+                      textAlign:
+                        'center',
                     }}
-                  />
+                  >
+                    <div>
+                      <div
+                        style={{
+                          color:
+                            averageStyle.color,
+
+                          fontSize:
+                            23,
+
+                          fontWeight:
+                            900,
+
+                          lineHeight:
+                            1,
+                        }}
+                      >
+                        {average ===
+                        null
+                          ? '—'
+                          : average.toFixed(
+                              2
+                            )}
+                      </div>
+
+                      <div
+                        style={{
+                          color:
+                            'var(--txm)',
+
+                          fontSize:
+                            8,
+
+                          marginTop:
+                            4,
+                        }}
+                      >
+                        از ۲۰
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    flex: 1,
+                  }}
+                >
+                  <div
+                    style={{
+                      color:
+                        'var(--txm)',
+
+                      fontSize:
+                        10.5,
+                    }}
+                  >
+                    میانگین کل شما
+                  </div>
+
+                  <div
+                    style={{
+                      color:
+                        averageStyle.color,
+
+                      fontSize:
+                        18,
+
+                      fontWeight:
+                        900,
+
+                      marginTop:
+                        3,
+                    }}
+                  >
+                    {averageStyle.icon}{' '}
+                    {averageStyle.label}
+                  </div>
+
+                  <div
+                    style={{
+                      color:
+                        'var(--tx2)',
+
+                      fontSize:
+                        10.5,
+
+                      lineHeight:
+                        1.7,
+
+                      marginTop:
+                        5,
+                    }}
+                  >
+                    {graded} نمره در محاسبهٔ
+                    میانگین لحاظ شده است.
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section className="grid2">
+              <div
+                className="card"
+                style={{
+                  textAlign:
+                    'center',
+
+                  padding:
+                    12,
+                }}
+              >
+                <div
+                  style={{
+                    color:
+                      'var(--ok)',
+
+                    fontSize:
+                      20,
+
+                    fontWeight:
+                      900,
+                  }}
+                >
+                  {passed}
+                </div>
+
+                <div
+                  style={{
+                    color:
+                      'var(--txm)',
+
+                    fontSize:
+                      9.5,
+                  }}
+                >
+                  نمره قبولی
                 </div>
               </div>
 
               <div
+                className="card"
                 style={{
-                  display: 'flex',
-                  justifyContent:
+                  textAlign:
                     'center',
-                  gap: 8,
-                  marginTop: 12,
-                  flexWrap: 'wrap',
+
+                  padding:
+                    12,
                 }}
               >
-                <span className="badge b-acc">
-                  {gradedCount} نمره
-                  محاسبه‌شده
+                <div
+                  style={{
+                    color:
+                      'var(--acc2)',
+
+                    fontSize:
+                      20,
+
+                    fontWeight:
+                      900,
+                  }}
+                >
+                  {best}٪
+                </div>
+
+                <div
+                  style={{
+                    color:
+                      'var(--txm)',
+
+                    fontSize:
+                      9.5,
+                  }}
+                >
+                  بهترین عملکرد
+                </div>
+              </div>
+            </section>
+
+            {total > graded && (
+              <div
+                className="card"
+                style={{
+                  display:
+                    'flex',
+
+                  alignItems:
+                    'center',
+
+                  gap:
+                    10,
+
+                  borderColor:
+                    'rgba(245,158,11,.25)',
+                }}
+              >
+                <span
+                  style={{
+                    fontSize:
+                      21,
+                  }}
+                >
+                  ⏳
                 </span>
 
-                {total >
-                  gradedCount && (
-                  <span className="badge b-gray">
+                <div>
+                  <b
+                    style={{
+                      fontSize:
+                        12,
+                    }}
+                  >
                     {total -
-                      gradedCount}{' '}
-                    نمره در انتظار
-                  </span>
-                )}
+                      graded}{' '}
+
+                    نمره در انتظار محاسبه
+                  </b>
+
+                  <div
+                    style={{
+                      color:
+                        'var(--txm)',
+
+                      fontSize:
+                        9.5,
+
+                      marginTop:
+                        2,
+                    }}
+                  >
+                    پس از تکمیل نمره،
+                    میانگین خودکار
+                    به‌روزرسانی می‌شود.
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
 
             <div
+              className="sec-title"
               style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 9,
+                marginTop:
+                  4,
+              }}
+            >
+              📋 جزئیات نمرات
+            </div>
+
+            <section
+              style={{
+                display:
+                  'grid',
+
+                gap:
+                  9,
               }}
             >
               {grades.map(
-                (grade, index) => {
-                  const score =
-                    finiteNumber(
-                      grade.score
-                    );
-
-                  const maxScore =
-                    finiteNumber(
-                      grade.max_score
-                    ) || 20;
-
-                  const percentage =
-                    clampPercentage(
-                      grade.percentage
-                    );
-
-                  const visual =
-                    gradeStyle(
-                      percentage
-                    );
-
-                  return (
-                    <div
-                      key={
-                        grade.id ||
-                        `${grade.lesson}-${grade.exam_title}-${grade.exam_date}-${index}`
-                      }
-                      className="card"
-                    >
-                      <div
-                        style={{
-                          display:
-                            'flex',
-                          alignItems:
-                            'center',
-                          gap: 12,
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 52,
-                            height: 52,
-
-                            borderRadius:
-                              'var(--r-md)',
-
-                            background:
-                              visual.soft,
-
-                            display:
-                              'flex',
-
-                            flexDirection:
-                              'column',
-
-                            alignItems:
-                              'center',
-
-                            justifyContent:
-                              'center',
-
-                            flexShrink: 0,
-                          }}
-                        >
-                          <div
-                            style={{
-                              fontSize: 17,
-
-                              fontWeight:
-                                800,
-
-                              color:
-                                visual.color,
-                            }}
-                          >
-                            {score === null
-                              ? '—'
-                              : score}
-                          </div>
-
-                          <div
-                            style={{
-                              fontSize:
-                                8.5,
-
-                              color:
-                                'var(--txm)',
-                            }}
-                          >
-                            از {maxScore}
-                          </div>
-                        </div>
-
-                        <div
-                          style={{
-                            flex: 1,
-                            minWidth: 0,
-                          }}
-                        >
-                          <div
-                            style={{
-                              fontWeight:
-                                700,
-
-                              fontSize: 14,
-                            }}
-                          >
-                            {grade.lesson ||
-                              'درس بدون عنوان'}
-                          </div>
-
-                          <div
-                            style={{
-                              fontSize: 12,
-
-                              color:
-                                'var(--tx2)',
-
-                              marginTop: 2,
-                            }}
-                          >
-                            {grade.exam_title ||
-                              'امتحان'}
-                          </div>
-
-                          <div
-                            style={{
-                              fontSize: 11,
-
-                              color:
-                                'var(--txm)',
-
-                              marginTop: 3,
-                            }}
-                          >
-                            {grade.exam_date ||
-                              'تاریخ نامشخص'}
-                          </div>
-                        </div>
-
-                        <div
-                          style={{
-                            padding:
-                              '5px 10px',
-
-                            borderRadius:
-                              'var(--r-sm)',
-
-                            background:
-                              visual.soft,
-
-                            fontSize: 11,
-
-                            fontWeight:
-                              800,
-
-                            color:
-                              visual.color,
-
-                            flexShrink: 0,
-                          }}
-                        >
-                          {visual.label}
-                        </div>
-                      </div>
-
-                      <div
-                        style={{
-                          marginTop: 10,
-                        }}
-                      >
-                        <div className="pbar">
-                          <div
-                            className="pbar-f"
-                            style={{
-                              width: `${
-                                percentage ||
-                                0
-                              }%`,
-
-                              background:
-                                visual.color,
-                            }}
-                          />
-                        </div>
-                      </div>
-
-                      {grade.note && (
-                        <div
-                          style={{
-                            marginTop: 9,
-
-                            fontSize: 11,
-
-                            lineHeight:
-                              1.7,
-
-                            color:
-                              'var(--txm)',
-                          }}
-                        >
-                          📝 {grade.note}
-                        </div>
-                      )}
-                    </div>
-                  );
-                }
+                (
+                  grade,
+                  index
+                ) => (
+                  <GradeRow
+                    key={
+                      grade.id ||
+                      `${
+                        grade.lesson
+                      }-${index}`
+                    }
+                    grade={grade}
+                    index={index}
+                  />
+                )
               )}
-            </div>
-          </>
+            </section>
+          </div>
         )}
-      </div>
+      </main>
     </>
   );
 }
