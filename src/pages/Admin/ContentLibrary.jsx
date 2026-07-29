@@ -337,8 +337,139 @@ export function QbankAdmin() {
 }
 
 /* ═══════════════════════════════════════════
-   🚩 گزارش‌های ایراد
+   📊 مدیریت نمرات
    ═══════════════════════════════════════════ */
+export function GradesAdmin() {
+  const toast = useUIStore(s => s.toast);
+  const qc = useQueryClient();
+  const [view, setView] = useState('list'); // list | bulk
+  const [bulkForm, setBulkForm] = useState({ lesson:'', exam_title:'', exam_date:'' });
+  const [nameQuery, setNameQuery] = useState('');
+  const [entries, setEntries] = useState([]); // [{user_id,name,score}]
+  const [editing, setEditing] = useState(null); // {id, score}
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['grades-recent'], queryFn: () => api.get('/api/content/grades/recent?limit=50').then(r=>r.data),
+    enabled: view === 'list',
+  });
+
+  const { data: foundStudents } = useQuery({
+    queryKey: ['grade-find-student', nameQuery],
+    queryFn: () => api.get(`/api/content/grades/find-student?name=${encodeURIComponent(nameQuery)}`).then(r=>r.data.students),
+    enabled: view==='bulk' && nameQuery.trim().length > 1,
+  });
+
+  const bulkMut = useMutation({
+    mutationFn: () => api.post('/api/content/grades/bulk', {
+      entries: entries.map(e => ({ user_id: e.user_id, score: Number(e.score) })),
+      lesson: bulkForm.lesson, exam_title: bulkForm.exam_title, exam_date: bulkForm.exam_date,
+    }).then(r=>r.data),
+    onSuccess: (d) => { hapticNotif('success'); toast(`✅ ${d.updated} نمره ثبت شد`,'success'); setView('list'); setEntries([]); setBulkForm({lesson:'',exam_title:'',exam_date:''}); qc.invalidateQueries({queryKey:['grades-recent']}); },
+    onError: (e) => toast(e.response?.data?.detail||'خطا','error'),
+  });
+
+  const editMut = useMutation({
+    mutationFn: () => api.patch(`/api/content/grades/${editing.id}`, { score: Number(editing.score) }).then(r=>r.data),
+    onSuccess: () => { hapticNotif('success'); toast('✅ ویرایش شد','success'); setEditing(null); qc.invalidateQueries({queryKey:['grades-recent']}); },
+  });
+
+  const delMut = useMutation({
+    mutationFn: (id) => api.delete(`/api/content/grades/${id}`).then(r=>r.data),
+    onSuccess: () => { toast('🗑 حذف شد','info'); qc.invalidateQueries({queryKey:['grades-recent']}); },
+  });
+
+  function addStudentToEntries(s) {
+    if (entries.some(e => e.user_id === s.id)) { toast('قبلاً اضافه شده','info'); return; }
+    setEntries(prev => [...prev, { user_id: s.id, name: s.name, score: '' }]);
+    setNameQuery('');
+    haptic();
+  }
+
+  if (view === 'bulk') return (
+    <>
+      <Header title="📊 ثبت نمره دسته‌ای" onBack={() => setView('list')} />
+      <div className="page fade-up">
+        <div className="card" style={{ marginBottom:14 }}>
+          <div className="sec-title">📝 اطلاعات امتحان</div>
+          <div style={{ fontSize:11,color:'var(--txm)',marginBottom:4 }}>درس</div>
+          <input className="inp" style={{ marginBottom:9 }} value={bulkForm.lesson} onChange={e=>setBulkForm(f=>({...f,lesson:e.target.value}))} placeholder="فیزیولوژی ۱" />
+          <div style={{ fontSize:11,color:'var(--txm)',marginBottom:4 }}>عنوان امتحان</div>
+          <input className="inp" style={{ marginBottom:9 }} value={bulkForm.exam_title} onChange={e=>setBulkForm(f=>({...f,exam_title:e.target.value}))} placeholder="میان‌ترم" />
+          <div style={{ fontSize:11,color:'var(--txm)',marginBottom:4 }}>تاریخ (YYYY-MM-DD)</div>
+          <input className="inp" value={bulkForm.exam_date} onChange={e=>setBulkForm(f=>({...f,exam_date:e.target.value}))} placeholder="2025-09-01" />
+        </div>
+
+        <div className="card" style={{ marginBottom:14 }}>
+          <div className="sec-title">👤 افزودن دانشجو</div>
+          <input className="inp" placeholder="جستجوی نام..." value={nameQuery} onChange={e=>setNameQuery(e.target.value)} />
+          {foundStudents?.length > 0 && (
+            <div style={{ marginTop:8,maxHeight:180,overflowY:'auto' }}>
+              {foundStudents.map(s => (
+                <button key={s.id} className="menu-row" style={{ width:'100%' }} onClick={() => addStudentToEntries(s)}>
+                  <span style={{ flex:1,textAlign:'right' }}>👤 {s.name} <span style={{ color:'var(--txm)',fontSize:11 }}>گروه {s.group}</span></span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {entries.length > 0 && (
+          <div className="card" style={{ marginBottom:14 }}>
+            <div className="sec-title">🎯 نمرات ({entries.length} نفر)</div>
+            {entries.map((e, i) => (
+              <div key={e.user_id} style={{ display:'flex',alignItems:'center',gap:8,marginBottom:8 }}>
+                <span style={{ flex:1,fontSize:12.5 }}>{e.name}</span>
+                <input className="inp" type="number" step="0.01" style={{ width:80 }} placeholder="نمره"
+                  value={e.score} onChange={ev => setEntries(prev => prev.map((x,xi)=>xi===i?{...x,score:ev.target.value}:x))} />
+                <button onClick={() => setEntries(prev => prev.filter((_,xi)=>xi!==i))} style={{ background:'none',border:'none',color:'var(--err)',fontSize:15,cursor:'pointer' }}>🗑</button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <button className="btn btn-p btn-full" disabled={!bulkForm.lesson||!bulkForm.exam_title||!bulkForm.exam_date||!entries.length||entries.some(e=>e.score==='')||bulkMut.isPending}
+          onClick={() => bulkMut.mutate()}>
+          {bulkMut.isPending ? <Spinner size={14}/> : `💾 ثبت ${entries.length} نمره`}
+        </button>
+      </div>
+    </>
+  );
+
+  return (
+    <>
+      <Header title="📊 مدیریت نمرات" subtitle={data?`${data.total} نمره ثبت‌شده`:''} />
+      <div className="page fade-up">
+        <button className="btn btn-p btn-full" style={{ marginBottom:14 }} onClick={() => { haptic(); setView('bulk'); }}>+ ثبت نمره دسته‌ای</button>
+
+        {isLoading ? <SkeletonCard /> : !data?.grades?.length ? <EmptyState icon="📊" text="هنوز نمره‌ای ثبت نشده" /> :
+          data.grades.map(g => (
+            <div key={g.id} className="card" style={{ marginBottom:9 }}>
+              <div style={{ display:'flex',justifyContent:'space-between',alignItems:'flex-start' }}>
+                <div>
+                  <div style={{ fontWeight:700,fontSize:13.5 }}>{g.student_name}</div>
+                  <div style={{ fontSize:11,color:'var(--txm)',marginTop:2 }}>{g.lesson} — {g.exam_title} • {g.exam_date}</div>
+                </div>
+                {editing?.id === g.id ? (
+                  <div style={{ display:'flex',gap:6,alignItems:'center' }}>
+                    <input className="inp" type="number" step="0.01" style={{ width:70 }} value={editing.score} onChange={e=>setEditing({...editing,score:e.target.value})} autoFocus />
+                    <button className="btn btn-p" style={{ fontSize:11,padding:'6px 8px' }} onClick={() => editMut.mutate()}>✓</button>
+                    <button className="btn btn-dark" style={{ fontSize:11,padding:'6px 8px' }} onClick={() => setEditing(null)}>✕</button>
+                  </div>
+                ) : (
+                  <div style={{ display:'flex',gap:6,alignItems:'center' }}>
+                    <span style={{ fontSize:16,fontWeight:800,color:'var(--acc)' }}>{g.score}</span>
+                    <button className="btn btn-dark" style={{ fontSize:11,padding:'6px 8px' }} onClick={() => setEditing({id:g.id,score:g.score})}>✏️</button>
+                    <button className="btn btn-d" style={{ fontSize:11,padding:'6px 8px' }} onClick={() => { if(confirm('این نمره حذف بشه؟')) delMut.mutate(g.id); }}>🗑</button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+      </div>
+    </>
+  );
+}
+
 export function ContentReportsAdmin() {
   const toast = useUIStore(s => s.toast);
   const qc = useQueryClient();
