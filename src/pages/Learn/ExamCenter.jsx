@@ -19,6 +19,7 @@ import {
 } from '../../components/shared/Loading';
 
 import {
+  haptic,
   hapticNotif,
 } from '../../lib/telegram';
 
@@ -27,9 +28,9 @@ import {
 } from '../../stores/uiStore';
 
 
-const formatTime = (seconds) => {
+const clock = (seconds) => {
   if (seconds == null) {
-    return 'بدون محدودیت';
+    return '∞';
   }
 
   const safe = Math.max(
@@ -41,7 +42,7 @@ const formatTime = (seconds) => {
     safe / 60
   );
 
-  const remainingSeconds =
+  const remaining =
     safe % 60;
 
   return (
@@ -49,31 +50,38 @@ const formatTime = (seconds) => {
       2,
       '0'
     )}:` +
-    `${String(
-      remainingSeconds
-    ).padStart(2, '0')}`
+    `${String(remaining).padStart(
+      2,
+      '0'
+    )}`
   );
 };
 
 
-const statusLabel = {
-  active: 'در حال انجام',
-  finished: 'تمام‌شده',
-  expired: 'زمان تمام‌شده',
-  abandoned: 'رهاشده',
-};
+const STATUS = {
+  active: [
+    'در حال انجام',
+    'b-yel',
+    '▶️',
+  ],
 
+  finished: [
+    'تمام‌شده',
+    'b-grn',
+    '✅',
+  ],
 
-const apiError = (
-  error,
-  fallback
-) => {
-  const detail =
-    error?.response?.data?.detail;
+  expired: [
+    'زمان تمام‌شده',
+    'b-red',
+    '⏱',
+  ],
 
-  return typeof detail === 'string'
-    ? detail
-    : fallback;
+  abandoned: [
+    'رهاشده',
+    'b-gray',
+    '⏹',
+  ],
 };
 
 
@@ -264,10 +272,11 @@ export default function ExamCenter() {
 
     } catch (error) {
       toast(
-        apiError(
-          error,
-          'دریافت آزمون انجام نشد'
-        ),
+        error?.response
+          ?.data
+          ?.detail ||
+          'دریافت آزمون انجام نشد',
+
         'error'
       );
 
@@ -281,6 +290,7 @@ export default function ExamCenter() {
       mutationFn: () =>
         api.post(
           '/api/questions/custom-exam/start',
+
           {
             lesson:
               config.lesson,
@@ -320,10 +330,11 @@ export default function ExamCenter() {
 
       onError: (error) =>
         toast(
-          apiError(
-            error,
-            'ساخت آزمون انجام نشد'
-          ),
+          error?.response
+            ?.data
+            ?.detail ||
+            'ساخت آزمون انجام نشد',
+
           'error'
         ),
     });
@@ -332,16 +343,13 @@ export default function ExamCenter() {
   const answerMutation =
     useMutation({
       mutationFn: ({
-        questionId,
         selected,
       }) =>
         api.post(
           `/api/questions/custom-exam/${session.session_id}/answer`,
+
           {
             selected,
-
-            question_id:
-              questionId,
           }
         ),
 
@@ -362,10 +370,11 @@ export default function ExamCenter() {
 
       onError: (error) =>
         toast(
-          apiError(
-            error,
-            'ثبت پاسخ انجام نشد'
-          ),
+          error?.response
+            ?.data
+            ?.detail ||
+            'ثبت پاسخ انجام نشد',
+
           'error'
         ),
     });
@@ -381,20 +390,10 @@ export default function ExamCenter() {
       onSuccess: async () => {
         setSession(null);
         setQuestion(null);
-        setAnswer(null);
         setView('history');
 
         await refreshHistory();
       },
-
-      onError: (error) =>
-        toast(
-          apiError(
-            error,
-            'رهاکردن آزمون انجام نشد'
-          ),
-          'error'
-        ),
     });
 
 
@@ -407,7 +406,9 @@ export default function ExamCenter() {
     }
 
     if (secondsLeft <= 0) {
-      if (session?.session_id) {
+      if (
+        session?.session_id
+      ) {
         loadNext(
           session.session_id
         );
@@ -423,10 +424,13 @@ export default function ExamCenter() {
             (current) =>
               Math.max(
                 0,
-                (current || 0) - 1
+                (
+                  current || 0
+                ) - 1
               )
           );
         },
+
         1000
       );
 
@@ -465,47 +469,121 @@ export default function ExamCenter() {
 
 
   if (view === 'active') {
+    const total =
+      Number(
+        session?.total
+      ) || 0;
+
+    const examProgress =
+      total
+        ? Math.min(
+            100,
+
+            Math.round(
+              (
+                progress /
+                total
+              ) * 100
+            )
+          )
+        : 0;
+
     return (
       <>
         <Header
-          title="آزمون سفارشی"
+          title="آزمون در حال اجرا"
+          subtitle={`${
+            config.lesson ||
+            'آزمون سفارشی'
+          } • سؤال ${
+            progress
+          } از ${
+            total || '—'
+          }`}
           onBack={() =>
             setView('history')
           }
         />
 
-        <div className="page fade-up">
-          <div
-            className="card"
+        <main className="page fade-up">
+          <section
+            className={
+              'card card-glow'
+            }
             style={{
-              display: 'flex',
-              justifyContent:
-                'space-between',
-              alignItems: 'center',
-              marginBottom: 12,
+              marginBottom:
+                12,
+
+              padding:
+                13,
+
+              background:
+                'linear-gradient(145deg,rgba(29,78,216,.18),rgba(16,24,39,.95))',
             }}
           >
-            <span>
-              سؤال {progress} از{' '}
-              {session?.total ||
-                '—'}
-            </span>
+            <div
+              style={{
+                display:
+                  'flex',
 
-            <span className="badge b-yel">
-              ⏱{' '}
-              {formatTime(
-                secondsLeft
-              )}
-            </span>
-          </div>
+                alignItems:
+                  'center',
+
+                gap:
+                  10,
+              }}
+            >
+              <span className="badge b-acc">
+                سؤال {progress}/
+                {total || '—'}
+              </span>
+
+              <div
+                className="pbar"
+                style={{
+                  flex:
+                    1,
+                }}
+              >
+                <div
+                  className="pbar-f"
+                  style={{
+                    width:
+                      `${examProgress}%`,
+                  }}
+                />
+              </div>
+
+              <span
+                className={`badge ${
+                  secondsLeft !=
+                    null &&
+                  secondsLeft < 60
+                    ? 'b-red'
+                    : 'b-yel'
+                }`}
+              >
+                ⏱{' '}
+
+                {clock(
+                  secondsLeft
+                )}
+              </span>
+            </div>
+          </section>
+
 
           {!question ? (
             <div
               style={{
-                display: 'flex',
-                justifyContent:
+                display:
+                  'grid',
+
+                placeItems:
                   'center',
-                padding: 40,
+
+                padding:
+                  50,
               }}
             >
               <Spinner size={30} />
@@ -516,25 +594,27 @@ export default function ExamCenter() {
                 question={question}
                 answered={answer}
                 onAnswer={(
-                  questionId,
+                  _,
                   selected
                 ) =>
-                  answerMutation.mutate({
-                    questionId,
-                    selected,
-                  })
+                  answerMutation
+                    .mutate({
+                      selected,
+                    })
                 }
                 showReport={false}
               />
 
               {answer && (
-                <div
-                  className="card fade-up"
+                <section
+                  className={
+                    'card pop-in'
+                  }
                   style={{
                     borderColor:
                       answer.is_correct
-                        ? 'var(--ok)'
-                        : 'var(--err)',
+                        ? 'rgba(16,185,129,.3)'
+                        : 'rgba(239,68,68,.3)',
                   }}
                 >
                   <div
@@ -544,24 +624,32 @@ export default function ExamCenter() {
                           ? 'var(--ok)'
                           : 'var(--err)',
 
-                      fontWeight: 800,
+                      fontSize:
+                        14,
+
+                      fontWeight:
+                        900,
                     }}
                   >
                     {answer.is_correct
-                      ? '✅ پاسخ صحیح'
-                      : '❌ پاسخ اشتباه'}
+                      ? '✅ پاسخ صحیح؛ آفرین!'
+                      : '❌ پاسخ نادرست'}
                   </div>
 
                   {answer.explanation && (
                     <div
                       style={{
-                        marginTop: 8,
-
-                        lineHeight:
-                          1.8,
+                        marginTop:
+                          9,
 
                         color:
                           'var(--tx2)',
+
+                        fontSize:
+                          11,
+
+                        lineHeight:
+                          1.9,
                       }}
                     >
                       {
@@ -571,9 +659,12 @@ export default function ExamCenter() {
                   )}
 
                   <button
-                    className="btn btn-p btn-full"
+                    className={
+                      'btn btn-p btn-full'
+                    }
                     style={{
-                      marginTop: 12,
+                      marginTop:
+                        12,
                     }}
                     onClick={() =>
                       loadNext(
@@ -583,46 +674,52 @@ export default function ExamCenter() {
                   >
                     {answer.finished
                       ? 'مشاهده نتیجه'
-                      : 'سؤال بعدی'}
+                      : 'سؤال بعدی ←'}
                   </button>
-                </div>
+                </section>
               )}
             </>
           )}
 
+
           <button
-            className="btn btn-d btn-full"
+            className={
+              'btn btn-d btn-full'
+            }
             style={{
-              marginTop: 12,
+              marginTop:
+                12,
             }}
             disabled={
               abandonMutation
                 .isPending
             }
             onClick={() => {
-              const confirmed =
+              const accepted =
                 window.confirm(
                   'آزمون رها شود؟'
                 );
 
-              if (confirmed) {
+              if (accepted) {
                 abandonMutation
                   .mutate();
               }
             }}
           >
-            {abandonMutation
-              .isPending
-              ? 'در حال ثبت...'
-              : 'رهاکردن آزمون'}
+            رهاکردن آزمون
           </button>
-        </div>
+        </main>
       </>
     );
   }
 
 
   if (view === 'result') {
+    const score =
+      Number(
+        result?.percentage
+      ) || 0;
+
     return (
       <>
         <Header
@@ -632,82 +729,168 @@ export default function ExamCenter() {
           }
         />
 
-        <div className="page fade-up">
-          <div
-            className="card card-glow"
+        <main className="page fade-up">
+          <section
+            className={
+              'card card-glow'
+            }
             style={{
-              textAlign: 'center',
-              padding: 26,
+              padding:
+                25,
+
+              textAlign:
+                'center',
+
+              background:
+                'linear-gradient(145deg,rgba(29,78,216,.2),rgba(16,24,39,.95) 55%,rgba(34,211,238,.08))',
             }}
           >
             <div
               style={{
-                fontSize: 48,
+                fontSize:
+                  53,
               }}
             >
-              {(result?.percentage ||
-                0) >= 70
-                ? '🎉'
-                : '📚'}
+              {score >= 70
+                ? '🏆'
+                : score >= 40
+                  ? '💪'
+                  : '📚'}
             </div>
 
             <div
               style={{
-                fontSize: 28,
-                fontWeight: 800,
-                color: 'var(--acc)',
-                marginTop: 8,
+                color:
+                  score >= 70
+                    ? 'var(--ok)'
+                    : score >= 40
+                      ? 'var(--warn)'
+                      : 'var(--err)',
+
+                fontSize:
+                  32,
+
+                fontWeight:
+                  900,
+
+                marginTop:
+                  8,
               }}
             >
-              {result?.percentage ||
-                0}
-              ٪
+              {score}٪
             </div>
 
             <div
               style={{
-                marginTop: 12,
+                color:
+                  'var(--txm)',
+
+                fontSize:
+                  10.5,
               }}
             >
-              {result?.correct || 0}{' '}
-              پاسخ صحیح از{' '}
-              {result?.answered || 0}
+              نتیجه نهایی آزمون
             </div>
 
             <div
+              className="grid2"
               style={{
-                fontSize: 11,
-                color: 'var(--txm)',
-                marginTop: 6,
+                marginTop:
+                  18,
               }}
             >
-              وضعیت:{' '}
-              {statusLabel[
-                result?.status
-              ] ||
-                'تمام‌شده'}
+              <div className="card">
+                <b
+                  style={{
+                    color:
+                      'var(--ok)',
+
+                    fontSize:
+                      20,
+                  }}
+                >
+                  {result?.correct ||
+                    0}
+                </b>
+
+                <div
+                  style={{
+                    color:
+                      'var(--txm)',
+
+                    fontSize:
+                      9,
+                  }}
+                >
+                  صحیح
+                </div>
+              </div>
+
+              <div className="card">
+                <b
+                  style={{
+                    color:
+                      'var(--err)',
+
+                    fontSize:
+                      20,
+                  }}
+                >
+                  {Math.max(
+                    0,
+
+                    (
+                      result
+                        ?.answered ||
+                      0
+                    ) -
+                    (
+                      result
+                        ?.correct ||
+                      0
+                    )
+                  )}
+                </b>
+
+                <div
+                  style={{
+                    color:
+                      'var(--txm)',
+
+                    fontSize:
+                      9,
+                  }}
+                >
+                  اشتباه
+                </div>
+              </div>
             </div>
 
             <button
-              className="btn btn-p btn-full"
+              className={
+                'btn btn-p btn-full'
+              }
               style={{
-                marginTop: 18,
+                marginTop:
+                  17,
               }}
               onClick={() =>
-                setView('history')
+                setView(
+                  'history'
+                )
               }
             >
-              مشاهده تاریخچه
+              تاریخچه آزمون‌ها
             </button>
-          </div>
-        </div>
+          </section>
+        </main>
       </>
     );
   }
 
 
   if (view === 'history') {
-    const safeHistory =
+    const rows =
       Array.isArray(history)
         ? history
         : [];
@@ -721,17 +904,20 @@ export default function ExamCenter() {
           }
         />
 
-        <div className="page fade-up">
+        <main className="page fade-up">
           <button
-            className="btn btn-p btn-full"
+            className={
+              'btn btn-p btn-full'
+            }
             style={{
-              marginBottom: 14,
+              marginBottom:
+                14,
             }}
             onClick={() =>
               setView('setup')
             }
           >
-            + آزمون جدید
+            ＋ آزمون جدید
           </button>
 
           {historyLoading ? (
@@ -740,15 +926,14 @@ export default function ExamCenter() {
               <SkeletonCard />
             </>
           ) : historyError ? (
-            <div className="empty">
-              <div>
-                دریافت تاریخچه انجام نشد.
-              </div>
+            <div className="empty card">
+              دریافت تاریخچه انجام نشد.
 
               <button
                 className="btn btn-p"
                 style={{
-                  marginTop: 12,
+                  marginTop:
+                    12,
                 }}
                 onClick={() =>
                   refetchHistory()
@@ -757,132 +942,161 @@ export default function ExamCenter() {
                 تلاش دوباره
               </button>
             </div>
-          ) : safeHistory.length ===
-            0 ? (
-            <div className="empty">
+          ) : rows.length === 0 ? (
+            <div className="empty card">
               هنوز آزمونی ثبت نشده است.
             </div>
           ) : (
-            safeHistory.map(
-              (item) => (
-                <div
-                  key={
-                    item.session_id
-                  }
-                  className="card"
-                  style={{
-                    marginBottom: 9,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: 'flex',
+            <section
+              style={{
+                display:
+                  'grid',
 
-                      justifyContent:
-                        'space-between',
+                gap:
+                  9,
+              }}
+            >
+              {rows.map(
+                (item) => {
+                  const [
+                    label,
+                    badge,
+                    icon,
+                  ] = (
+                    STATUS[
+                      item.status
+                    ] || [
+                      item.status,
 
-                      gap: 8,
-                    }}
-                  >
-                    <div>
-                      <div
-                        style={{
-                          fontWeight:
-                            700,
-                        }}
-                      >
-                        {item.lesson ||
-                          'آزمون'}
-                      </div>
+                      'b-gray',
 
-                      <div
-                        style={{
-                          fontSize: 11,
+                      '📌',
+                    ]
+                  );
 
-                          color:
-                            'var(--txm)',
-
-                          marginTop: 3,
-                        }}
-                      >
-                        {item.topic ||
-                          'همه مباحث'}
-
-                        {' • '}
-
-                        {item.answered ||
-                          0}
-                        /
-                        {item.total ||
-                          0}{' '}
-                        پاسخ
-                      </div>
-                    </div>
-
-                    <span
-                      className={`badge ${
-                        item.status ===
-                        'active'
-                          ? 'b-yel'
-                          : (
-                                item.percentage ||
-                                0
-                              ) >= 70
-                            ? 'b-grn'
-                            : 'b-gray'
-                      }`}
-                    >
-                      {item.status ===
-                      'active'
-                        ? statusLabel
-                            .active
-                        : `${
-                            item.percentage ||
-                            0
-                          }٪`}
-                    </span>
-                  </div>
-
-                  {item.status ===
-                    'active' && (
-                    <button
-                      className="btn btn-p btn-full"
-                      style={{
-                        marginTop: 10,
-                      }}
-                      onClick={() =>
-                        resume(item)
+                  return (
+                    <article
+                      key={
+                        item.session_id
                       }
+                      className="card"
                     >
-                      ادامه آزمون
-                    </button>
-                  )}
+                      <div
+                        style={{
+                          display:
+                            'flex',
 
-                  {item.status !==
-                    'active' && (
-                    <div
-                      style={{
-                        fontSize:
-                          10.5,
+                          alignItems:
+                            'center',
 
-                        color:
-                          'var(--txm)',
+                          gap:
+                            11,
+                        }}
+                      >
+                        <span
+                          style={{
+                            display:
+                              'grid',
 
-                        marginTop:
-                          7,
-                      }}
-                    >
-                      {statusLabel[
-                        item.status
-                      ] ||
-                        item.status}
-                    </div>
-                  )}
-                </div>
-              )
-            )
+                            width:
+                              44,
+
+                            height:
+                              44,
+
+                            placeItems:
+                              'center',
+
+                            borderRadius:
+                              14,
+
+                            background:
+                              'var(--acc-soft)',
+
+                            fontSize:
+                              20,
+                          }}
+                        >
+                          {icon}
+                        </span>
+
+                        <div
+                          style={{
+                            flex:
+                              1,
+                          }}
+                        >
+                          <b
+                            style={{
+                              fontSize:
+                                12.5,
+                            }}
+                          >
+                            {item.lesson ||
+                              'آزمون سفارشی'}
+                          </b>
+
+                          <div
+                            style={{
+                              color:
+                                'var(--txm)',
+
+                              fontSize:
+                                9.5,
+
+                              marginTop:
+                                3,
+                            }}
+                          >
+                            {item.topic ||
+                              'همه مباحث'}
+
+                            {' • '}
+
+                            {item.answered ||
+                              0}
+                            /
+                            {item.total ||
+                              0}{' '}
+
+                            پاسخ
+                          </div>
+                        </div>
+
+                        <span
+                          className={`badge ${badge}`}
+                        >
+                          {item.status ===
+                          'active'
+                            ? label
+                            : `${item.percentage || 0}٪`}
+                        </span>
+                      </div>
+
+                      {item.status ===
+                        'active' && (
+                        <button
+                          className={
+                            'btn btn-p btn-full'
+                          }
+                          style={{
+                            marginTop:
+                              10,
+                          }}
+                          onClick={() =>
+                            resume(item)
+                          }
+                        >
+                          ▶️ ادامه آزمون
+                        </button>
+                      )}
+                    </article>
+                  );
+                }
+              )}
+            </section>
           )}
-        </div>
+        </main>
       </>
     );
   }
@@ -890,35 +1104,128 @@ export default function ExamCenter() {
 
   return (
     <>
-      <Header title="آزمون سفارشی" />
+      <Header
+        title="مرکز آزمون"
+        subtitle={
+          'آزمون شخصی‌سازی‌شده و ماندگار'
+        }
+      />
 
-      <div className="page fade-up">
-        <button
-          className="btn btn-dark btn-full"
+      <main className="page fade-up">
+        <section
+          className={
+            'card card-glow'
+          }
           style={{
-            marginBottom: 14,
+            padding:
+              18,
+
+            marginBottom:
+              14,
+
+            background:
+              'linear-gradient(145deg,rgba(139,92,246,.16),rgba(16,24,39,.95) 55%,rgba(59,130,246,.1))',
+          }}
+        >
+          <div
+            style={{
+              display:
+                'flex',
+
+              alignItems:
+                'center',
+
+              gap:
+                13,
+            }}
+          >
+            <span
+              style={{
+                display:
+                  'grid',
+
+                width:
+                  54,
+
+                height:
+                  54,
+
+                placeItems:
+                  'center',
+
+                borderRadius:
+                  17,
+
+                background:
+                  'linear-gradient(135deg,#7C3AED,#3B82F6)',
+
+                fontSize:
+                  26,
+              }}
+            >
+              🧪
+            </span>
+
+            <div>
+              <b
+                style={{
+                  fontSize:
+                    17,
+                }}
+              >
+                آزمون خودت رو بساز
+              </b>
+
+              <div
+                style={{
+                  color:
+                    'var(--txm)',
+
+                  fontSize:
+                    10,
+
+                  lineHeight:
+                    1.6,
+
+                  marginTop:
+                    3,
+                }}
+              >
+                درس، مبحث، تعداد سؤال و
+                زمان را خودت انتخاب کن.
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <button
+          className={
+            'btn btn-dark btn-full'
+          }
+          style={{
+            marginBottom:
+              14,
           }}
           onClick={() =>
             setView('history')
           }
         >
-          📋 تاریخچه و ادامه آزمون
+          🕘 تاریخچه و ادامه آزمون
         </button>
 
-        <div
+
+        <section
           className="card"
           style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 10,
+            display:
+              'grid',
+
+            gap:
+              10,
           }}
         >
-          <label
-            style={{
-              fontSize: 11,
-              color: 'var(--txm)',
-            }}
-          >
+          <label>
             درس
           </label>
 
@@ -927,13 +1234,16 @@ export default function ExamCenter() {
           ) : (
             <select
               className="inp"
-              value={config.lesson}
+              value={
+                config.lesson
+              }
               onChange={(event) =>
                 setConfig({
                   ...config,
 
                   lesson:
-                    event.target.value,
+                    event.target
+                      .value,
 
                   topic:
                     'همه',
@@ -958,18 +1268,15 @@ export default function ExamCenter() {
             </select>
           )}
 
-          <label
-            style={{
-              fontSize: 11,
-              color: 'var(--txm)',
-            }}
-          >
+          <label>
             مبحث
           </label>
 
           <select
             className="inp"
-            value={config.topic}
+            value={
+              config.topic
+            }
             disabled={
               !config.lesson
             }
@@ -978,7 +1285,8 @@ export default function ExamCenter() {
                 ...config,
 
                 topic:
-                  event.target.value,
+                  event.target
+                    .value,
               })
             }
           >
@@ -999,115 +1307,121 @@ export default function ExamCenter() {
             )}
           </select>
 
-          <label
-            style={{
-              fontSize: 11,
-              color: 'var(--txm)',
-            }}
-          >
-            تعداد سؤال
-          </label>
+          <div className="grid2">
+            <div>
+              <label>
+                تعداد سؤال
+              </label>
 
-          <select
-            className="inp"
-            value={config.count}
-            onChange={(event) =>
-              setConfig({
-                ...config,
+              <select
+                className="inp"
+                value={
+                  config.count
+                }
+                onChange={(event) =>
+                  setConfig({
+                    ...config,
 
-                count:
-                  Number(
-                    event.target
-                      .value
-                  ),
-              })
-            }
-          >
-            {[
-              5,
-              10,
-              15,
-              20,
-              30,
-              40,
-            ].map((count) => (
-              <option
-                key={count}
-                value={count}
+                    count:
+                      Number(
+                        event.target
+                          .value
+                      ),
+                  })
+                }
               >
-                {count} سؤال
-              </option>
-            ))}
-          </select>
+                {[
+                  5,
+                  10,
+                  15,
+                  20,
+                  30,
+                  40,
+                ].map(
+                  (value) => (
+                    <option
+                      key={value}
+                      value={value}
+                    >
+                      {value} سؤال
+                    </option>
+                  )
+                )}
+              </select>
+            </div>
 
-          <label
-            style={{
-              fontSize: 11,
-              color: 'var(--txm)',
-            }}
-          >
-            زمان
-          </label>
+            <div>
+              <label>
+                زمان
+              </label>
 
-          <select
-            className="inp"
-            value={
-              config.minutes
-            }
-            onChange={(event) =>
-              setConfig({
-                ...config,
+              <select
+                className="inp"
+                value={
+                  config.minutes
+                }
+                onChange={(event) =>
+                  setConfig({
+                    ...config,
 
-                minutes:
-                  Number(
-                    event.target
-                      .value
-                  ),
-              })
-            }
-          >
-            <option value={0}>
-              بدون محدودیت
-            </option>
-
-            {[
-              10,
-              20,
-              30,
-              60,
-              90,
-            ].map((minutes) => (
-              <option
-                key={minutes}
-                value={minutes}
+                    minutes:
+                      Number(
+                        event.target
+                          .value
+                      ),
+                  })
+                }
               >
-                {minutes} دقیقه
-              </option>
-            ))}
-          </select>
-        </div>
+                <option value={0}>
+                  بدون محدودیت
+                </option>
+
+                {[
+                  10,
+                  20,
+                  30,
+                  60,
+                  90,
+                ].map(
+                  (value) => (
+                    <option
+                      key={value}
+                      value={value}
+                    >
+                      {value} دقیقه
+                    </option>
+                  )
+                )}
+              </select>
+            </div>
+          </div>
+        </section>
 
         <button
-          className="btn btn-p btn-full"
+          className={
+            'btn btn-p btn-full'
+          }
           style={{
-            marginTop: 14,
+            marginTop:
+              13,
           }}
           disabled={
             !config.lesson ||
             startMutation.isPending
           }
-          onClick={() =>
-            startMutation.mutate()
-          }
+          onClick={() => {
+            haptic('medium');
+
+            startMutation.mutate();
+          }}
         >
-          {startMutation
-            .isPending ? (
+          {startMutation.isPending ? (
             <Spinner size={16} />
           ) : (
             '🚀 شروع آزمون'
           )}
         </button>
-      </div>
+      </main>
     </>
   );
 }
