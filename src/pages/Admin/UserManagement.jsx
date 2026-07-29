@@ -974,4 +974,1407 @@ export function AdminUserDetail() {
                       {user.suspended
                         ? 'تعلیق‌شده'
 
-                        : 
+                        : user.approved
+                          ? 'فعال'
+
+                          : 'در انتظار'}
+                    </span>
+
+                    <span className="badge b-pur">
+                      {user.role ||
+                        'student'}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  className={
+                    'btn btn-dark'
+                  }
+                  onClick={
+                    startEdit
+                  }
+                >
+                  ✏️
+                </button>
+              </div>
+            </section>
+
+
+            {editing ? (
+              <section
+                className="card"
+                style={{
+                  display:
+                    'grid',
+
+                  gap:
+                    9,
+                }}
+              >
+                <input
+                  className="inp"
+                  value={form.name}
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+
+                      name:
+                        event.target
+                          .value,
+                    })
+                  }
+                  placeholder="نام"
+                />
+
+                <input
+                  className="inp"
+                  value={
+                    form.student_id
+                  }
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+
+                      student_id:
+                        event.target
+                          .value,
+                    })
+                  }
+                  placeholder={
+                    'شماره دانشجویی'
+                  }
+                />
+
+                <div className="grid2">
+                  <input
+                    className="inp"
+                    value={
+                      form.intake
+                    }
+                    onChange={(event) =>
+                      setForm({
+                        ...form,
+
+                        intake:
+                          event.target
+                            .value,
+                      })
+                    }
+                    placeholder="ورودی"
+                  />
+
+                  <select
+                    className="inp"
+                    value={
+                      form.group
+                    }
+                    onChange={(event) =>
+                      setForm({
+                        ...form,
+
+                        group:
+                          event.target
+                            .value,
+                      })
+                    }
+                  >
+                    <option value="1">
+                      گروه ۱
+                    </option>
+
+                    <option value="2">
+                      گروه ۲
+                    </option>
+                  </select>
+                </div>
+
+                <select
+                  className="inp"
+                  value={
+                    form.role
+                  }
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+
+                      role:
+                        event.target
+                          .value,
+                    })
+                  }
+                >
+                  <option value="student">
+                    دانشجو
+                  </option>
+
+                  <option value="content_admin">
+                    مدیر محتوا
+                  </option>
+
+                  <option value="support">
+                    پشتیبان
+                  </option>
+                </select>
+
+                <div
+                  style={{
+                    display:
+                      'flex',
+
+                    gap:
+                      7,
+                  }}
+                >
+                  <button
+                    className="btn btn-p"
+                    style={{
+                      flex:
+                        2,
+                    }}
+                    disabled={
+                      action.isPending ||
+                      !form.name.trim()
+                    }
+                    onClick={() =>
+                      action.mutate({
+                        type:
+                          'edit',
+
+                        payload:
+                          form,
+                      })
+                    }
+                  >
+                    {action.isPending ? (
+                      <Spinner
+                        size={14}
+                      />
+                    ) : (
+                      'ذخیره'
+                    )}
+                  </button>
+
+                  <button
+                    className={
+                      'btn btn-dark'
+                    }
+                    style={{
+                      flex:
+                        1,
+                    }}
+                    onClick={() =>
+                      setEditing(
+                        false
+                      )
+                    }
+                  >
+                    لغو
+                  </button>
+                </div>
+              </section>
+            ) : (
+              <section className="card">
+                <div className="sec-title">
+                  اطلاعات حساب
+                </div>
+
+                {[
+                  [
+                    '🎓',
+                    'شماره دانشجویی',
+                    user.student_id ||
+                      '—',
+                  ],
+
+                  [
+                    '📅',
+                    'ورودی',
+                    user.intake ||
+                      '—',
+                  ],
+
+                  [
+                    '👥',
+                    'گروه',
+                    user.group ||
+                      '—',
+                  ],
+
+                  [
+                    '📆',
+                    'تاریخ ثبت‌نام',
+                    user
+                      .registered_at ||
+                      '—',
+                  ],
+
+                  [
+                    '🧪',
+                    'سؤال‌های پاسخ‌داده',
+                    number(
+                      user
+                        .total_answers
+                    ),
+                  ],
+
+                  [
+                    '✅',
+                    'پاسخ صحیح',
+                    number(
+                      user
+                        .correct_answers
+                    ),
+                  ],
+                ].map(
+                  ([
+                    icon,
+                    label,
+                    value,
+                  ], index) => (
+                    <div
+                      key={label}
+                      style={{
+                        display:
+                          'flex',
+
+                        padding:
+                          '9px 0',
+
+                        borderBottom:
+                          index < 5
+                            ? '1px solid var(--bd)'
+                            : 0,
+                      }}
+                    >
+                      <span>
+                        {icon}
+                      </span>
+
+                      <span
+                        style={{
+                          marginRight:
+                            8,
+
+                          color:
+                            'var(--txm)',
+
+                          fontSize:
+                            10.5,
+                        }}
+                      >
+                        {label}
+                      </span>
+
+                      <b
+                        style={{
+                          marginRight:
+                            'auto',
+
+                          fontSize:
+                            11.5,
+                        }}
+                      >
+                        {value}
+                      </b>
+                    </div>
+                  )
+                )}
+              </section>
+            )}
+
+
+            <section className="card">
+              <div className="sec-title">
+                عملیات مدیریتی
+              </div>
+
+              <div className="grid2">
+                {!user.approved && (
+                  <button
+                    className="btn btn-p"
+                    onClick={() =>
+                      action.mutate({
+                        type:
+                          'approve',
+                      })
+                    }
+                  >
+                    ✅ تأیید
+                  </button>
+                )}
+
+                <button
+                  className={
+                    'btn btn-dark'
+                  }
+                  onClick={() =>
+                    run(
+                      'suspend',
+
+                      user.suspended
+                        ? 'تعلیق کاربر برداشته شود؟'
+                        : 'کاربر تعلیق شود؟'
+                    )
+                  }
+                >
+                  {user.suspended
+                    ? '🔓 رفع تعلیق'
+                    : '⏸ تعلیق'}
+                </button>
+
+                <button
+                  className="btn btn-d"
+                  onClick={() =>
+                    run(
+                      'delete',
+                      'کاربر حذف شود؟'
+                    )
+                  }
+                >
+                  🗑 حذف
+                </button>
+
+                <button
+                  className="btn btn-d"
+                  onClick={() =>
+                    run(
+                      'block',
+
+                      'کاربر حذف و برای همیشه مسدود شود؟'
+                    )
+                  }
+                >
+                  🚫 مسدودسازی
+                </button>
+              </div>
+            </section>
+          </div>
+        )}
+      </main>
+    </>
+  );
+}
+
+
+/* مدیریت ورودی‌ها */
+
+export function AdminIntakes() {
+  const [
+    form,
+    setForm,
+  ] = useState({
+    code: '',
+    label: '',
+  });
+
+  const toast = useUIStore(
+    (state) => state.toast
+  );
+
+  const queryClient =
+    useQueryClient();
+
+
+  const {
+    data = [],
+    isLoading,
+  } = useQuery({
+    queryKey: [
+      'admin-intakes',
+    ],
+
+    queryFn: () =>
+      api
+        .get(
+          '/api/admin/intakes'
+        )
+        .then(
+          (response) =>
+            response.data
+              ?.intakes || []
+        ),
+  });
+
+
+  const refresh = () =>
+    queryClient.invalidateQueries({
+      queryKey: [
+        'admin-intakes',
+      ],
+    });
+
+
+  const mutation = useMutation({
+    mutationFn: ({
+      type,
+      value,
+    }) => {
+      if (type === 'add') {
+        return api.post(
+          '/api/admin/intakes',
+          form
+        );
+      }
+
+      if (type === 'toggle') {
+        return api.post(
+          `/api/admin/intakes/${
+            encodeURIComponent(
+              value
+            )
+          }/toggle`
+        );
+      }
+
+      return api.delete(
+        `/api/admin/intakes/${
+          encodeURIComponent(
+            value
+          )
+        }`
+      );
+    },
+
+    onSuccess: async () => {
+      hapticNotif(
+        'success'
+      );
+
+      toast(
+        'تغییرات ذخیره شد ✅',
+        'success'
+      );
+
+      setForm({
+        code: '',
+        label: '',
+      });
+
+      await refresh();
+    },
+
+    onError: (error) =>
+      toast(
+        errorText(
+          error,
+          'عملیات انجام نشد'
+        ),
+        'error'
+      ),
+  });
+
+
+  const items =
+    Array.isArray(data)
+      ? data
+      : [];
+
+
+  return (
+    <>
+      <Header
+        title="مدیریت ورودی‌ها"
+        subtitle={`${items.length} ورودی`}
+      />
+
+      <main className="page fade-up">
+        <section
+          className={
+            'card card-glow'
+          }
+          style={{
+            padding:
+              16,
+
+            marginBottom:
+              13,
+          }}
+        >
+          <div className="sec-title">
+            ＋ ورودی جدید
+          </div>
+
+          <div className="grid2">
+            <input
+              className="inp"
+              value={form.code}
+              onChange={(event) =>
+                setForm({
+                  ...form,
+
+                  code:
+                    event.target.value,
+                })
+              }
+              placeholder="کد؛ مثل ۱۴۰۳"
+            />
+
+            <input
+              className="inp"
+              value={form.label}
+              onChange={(event) =>
+                setForm({
+                  ...form,
+
+                  label:
+                    event.target.value,
+                })
+              }
+              placeholder="عنوان ورودی"
+            />
+          </div>
+
+          <button
+            className={
+              'btn btn-p btn-full'
+            }
+            style={{
+              marginTop:
+                9,
+            }}
+            disabled={
+              !form.code.trim() ||
+              !form.label.trim() ||
+              mutation.isPending
+            }
+            onClick={() =>
+              mutation.mutate({
+                type:
+                  'add',
+              })
+            }
+          >
+            {mutation.isPending ? (
+              <Spinner size={14} />
+            ) : (
+              'افزودن ورودی'
+            )}
+          </button>
+        </section>
+
+
+        {isLoading ? (
+          <SkeletonCard />
+        ) : items.length === 0 ? (
+          <Empty>
+            ورودی‌ای ثبت نشده است.
+          </Empty>
+        ) : (
+          <section
+            style={{
+              display:
+                'grid',
+
+              gap:
+                9,
+            }}
+          >
+            {items.map((item) => (
+              <article
+                key={item.code}
+                className="card"
+              >
+                <div
+                  style={{
+                    display:
+                      'flex',
+
+                    alignItems:
+                      'center',
+
+                    gap:
+                      11,
+                  }}
+                >
+                  <span
+                    style={{
+                      display:
+                        'grid',
+
+                      width:
+                        44,
+
+                      height:
+                        44,
+
+                      placeItems:
+                        'center',
+
+                      borderRadius:
+                        14,
+
+                      background:
+                        item.active
+                          ? 'rgba(16,185,129,.12)'
+                          : 'rgba(100,116,139,.12)',
+
+                      fontSize:
+                        20,
+                    }}
+                  >
+                    📅
+                  </span>
+
+                  <div
+                    style={{
+                      flex:
+                        1,
+                    }}
+                  >
+                    <b>
+                      {item.label ||
+                        item.code}
+                    </b>
+
+                    <div
+                      style={{
+                        color:
+                          'var(--txm)',
+
+                        fontSize:
+                          9.5,
+
+                        marginTop:
+                          3,
+                      }}
+                    >
+                      {number(
+                        item.total
+                      )}{' '}
+
+                      دانشجو • گروه ۱:{' '}
+
+                      {number(
+                        item
+                          .groups
+                          ?.['1']
+                      )}{' '}
+
+                      • گروه ۲:{' '}
+
+                      {number(
+                        item
+                          .groups
+                          ?.['2']
+                      )}
+                    </div>
+                  </div>
+
+                  <span
+                    className={`badge ${
+                      item.active
+                        ? 'b-grn'
+                        : 'b-gray'
+                    }`}
+                  >
+                    {item.active
+                      ? 'فعال'
+                      : 'غیرفعال'}
+                  </span>
+                </div>
+
+                <div
+                  style={{
+                    display:
+                      'flex',
+
+                    gap:
+                      7,
+
+                    marginTop:
+                      10,
+                  }}
+                >
+                  <button
+                    className={
+                      'btn btn-dark'
+                    }
+                    style={{
+                      flex:
+                        1,
+                    }}
+                    onClick={() =>
+                      mutation.mutate({
+                        type:
+                          'toggle',
+
+                        value:
+                          item.code,
+                      })
+                    }
+                  >
+                    {item.active
+                      ? 'غیرفعال‌کردن'
+                      : 'فعال‌کردن'}
+                  </button>
+
+                  <button
+                    className="btn btn-d"
+                    onClick={() => {
+                      const accepted =
+                        window.confirm(
+                          'این ورودی حذف شود؟'
+                        );
+
+                      if (accepted) {
+                        mutation.mutate({
+                          type:
+                            'delete',
+
+                          value:
+                            item.code,
+                        });
+                      }
+                    }}
+                  >
+                    🗑
+                  </button>
+                </div>
+              </article>
+            ))}
+          </section>
+        )}
+      </main>
+    </>
+  );
+}
+
+
+/* مدیران محتوا */
+
+export function AdminContentAdmins() {
+  const [
+    search,
+    setSearch,
+  ] = useState('');
+
+  const toast = useUIStore(
+    (state) => state.toast
+  );
+
+  const queryClient =
+    useQueryClient();
+
+
+  const {
+    data: admins = [],
+    isLoading,
+  } = useQuery({
+    queryKey: [
+      'content-admins',
+    ],
+
+    queryFn: () =>
+      api
+        .get(
+          '/api/admin/content-admins'
+        )
+        .then(
+          (response) =>
+            response.data
+              ?.admins || []
+        ),
+  });
+
+
+  const {
+    data: students = [],
+    isFetching,
+  } = useQuery({
+    queryKey: [
+      'admin-student-search',
+      search,
+    ],
+
+    queryFn: () =>
+      api
+        .get(
+          '/api/admin/students',
+
+          {
+            params: {
+              q:
+                search.trim(),
+            },
+          }
+        )
+        .then(
+          (response) =>
+            response.data
+              ?.students || []
+        ),
+
+    enabled:
+      search.trim().length >= 2,
+  });
+
+
+  const refresh = () =>
+    queryClient.invalidateQueries({
+      queryKey: [
+        'content-admins',
+      ],
+    });
+
+
+  const mutation = useMutation({
+    mutationFn: ({
+      type,
+      id,
+    }) => {
+      if (type === 'add') {
+        return api.post(
+          `/api/admin/content-admins/${id}`
+        );
+      }
+
+      return api.delete(
+        `/api/admin/content-admins/${id}`
+      );
+    },
+
+    onSuccess: async () => {
+      toast(
+        'دسترسی به‌روزرسانی شد ✅',
+        'success'
+      );
+
+      setSearch('');
+
+      await refresh();
+    },
+
+    onError: (error) =>
+      toast(
+        errorText(
+          error,
+          'عملیات انجام نشد'
+        ),
+        'error'
+      ),
+  });
+
+
+  const adminList =
+    Array.isArray(admins)
+      ? admins
+      : [];
+
+
+  return (
+    <>
+      <Header
+        title="مدیران محتوا"
+        subtitle={`${adminList.length} مدیر`}
+      />
+
+      <main className="page fade-up">
+        <section
+          className="card"
+          style={{
+            marginBottom:
+              13,
+          }}
+        >
+          <div className="sec-title">
+            افزودن مدیر محتوا
+          </div>
+
+          <div
+            style={{
+              position:
+                'relative',
+            }}
+          >
+            <input
+              className="inp"
+              value={search}
+              onChange={(event) =>
+                setSearch(
+                  event.target.value
+                )
+              }
+              placeholder="جست‌وجوی دانشجو..."
+            />
+
+            {isFetching && (
+              <span
+                style={{
+                  position:
+                    'absolute',
+
+                  left:
+                    12,
+
+                  top:
+                    12,
+                }}
+              >
+                <Spinner size={15} />
+              </span>
+            )}
+          </div>
+
+          {(
+            Array.isArray(students)
+              ? students
+              : []
+          ).map((item) => (
+            <button
+              type="button"
+              key={item.id}
+              className="menu-row"
+              onClick={() =>
+                mutation.mutate({
+                  type:
+                    'add',
+
+                  id:
+                    item.id,
+                })
+              }
+            >
+              <span
+                className="avatar"
+                style={{
+                  width:
+                    37,
+
+                  height:
+                    37,
+                }}
+              >
+                {item.name?.[0] ||
+                  '؟'}
+              </span>
+
+              <span
+                style={{
+                  flex:
+                    1,
+                }}
+              >
+                <b>
+                  {item.name}
+                </b>
+
+                <span
+                  style={{
+                    display:
+                      'block',
+
+                    color:
+                      'var(--txm)',
+
+                    fontSize:
+                      9,
+                  }}
+                >
+                  گروه{' '}
+
+                  {item.group ||
+                    '—'}
+                </span>
+              </span>
+
+              <span>＋</span>
+            </button>
+          ))}
+        </section>
+
+
+        <div className="sec-title">
+          فهرست مدیران
+        </div>
+
+
+        {isLoading ? (
+          <SkeletonCard />
+        ) : adminList.length === 0 ? (
+          <Empty>
+            مدیر محتوایی ثبت نشده است.
+          </Empty>
+        ) : (
+          <section
+            className="card"
+            style={{
+              padding:
+                '0 14px',
+            }}
+          >
+            {adminList.map(
+              (item) => (
+                <div
+                  key={item.id}
+                  className="menu-row"
+                >
+                  <span
+                    className="avatar"
+                    style={{
+                      width:
+                        39,
+
+                      height:
+                        39,
+                    }}
+                  >
+                    {item.name?.[0] ||
+                      '؟'}
+                  </span>
+
+                  <span
+                    style={{
+                      flex:
+                        1,
+                    }}
+                  >
+                    <b>
+                      {item.name ||
+                        `#${item.id}`}
+                    </b>
+
+                    <span
+                      style={{
+                        display:
+                          'block',
+
+                        color:
+                          'var(--txm)',
+
+                        fontSize:
+                          9,
+                      }}
+                    >
+                      مدیر محتوا
+                    </span>
+                  </span>
+
+                  <button
+                    className="btn btn-d"
+                    style={{
+                      minHeight:
+                        32,
+
+                      padding:
+                        '5px 9px',
+                    }}
+                    onClick={() => {
+                      const accepted =
+                        window.confirm(
+                          'دسترسی لغو شود؟'
+                        );
+
+                      if (accepted) {
+                        mutation.mutate({
+                          type:
+                            'remove',
+
+                          id:
+                            item.id,
+                        });
+                      }
+                    }}
+                  >
+                    لغو
+                  </button>
+                </div>
+              )
+            )}
+          </section>
+        )}
+      </main>
+    </>
+  );
+}
+
+
+/* فهرست مسدودها */
+
+export function AdminBlacklist() {
+  const toast = useUIStore(
+    (state) => state.toast
+  );
+
+  const queryClient =
+    useQueryClient();
+
+
+  const {
+    data = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: [
+      'admin-blacklist',
+    ],
+
+    queryFn: () =>
+      api
+        .get(
+          '/api/admin/blacklist'
+        )
+        .then(
+          (response) =>
+            response.data
+              ?.blacklist || []
+        ),
+  });
+
+
+  const mutation = useMutation({
+    mutationFn: (id) =>
+      api.post(
+        `/api/admin/users/${id}/unblock`
+      ),
+
+    onSuccess: async () => {
+      hapticNotif(
+        'success'
+      );
+
+      toast(
+        'مسدودیت برداشته شد ✅',
+        'success'
+      );
+
+      await queryClient
+        .invalidateQueries({
+          queryKey: [
+            'admin-blacklist',
+          ],
+        });
+    },
+
+    onError: (error) =>
+      toast(
+        errorText(
+          error,
+          'رفع مسدودیت انجام نشد'
+        ),
+        'error'
+      ),
+  });
+
+
+  const rows =
+    Array.isArray(data)
+      ? data
+      : [];
+
+
+  return (
+    <>
+      <Header
+        title="فهرست مسدودها"
+        subtitle={`${rows.length} کاربر`}
+      />
+
+      <main className="page fade-up">
+        <section
+          className={
+            'card card-glow'
+          }
+          style={{
+            display:
+              'flex',
+
+            alignItems:
+              'center',
+
+            gap:
+              12,
+
+            marginBottom:
+              14,
+
+            borderColor:
+              'rgba(239,68,68,.25)',
+
+            background:
+              'linear-gradient(145deg,rgba(239,68,68,.1),rgba(16,24,39,.95))',
+          }}
+        >
+          <span
+            style={{
+              fontSize:
+                27,
+            }}
+          >
+            🚫
+          </span>
+
+          <div>
+            <b>
+              کاربران مسدودشده
+            </b>
+
+            <div
+              style={{
+                color:
+                  'var(--txm)',
+
+                fontSize:
+                  9.5,
+
+                marginTop:
+                  3,
+              }}
+            >
+              این کاربران امکان ثبت‌نام
+              مجدد ندارند.
+            </div>
+          </div>
+        </section>
+
+
+        {isLoading ? (
+          <SkeletonCard />
+        ) : isError ? (
+          <Empty icon="🌐">
+            دریافت فهرست انجام نشد.
+
+            <button
+              className="btn btn-p"
+              style={{
+                marginTop:
+                  12,
+              }}
+              onClick={() =>
+                refetch()
+              }
+            >
+              تلاش دوباره
+            </button>
+          </Empty>
+        ) : rows.length === 0 ? (
+          <Empty icon="✅">
+            هیچ کاربری مسدود نیست.
+          </Empty>
+        ) : (
+          <section
+            style={{
+              display:
+                'grid',
+
+              gap:
+                9,
+            }}
+          >
+            {rows.map((item) => (
+              <article
+                key={item.id}
+                className="card"
+              >
+                <div
+                  style={{
+                    display:
+                      'flex',
+
+                    alignItems:
+                      'center',
+
+                    gap:
+                      10,
+                  }}
+                >
+                  <span
+                    style={{
+                      display:
+                        'grid',
+
+                      width:
+                        43,
+
+                      height:
+                        43,
+
+                      placeItems:
+                        'center',
+
+                      borderRadius:
+                        14,
+
+                      background:
+                        'rgba(239,68,68,.12)',
+
+                      fontSize:
+                        20,
+                    }}
+                  >
+                    🚫
+                  </span>
+
+                  <div
+                    style={{
+                      flex:
+                        1,
+                    }}
+                  >
+                    <b>
+                      {item.name ||
+                        `#${item.id}`}
+                    </b>
+
+                    <div
+                      style={{
+                        color:
+                          'var(--txm)',
+
+                        fontSize:
+                          9,
+
+                        marginTop:
+                          3,
+                      }}
+                    >
+                      مسدودکننده:{' '}
+
+                      {item
+                        .blocked_by_name ||
+                        'مدیریت'}
+
+                      {' • '}
+
+                      {item.blocked_at ||
+                        '—'}
+                    </div>
+                  </div>
+
+                  <button
+                    className="btn btn-g"
+                    style={{
+                      minHeight:
+                        34,
+
+                      padding:
+                        '5px 9px',
+                    }}
+                    disabled={
+                      mutation.isPending
+                    }
+                    onClick={() => {
+                      const accepted =
+                        window.confirm(
+                          'مسدودیت برداشته شود؟'
+                        );
+
+                      if (accepted) {
+                        mutation.mutate(
+                          item.id
+                        );
+                      }
+                    }}
+                  >
+                    رفع مسدودیت
+                  </button>
+                </div>
+              </article>
+            ))}
+          </section>
+        )}
+      </main>
+    </>
+  );
+}
