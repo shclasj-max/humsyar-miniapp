@@ -1,7 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '../../lib/api';
 import Header from '../../components/layout/Header';
-import { SkeletonCard, Spinner } from '../../components/shared/Loading';
+import {
+  SkeletonCard,
+  Spinner,
+} from '../../components/shared/Loading';
 import { haptic } from '../../lib/telegram';
 
 const finiteNumber = (value) => {
@@ -23,9 +26,14 @@ const finiteNumber = (value) => {
 const clampPercentage = (value) => {
   const number = finiteNumber(value);
 
-  return number === null
-    ? null
-    : Math.max(0, Math.min(100, number));
+  if (number === null) {
+    return null;
+  }
+
+  return Math.max(
+    0,
+    Math.min(100, number)
+  );
 };
 
 const gradeStyle = (percentage) => {
@@ -77,7 +85,9 @@ export default function Grades() {
     queryFn: () =>
       api
         .get('/api/grades')
-        .then((response) => response.data),
+        .then(
+          (response) => response.data
+        ),
 
     staleTime: 1000 * 60 * 5,
   });
@@ -95,9 +105,11 @@ export default function Grades() {
   const averagePercentage =
     clampPercentage(
       data?.avg_percentage ??
-        (average === null
-          ? null
-          : (average / 20) * 100)
+        (
+          average === null
+            ? null
+            : (average / 20) * 100
+        )
     );
 
   const averageVisual = gradeStyle(
@@ -124,8 +136,9 @@ export default function Grades() {
     ? Math.max(0, gradedCountValue)
     : grades.filter(
         (grade) =>
-          finiteNumber(grade?.score) !==
-          null
+          finiteNumber(
+            grade?.score
+          ) !== null
       ).length;
 
   return (
@@ -172,9 +185,13 @@ export default function Grades() {
               gap: 10,
             }}
           >
-            {[1, 2, 3].map((item) => (
-              <SkeletonCard key={item} />
-            ))}
+            {[1, 2, 3].map(
+              (item) => (
+                <SkeletonCard
+                  key={item}
+                />
+              )
+            )}
           </div>
         ) : isError ? (
           <div className="empty">
@@ -188,12 +205,15 @@ export default function Grades() {
             </div>
 
             <div>
-              دریافت نمرات با مشکل مواجه شد.
+              دریافت نمرات با مشکل مواجه
+              شد.
             </div>
 
             <button
               className="btn btn-p"
-              style={{ marginTop: 14 }}
+              style={{
+                marginTop: 14,
+              }}
               onClick={() => refetch()}
               disabled={isRefetching}
             >
@@ -216,7 +236,8 @@ export default function Grades() {
             </div>
 
             <div>
-              هنوز هیچ نمره‌ای ثبت نشده است.
+              هنوز هیچ نمره‌ای ثبت نشده
+              است.
             </div>
 
             <div
@@ -226,8 +247,9 @@ export default function Grades() {
                 marginTop: 8,
               }}
             >
-              پس از ثبت نمره توسط مدیر محتوا،
-              نتیجه اینجا نمایش داده می‌شود.
+              پس از ثبت نمره توسط مدیر
+              محتوا، نتیجه اینجا نمایش
+              داده می‌شود.
             </div>
           </div>
         ) : (
@@ -273,8 +295,10 @@ export default function Grades() {
                     className="pbar-f"
                     style={{
                       width: `${
-                        averagePercentage || 0
+                        averagePercentage ||
+                        0
                       }%`,
+
                       background:
                         averageVisual.color,
                     }}
@@ -285,7 +309,8 @@ export default function Grades() {
               <div
                 style={{
                   display: 'flex',
-                  justifyContent: 'center',
+                  justifyContent:
+                    'center',
                   gap: 8,
                   marginTop: 12,
                   flexWrap: 'wrap',
@@ -296,9 +321,11 @@ export default function Grades() {
                   محاسبه‌شده
                 </span>
 
-                {total > gradedCount && (
+                {total >
+                  gradedCount && (
                   <span className="badge b-gray">
-                    {total - gradedCount}{' '}
+                    {total -
+                      gradedCount}{' '}
                     نمره در انتظار
                   </span>
                 )}
@@ -344,7 +371,8 @@ export default function Grades() {
                     >
                       <div
                         style={{
-                          display: 'flex',
+                          display:
+                            'flex',
                           alignItems:
                             'center',
                           gap: 12,
@@ -354,24 +382,35 @@ export default function Grades() {
                           style={{
                             width: 52,
                             height: 52,
+
                             borderRadius:
                               'var(--r-md)',
+
                             background:
                               visual.soft,
-                            display: 'flex',
+
+                            display:
+                              'flex',
+
                             flexDirection:
                               'column',
+
                             alignItems:
                               'center',
+
                             justifyContent:
                               'center',
+
                             flexShrink: 0,
                           }}
                         >
                           <div
                             style={{
                               fontSize: 17,
-                              fontWeight: 800,
+
+                              fontWeight:
+                                800,
+
                               color:
                                 visual.color,
                             }}
@@ -383,7 +422,9 @@ export default function Grades() {
 
                           <div
                             style={{
-                              fontSize: 8.5,
+                              fontSize:
+                                8.5,
+
                               color:
                                 'var(--txm)',
                             }}
@@ -400,7 +441,9 @@ export default function Grades() {
                         >
                           <div
                             style={{
-                              fontWeight: 700,
+                              fontWeight:
+                                700,
+
                               fontSize: 14,
                             }}
                           >
@@ -411,8 +454,10 @@ export default function Grades() {
                           <div
                             style={{
                               fontSize: 12,
+
                               color:
                                 'var(--tx2)',
+
                               marginTop: 2,
                             }}
                           >
@@ -423,8 +468,10 @@ export default function Grades() {
                           <div
                             style={{
                               fontSize: 11,
+
                               color:
                                 'var(--txm)',
+
                               marginTop: 3,
                             }}
                           >
@@ -437,14 +484,21 @@ export default function Grades() {
                           style={{
                             padding:
                               '5px 10px',
+
                             borderRadius:
                               'var(--r-sm)',
+
                             background:
                               visual.soft,
+
                             fontSize: 11,
-                            fontWeight: 800,
+
+                            fontWeight:
+                              800,
+
                             color:
                               visual.color,
+
                             flexShrink: 0,
                           }}
                         >
@@ -462,8 +516,10 @@ export default function Grades() {
                             className="pbar-f"
                             style={{
                               width: `${
-                                percentage || 0
+                                percentage ||
+                                0
                               }%`,
+
                               background:
                                 visual.color,
                             }}
@@ -475,8 +531,12 @@ export default function Grades() {
                         <div
                           style={{
                             marginTop: 9,
+
                             fontSize: 11,
-                            lineHeight: 1.7,
+
+                            lineHeight:
+                              1.7,
+
                             color:
                               'var(--txm)',
                           }}
