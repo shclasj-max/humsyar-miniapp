@@ -11,8 +11,6 @@ import { useUIStore } from '../../stores/uiStore';
 export function AdminPanel() {
   const navigate = useNavigate();
   const toast = useUIStore(s => s.toast);
-  const [bcText, setBcText] = useState('');
-  const [bcTarget, setBcTarget] = useState('all');
   const [activeTab, setActiveTab] = useState('overview');
 
   const { data: stats, isLoading } = useQuery({
@@ -32,12 +30,6 @@ export function AdminPanel() {
     mutationFn: () => api.post('/api/admin/export/excel').then(r => r.data),
     onSuccess: (data) => toast(data.message,'success',4000),
     onError: () => toast('خطا','error'),
-  });
-
-  const sendBc = useMutation({
-    mutationFn: () => api.post('/api/admin/broadcast', { text: bcText, target: bcTarget }).then(r => r.data),
-    onSuccess: (data) => { hapticNotif('success'); toast(`✅ ${data.queued} پیام در صف ارسال قرار گرفت`,'success',4000); setBcText(''); },
-    onError: (err) => toast(err.response?.data?.detail||'خطا','error'),
   });
 
   return (
@@ -65,7 +57,7 @@ export function AdminPanel() {
         )}
 
         <div className="tab-bar">
-          {[['overview','📊 آمار'],['broadcast','📢 همگانی']].map(([k,l]) => (
+          {[['overview','📊 آمار'],['comm','📢 ارتباطات']].map(([k,l]) => (
             <button key={k} onClick={() => setActiveTab(k)} className="tab-btn"
               style={{ background:activeTab===k?'var(--acc)':'transparent',color:activeTab===k?'#fff':'var(--tx2)' }}>{l}</button>
           ))}
@@ -109,24 +101,18 @@ export function AdminPanel() {
           </>
         )}
 
-        {activeTab === 'broadcast' && (
-          <>
-            <div style={{ display:'flex',flexDirection:'column',gap:6,marginBottom:12 }}>
-              {[['all','👥 همه کاربران'],['group_1','1️⃣ گروه ۱'],['group_2','2️⃣ گروه ۲']].map(([v,l]) => (
-                <button key={v} onClick={() => { haptic(); setBcTarget(v); }}
-                  style={{ textAlign:'right',padding:'10px 13px',borderRadius:'var(--r-md)',border:`1px solid ${bcTarget===v?'var(--acc)':'var(--bd)'}`,background:bcTarget===v?'var(--acc-glow)':'var(--elev)',color:bcTarget===v?'var(--acc)':'var(--tx)',fontFamily:'var(--font)',fontSize:13,cursor:'pointer' }}>
-                  {l}
-                </button>
-              ))}
-            </div>
-            <div style={{ marginBottom:12 }}>
-              <div style={{ fontSize:11,color:'var(--txm)',marginBottom:5 }}>متن پیام (از HTML تلگرام پشتیبانی می‌شود)</div>
-              <textarea className="inp" rows={6} value={bcText} onChange={e=>setBcText(e.target.value)} placeholder="متن پیام را بنویسید..." style={{ resize:'vertical',lineHeight:1.7 }} />
-            </div>
-            <button className="btn btn-p btn-full" disabled={bcText.trim().length<5||sendBc.isPending} onClick={() => sendBc.mutate()}>
-              {sendBc.isPending ? <Spinner size={16} /> : '📤 ارسال همگانی'}
+        {activeTab === 'comm' && (
+          <div className="card" style={{ padding:'0 14px' }}>
+            <button className="menu-row" onClick={() => navigate('/admin/broadcast')}>
+              <span style={{ fontSize:18,width:24,textAlign:'center' }}>📢</span><div style={{ flex:1 }}><div style={{ fontWeight:600,fontSize:13 }}>ارسال همگانی</div><div style={{ fontSize:11,color:'var(--txm)' }}>پیش‌نمایش، هدفمند، زمان‌دار</div></div><span style={{ color:'var(--txm)' }}>←</span>
             </button>
-          </>
+            <button className="menu-row" onClick={() => navigate('/admin/poll')}>
+              <span style={{ fontSize:18,width:24,textAlign:'center' }}>📊</span><div style={{ flex:1 }}><div style={{ fontWeight:600,fontSize:13 }}>نظرسنجی کانال</div><div style={{ fontSize:11,color:'var(--txm)' }}>ساخت و ارسال نظرسنجی</div></div><span style={{ color:'var(--txm)' }}>←</span>
+            </button>
+            <button className="menu-row" onClick={() => navigate('/admin/notifications')} style={{ borderBottom:'none' }}>
+              <span style={{ fontSize:18,width:24,textAlign:'center' }}>🔔</span><div style={{ flex:1 }}><div style={{ fontWeight:600,fontSize:13 }}>مدیریت اعلان‌ها</div><div style={{ fontSize:11,color:'var(--txm)' }}>فاصله زمانی، تاریخچه، retry</div></div><span style={{ color:'var(--txm)' }}>←</span>
+            </button>
+          </div>
         )}
       </div>
     </>
