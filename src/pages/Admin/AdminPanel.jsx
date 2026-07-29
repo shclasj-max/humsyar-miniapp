@@ -278,7 +278,7 @@ export function AdminUserDetail() {
 
   return (
     <>
-      <Header title={`👤 ${u.name || 'کاربر'}`} right={<button className="btn btn-dark" style={{ fontSize:11,padding:'5px 10px' }} onClick={() => navigate('/admin/users')}>← برگشت</button>} />
+      <Header title={`👤 ${u.name || 'کاربر'}`} />
       <div className="page fade-up">
         <div className="grid2" style={{ marginBottom:14 }}>
           <div className="card" style={{ textAlign:'center',padding:'11px 7px' }}>
@@ -538,7 +538,7 @@ export function AdminTickets() {
 
   if (selectedId && detail) return (
     <>
-      <Header title={`تیکت #${selectedId}`} right={<button className="btn btn-dark" style={{ fontSize:11,padding:'5px 10px' }} onClick={() => setSelId(null)}>← برگشت</button>} />
+      <Header title={`تیکت #${selectedId}`} onBack={() => setSelId(null)} />
       <div className="page fade-up">
         <div className="card" style={{ marginBottom:10,background:'var(--elev)',fontSize:12,color:'var(--tx2)',lineHeight:1.8 }}>
           👤 <b style={{ color:'var(--tx)' }}>{detail.user?.name}</b>{detail.user?.student_id&&` • ش.د: ${detail.user.student_id}`}{detail.user?.group&&` • گروه ${detail.user.group}`}
