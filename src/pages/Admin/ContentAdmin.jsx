@@ -80,6 +80,15 @@ export function ContentAdminPanel() {
           </button>
         </div>
 
+        <div className="sec-title">📊 نمرات</div>
+        <div className="card" style={{ padding:'0 14px',marginBottom:14 }}>
+          <button className="menu-row" onClick={() => navigate('/admin/content/grades')} style={{ borderBottom:'none' }}>
+            <span style={{ fontSize:18,width:24,textAlign:'center' }}>📊</span>
+            <div style={{ flex:1 }}><div style={{ fontWeight:600,fontSize:13.5 }}>مدیریت نمرات</div><div style={{ fontSize:11,color:'var(--txm)' }}>ثبت دسته‌ای، ویرایش، حذف</div></div>
+            <span style={{ color:'var(--txm)' }}>←</span>
+          </button>
+        </div>
+
         <div className="sec-title">❓ سوالات متداول</div>
         <div className="card" style={{ padding:'0 14px',marginBottom:14 }}>
           <button className="menu-row" onClick={() => navigate('/admin/content/faq')} style={{ borderBottom:'none' }}>
@@ -184,10 +193,15 @@ export function ContentQuestions() {
 }
 
 /* ── Content Schedule ── */
+const EMPTY_SCHED_FORM = { type:'class',lesson:'',teacher:'',date:'',time:'',group:'هر دو',location:'',note:'',flex_type:'fixed' };
+
 export function ContentSchedule() {
   const [tab, setTab]         = useState('class');
-  const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm]       = useState({ type:'class',lesson:'',teacher:'',date:'',time:'',group:'0',note:'' });
+  const [view, setView]       = useState('list'); // list | form | flex-list | flex-form
+  const [form, setForm]       = useState(EMPTY_SCHED_FORM);
+  const [editId, setEditId]   = useState(null);
+  const [flexTarget, setFlexTarget] = useState(null); // {id,lesson,...}
+  const [flexForm, setFlexForm] = useState({ date:'', time:'', note:'' });
   const [savingId, setSavingId] = useState(null);
   const toast = useUIStore(s => s.toast);
   const qc    = useQueryClient();
@@ -196,11 +210,26 @@ export function ContentSchedule() {
     queryKey: ['content-schedule', tab],
     queryFn: () => api.get(`/api/content/schedule?stype=${tab}`).then(r => r.data.schedule),
     staleTime: 1000 * 30,
+    enabled: view === 'list',
   });
 
-  const addMut = useMutation({
-    mutationFn: () => api.post('/api/content/schedule', form).then(r => r.data),
-    onSuccess: () => { hapticNotif('success'); toast('برنامه اضافه شد ✅','success'); setShowAdd(false); setForm({type:'class',lesson:'',teacher:'',date:'',time:'',group:'0',note:''}); qc.invalidateQueries({ queryKey: ['content-schedule'] }); },
+  const { data: flexItems, isLoading: loadingFlex } = useQuery({
+    queryKey: ['content-schedule-flex'],
+    queryFn: () => api.get('/api/content/schedule/flex').then(r => r.data.items),
+    enabled: view === 'flex-list',
+  });
+
+  const saveMut = useMutation({
+    mutationFn: () => editId
+      ? api.patch(`/api/content/schedule/${editId}`, form).then(r => r.data)
+      : api.post('/api/content/schedule', form).then(r => r.data),
+    onSuccess: () => { hapticNotif('success'); toast(editId?'✏️ ویرایش شد':'✅ برنامه اضافه شد','success'); setView('list'); setForm(EMPTY_SCHED_FORM); setEditId(null); qc.invalidateQueries({ queryKey: ['content-schedule'] }); },
+    onError: err => toast(err.response?.data?.detail||'خطا','error'),
+  });
+
+  const flexChangeMut = useMutation({
+    mutationFn: () => api.post(`/api/content/schedule/${flexTarget.id}/flex-change`, flexForm).then(r => r.data),
+    onSuccess: (d) => { hapticNotif('success'); toast(`✅ اعلام شد — ${d.notified} نفر مطلع شدند`,'success'); setView('list'); setFlexTarget(null); setFlexForm({date:'',time:'',note:''}); qc.invalidateQueries({ queryKey: ['content-schedule'] }); qc.invalidateQueries({ queryKey: ['content-schedule-flex'] }); },
     onError: err => toast(err.response?.data?.detail||'خطا','error'),
   });
 
@@ -211,44 +240,104 @@ export function ContentSchedule() {
     finally { setSavingId(null); }
   }
 
+  function openEdit(s) {
+    setForm({ type:s.type, lesson:s.lesson, teacher:s.teacher, date:s.date, time:s.time,
+      group:s.group||'هر دو', location:s.location||'', note:s.note||'', flex_type:s.flex_type||'fixed' });
+    setEditId(s.id); setView('form'); haptic();
+  }
+
   const TYPE_OPTS = [['class','🏫 کلاس'],['exam','📝 امتحان'],['makeup','🔄 جبرانی']];
+  const GROUP_OPTS = [['هر دو','هر دو'],['1','گروه ۱'],['2','گروه ۲']];
+
+  if (view === 'flex-form' && flexTarget) return (
+    <>
+      <Header title="🔄 اعلام تغییر زمان" onBack={() => setView('flex-list')} />
+      <div className="page fade-up">
+        <div className="card" style={{ marginBottom:14 }}>
+          <div style={{ fontWeight:700,fontSize:14,marginBottom:2 }}>{flexTarget.lesson}</div>
+          <div style={{ fontSize:11,color:'var(--txm)' }}>زمان فعلی: {flexTarget.date} — {flexTarget.time}</div>
+        </div>
+        <div className="card">
+          <div className="sec-title">📅 زمان جدید</div>
+          <div style={{ fontSize:11,color:'var(--txm)',marginBottom:4 }}>تاریخ (YYYY-MM-DD)</div>
+          <input className="inp" style={{ marginBottom:9 }} placeholder="2025-09-10" value={flexForm.date} onChange={e=>setFlexForm(f=>({...f,date:e.target.value}))} />
+          <div style={{ fontSize:11,color:'var(--txm)',marginBottom:4 }}>ساعت</div>
+          <input className="inp" style={{ marginBottom:9 }} placeholder="14:00" value={flexForm.time} onChange={e=>setFlexForm(f=>({...f,time:e.target.value}))} />
+          <div style={{ fontSize:11,color:'var(--txm)',marginBottom:4 }}>توضیح (اختیاری)</div>
+          <input className="inp" style={{ marginBottom:12 }} value={flexForm.note} onChange={e=>setFlexForm(f=>({...f,note:e.target.value}))} />
+          <button className="btn btn-p btn-full" disabled={!flexForm.date||!flexForm.time||flexChangeMut.isPending} onClick={() => flexChangeMut.mutate()}>
+            {flexChangeMut.isPending ? <Spinner size={14}/> : '🔔 ثبت و اعلام به همه'}
+          </button>
+        </div>
+      </div>
+    </>
+  );
+
+  if (view === 'flex-list') return (
+    <>
+      <Header title="🔄 کلاس‌های منعطف" onBack={() => setView('list')} />
+      <div className="page fade-up">
+        {loadingFlex ? <SkeletonCard /> : !flexItems?.length ? (
+          <div className="empty"><div style={{ fontSize:36,marginBottom:10 }}>🔄</div><div>هیچ کلاس منعطفی ثبت نشده</div><div style={{ fontSize:11,marginTop:6 }}>هنگام افزودن برنامه، نوع زمان‌بندی رو «منعطف» انتخاب کن</div></div>
+        ) : flexItems.map(s => (
+          <button key={s.id} className="card" style={{ width:'100%',textAlign:'right',marginBottom:9,background:'var(--elev)',border:'1px solid var(--bd)' }}
+            onClick={() => { setFlexTarget(s); setFlexForm({date:s.date,time:s.time,note:''}); setView('flex-form'); haptic(); }}>
+            <div style={{ fontWeight:700,fontSize:13.5 }}>🔄 {s.lesson}</div>
+            <div style={{ fontSize:11,color:'var(--txm)',marginTop:3 }}>{s.date} — {s.time}{s.flex_note?` (${s.flex_note})`:''}</div>
+          </button>
+        ))}
+      </div>
+    </>
+  );
+
+  if (view === 'form') return (
+    <>
+      <Header title={editId?'✏️ ویرایش برنامه':'+ افزودن برنامه'} onBack={() => { setView('list'); setEditId(null); setForm(EMPTY_SCHED_FORM); }} />
+      <div className="page fade-up">
+        <div className="card card-glow">
+          <div style={{ display:'flex',gap:6,marginBottom:12 }}>
+            {TYPE_OPTS.map(([v,l]) => (
+              <button key={v} onClick={() => setForm(f=>({...f,type:v}))} style={{ flex:1,padding:'7px 4px',borderRadius:'var(--r-md)',fontSize:11,fontFamily:'var(--font)',cursor:'pointer',border:`1px solid ${form.type===v?'var(--acc)':'var(--bd)'}`,background:form.type===v?'var(--acc-glow)':'var(--elev)',color:form.type===v?'var(--acc)':'var(--tx2)' }}>{l}</button>
+            ))}
+          </div>
+          {[['lesson','نام درس *','فیزیولوژی ۱'],['teacher','استاد','دکتر احمدی'],['date','تاریخ (YYYY-MM-DD) *','2025-09-01'],['time','ساعت','08:00'],['location','مکان','کلاس ۳'],['note','توضیح','']].map(([k,label,ph]) => (
+            <div key={k} style={{ marginBottom:9 }}>
+              <div style={{ fontSize:11,color:'var(--txm)',marginBottom:4 }}>{label}</div>
+              <input className="inp" value={form[k]} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))} placeholder={ph} />
+            </div>
+          ))}
+          <div style={{ marginBottom:12 }}>
+            <div style={{ fontSize:11,color:'var(--txm)',marginBottom:6 }}>گروه</div>
+            <div style={{ display:'flex',gap:6 }}>
+              {GROUP_OPTS.map(([v,l]) => (
+                <button key={v} onClick={() => setForm(f=>({...f,group:v}))} style={{ flex:1,padding:'7px 4px',borderRadius:'var(--r-md)',fontSize:11,fontFamily:'var(--font)',cursor:'pointer',border:`1px solid ${form.group===v?'var(--acc)':'var(--bd)'}`,background:form.group===v?'var(--acc-glow)':'var(--elev)',color:form.group===v?'var(--acc)':'var(--tx2)' }}>{l}</button>
+              ))}
+            </div>
+          </div>
+          <div style={{ marginBottom:14 }}>
+            <div style={{ fontSize:11,color:'var(--txm)',marginBottom:6 }}>نوع زمان‌بندی</div>
+            <div style={{ display:'flex',gap:6 }}>
+              {[['fixed','📌 ثابت'],['flexible','🔄 منعطف']].map(([v,l]) => (
+                <button key={v} onClick={() => setForm(f=>({...f,flex_type:v}))} style={{ flex:1,padding:'7px 4px',borderRadius:'var(--r-md)',fontSize:11,fontFamily:'var(--font)',cursor:'pointer',border:`1px solid ${form.flex_type===v?'var(--acc)':'var(--bd)'}`,background:form.flex_type===v?'var(--acc-glow)':'var(--elev)',color:form.flex_type===v?'var(--acc)':'var(--tx2)' }}>{l}</button>
+              ))}
+            </div>
+          </div>
+          <button className="btn btn-p btn-full" disabled={!form.lesson||!form.date||saveMut.isPending} onClick={() => saveMut.mutate()}>
+            {saveMut.isPending?<Spinner size={16}/>:'💾 ذخیره'}
+          </button>
+        </div>
+      </div>
+    </>
+  );
 
   return (
     <>
       <Header title="📅 مدیریت برنامه" />
       <div className="page fade-up">
-        {showAdd ? (
-          <div className="card card-glow" style={{ marginBottom:14 }}>
-            <div className="sec-title">+ افزودن برنامه</div>
-            <div style={{ display:'flex',gap:6,marginBottom:12 }}>
-              {TYPE_OPTS.map(([v,l]) => (
-                <button key={v} onClick={() => setForm(f=>({...f,type:v}))} style={{ flex:1,padding:'7px 4px',borderRadius:'var(--r-md)',fontSize:11,fontFamily:'var(--font)',cursor:'pointer',border:`1px solid ${form.type===v?'var(--acc)':'var(--bd)'}`,background:form.type===v?'var(--acc-glow)':'var(--elev)',color:form.type===v?'var(--acc)':'var(--tx2)' }}>{l}</button>
-              ))}
-            </div>
-            {[['lesson','نام درس *','فیزیولوژی ۱'],['teacher','استاد','دکتر احمدی'],['date','تاریخ (YYYY-MM-DD) *','2025-09-01'],['time','ساعت','08:00'],['note','توضیح','']].map(([k,label,ph]) => (
-              <div key={k} style={{ marginBottom:9 }}>
-                <div style={{ fontSize:11,color:'var(--txm)',marginBottom:4 }}>{label}</div>
-                <input className="inp" value={form[k]} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))} placeholder={ph} />
-              </div>
-            ))}
-            <div style={{ marginBottom:12 }}>
-              <div style={{ fontSize:11,color:'var(--txm)',marginBottom:6 }}>گروه</div>
-              <div style={{ display:'flex',gap:6 }}>
-                {[['0','هر دو'],['1','گروه ۱'],['2','گروه ۲']].map(([v,l]) => (
-                  <button key={v} onClick={() => setForm(f=>({...f,group:v}))} style={{ flex:1,padding:'7px 4px',borderRadius:'var(--r-md)',fontSize:11,fontFamily:'var(--font)',cursor:'pointer',border:`1px solid ${form.group===v?'var(--acc)':'var(--bd)'}`,background:form.group===v?'var(--acc-glow)':'var(--elev)',color:form.group===v?'var(--acc)':'var(--tx2)' }}>{l}</button>
-                ))}
-              </div>
-            </div>
-            <div style={{ display:'flex',gap:8 }}>
-              <button className="btn btn-p" style={{ flex:2 }} disabled={!form.lesson||!form.date||addMut.isPending} onClick={() => addMut.mutate()}>
-                {addMut.isPending?<Spinner size={16}/>:'💾 ذخیره'}
-              </button>
-              <button className="btn btn-dark" style={{ flex:1 }} onClick={() => setShowAdd(false)}>لغو</button>
-            </div>
-          </div>
-        ) : (
-          <button className="btn btn-p btn-full" style={{ marginBottom:14 }} onClick={() => { haptic(); setShowAdd(true); }}>+ افزودن برنامه جدید</button>
-        )}
+        <div style={{ display:'flex',gap:8,marginBottom:14 }}>
+          <button className="btn btn-p" style={{ flex:1 }} onClick={() => { haptic(); setForm(EMPTY_SCHED_FORM); setEditId(null); setView('form'); }}>+ افزودن برنامه</button>
+          <button className="btn btn-dark" style={{ flex:1 }} onClick={() => { haptic(); setView('flex-list'); }}>🔄 اعلام تغییر زمان</button>
+        </div>
 
         <div className="tab-bar">
           {TYPE_OPTS.map(([v,l]) => (
@@ -260,15 +349,15 @@ export function ContentSchedule() {
         {isLoading ? <SkeletonCard /> : !data?.length ? <div className="empty"><div style={{ fontSize:36,marginBottom:10 }}>📭</div><div>موردی ثبت نشده</div></div> :
           data.map(s => (
             <div key={s.id} className="card" style={{ marginBottom:8,display:'flex',alignItems:'flex-start',gap:11 }}>
-              <div style={{ flex:1,minWidth:0 }}>
-                <div style={{ fontWeight:700,fontSize:13.5 }}>{s.lesson}</div>
-                {s.teacher&&<div style={{ fontSize:11,color:'var(--txm)',marginTop:2 }}>استاد: {s.teacher}</div>}
+              <button onClick={() => openEdit(s)} style={{ flex:1,minWidth:0,textAlign:'right',background:'none',border:'none',cursor:'pointer',padding:0 }}>
+                <div style={{ fontWeight:700,fontSize:13.5 }}>{s.flex_type==='flexible'&&'🔄 '}{s.lesson}</div>
+                {s.teacher&&<div style={{ fontSize:11,color:'var(--txm)',marginTop:2 }}>استاد: {s.teacher}{s.location?` • ${s.location}`:''}</div>}
                 <div style={{ display:'flex',gap:4,marginTop:5,flexWrap:'wrap' }}>
                   <span className="badge b-acc">{s.date}</span>
                   {s.time&&<span className="badge b-gray">{s.time}</span>}
-                  {s.group&&s.group!=='0'&&<span className="badge b-gray">گروه {s.group}</span>}
+                  {s.group&&s.group!=='هر دو'&&<span className="badge b-gray">گروه {s.group}</span>}
                 </div>
-              </div>
+              </button>
               <button onClick={() => delSchedule(s.id)} disabled={savingId===s.id} style={{ background:'rgba(239,68,68,.1)',border:'none',color:'var(--err)',borderRadius:'var(--r-sm)',padding:'6px 10px',cursor:'pointer',fontSize:15,flexShrink:0 }}>
                 {savingId===s.id?'...':'🗑'}
               </button>
