@@ -26,6 +26,7 @@ import { Faq, Reports } from './pages/Me/FaqReports';
 import { AdminPanel, AdminUsers, AdminUserDetail, AdminIntakes, AdminContentAdmins, AdminBlacklist, AdminTickets } from './pages/Admin/AdminPanel';
 import { ContentAdminPanel, ContentQuestions, ContentSchedule, ContentFaq } from './pages/Admin/ContentAdmin';
 import { BasicScienceAdmin, ReferencesAdmin, QbankAdmin, ContentReportsAdmin, GradesAdmin } from './pages/Admin/ContentLibrary';
+import { BroadcastAdmin, PollAdmin, NotificationsAdmin } from './pages/Admin/Communication';
 
 // Guards
 function AdminRoute({ children }) {
@@ -81,6 +82,9 @@ export default function App() {
         <Route path="/admin/content-admins" element={<AdminRoute><AdminContentAdmins /></AdminRoute>} />
         <Route path="/admin/blacklist"      element={<AdminRoute><AdminBlacklist /></AdminRoute>} />
         <Route path="/admin/tickets"        element={<AdminRoute><AdminTickets /></AdminRoute>} />
+        <Route path="/admin/broadcast"      element={<AdminRoute><BroadcastAdmin /></AdminRoute>} />
+        <Route path="/admin/poll"           element={<AdminRoute><PollAdmin /></AdminRoute>} />
+        <Route path="/admin/notifications"  element={<AdminRoute><NotificationsAdmin /></AdminRoute>} />
 
         {/* پنل محتوا */}
         <Route path="/admin/content"            element={<ContentAdminRoute><ContentAdminPanel /></ContentAdminRoute>} />
