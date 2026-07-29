@@ -44,34 +44,21 @@ function Stat({
       className="card"
       style={{
         padding: 12,
-
         display: 'flex',
-
-        alignItems:
-          'center',
-
-        gap:
-          9,
+        alignItems: 'center',
+        gap: 9,
       }}
     >
       <span
         style={{
           display: 'grid',
-
           width: 38,
           height: 38,
-
-          placeItems:
-            'center',
-
-          borderRadius:
-            12,
-
-          background:
-            soft,
-
-          fontSize:
-            18,
+          placeItems: 'center',
+          borderRadius: 12,
+          color,
+          background: soft,
+          fontSize: 18,
         }}
       >
         {icon}
@@ -80,13 +67,9 @@ function Stat({
       <div>
         <b
           style={{
-            display:
-              'block',
-
+            display: 'block',
             color,
-
-            fontSize:
-              18,
+            fontSize: 18,
           }}
         >
           {value}
@@ -94,11 +77,8 @@ function Stat({
 
         <span
           style={{
-            color:
-              'var(--txm)',
-
-            fontSize:
-              9,
+            color: 'var(--txm)',
+            fontSize: 9,
           }}
         >
           {label}
@@ -112,190 +92,124 @@ function Stat({
 const SECTIONS = [
   {
     icon: '👥',
-
-    title:
-      'مدیریت کاربران',
-
+    title: 'مدیریت کاربران',
     description:
       'جست‌وجو، تأیید، ویرایش و تعلیق',
-
-    route:
-      '/admin/users',
-
-    color:
-      '#70A7FF',
-
+    route: '/admin/users',
+    color: '#70A7FF',
     soft:
       'rgba(59,130,246,.12)',
   },
 
   {
     icon: '💳',
-
-    title:
-      'اشتراک و پرداخت',
-
+    title: 'اشتراک و پرداخت',
     description:
       'پلن‌ها، رسیدها، مشترکین و تخفیف',
-
     route:
       '/admin/subscription',
-
-    color:
-      '#34D399',
-
+    color: '#34D399',
     soft:
       'rgba(16,185,129,.12)',
   },
 
   {
+    icon: '🤖',
+    title: 'مدیریت هوشیار',
+    description:
+      'مدل، API Key، سهمیه و گزارش‌ها',
+    route: '/admin/ai',
+    color: '#C4B5FD',
+    soft:
+      'rgba(139,92,246,.13)',
+  },
+
+  {
     icon: '📅',
-
-    title:
-      'مدیریت ورودی‌ها',
-
+    title: 'مدیریت ورودی‌ها',
     description:
       'ورودی‌ها، گروه‌ها و آمار دانشجویان',
-
-    route:
-      '/admin/intakes',
-
-    color:
-      '#34D399',
-
+    route: '/admin/intakes',
+    color: '#34D399',
     soft:
       'rgba(16,185,129,.12)',
   },
 
   {
     icon: '🎓',
-
-    title:
-      'مدیران محتوا',
-
+    title: 'مدیران محتوا',
     description:
       'اعطا و لغو دسترسی محتوا',
-
     route:
       '/admin/content-admins',
-
-    color:
-      '#C4B5FD',
-
+    color: '#C4B5FD',
     soft:
       'rgba(139,92,246,.13)',
   },
 
   {
     icon: '🎫',
-
-    title:
-      'تیکت‌های پشتیبانی',
-
+    title: 'تیکت‌های پشتیبانی',
     description:
       'پاسخ، بستن و بازگشایی تیکت',
-
-    route:
-      '/admin/tickets',
-
-    color:
-      '#FCD34D',
-
+    route: '/admin/tickets',
+    color: '#FCD34D',
     soft:
       'rgba(245,158,11,.12)',
   },
 
   {
     icon: '📣',
-
-    title:
-      'ارسال همگانی',
-
+    title: 'ارسال همگانی',
     description:
       'ارسال هدفمند به کاربران',
-
-    route:
-      '/admin/broadcast',
-
-    color:
-      '#22D3EE',
-
+    route: '/admin/broadcast',
+    color: '#22D3EE',
     soft:
       'rgba(34,211,238,.12)',
   },
 
   {
     icon: '📊',
-
-    title:
-      'نظرسنجی',
-
+    title: 'نظرسنجی',
     description:
       'ساخت نظرسنجی در کانال',
-
-    route:
-      '/admin/poll',
-
-    color:
-      '#70A7FF',
-
+    route: '/admin/poll',
+    color: '#70A7FF',
     soft:
       'rgba(59,130,246,.12)',
   },
 
   {
     icon: '🔔',
-
-    title:
-      'مدیریت اعلان‌ها',
-
+    title: 'مدیریت اعلان‌ها',
     description:
       'تنظیم، تاریخچه و ارسال مجدد',
-
     route:
       '/admin/notifications',
-
-    color:
-      '#FCD34D',
-
+    color: '#FCD34D',
     soft:
       'rgba(245,158,11,.12)',
   },
 
   {
     icon: '🚫',
-
-    title:
-      'فهرست مسدودها',
-
+    title: 'فهرست مسدودها',
     description:
       'مشاهده و رفع مسدودیت کاربران',
-
-    route:
-      '/admin/blacklist',
-
-    color:
-      '#FB7185',
-
+    route: '/admin/blacklist',
+    color: '#FB7185',
     soft:
       'rgba(239,68,68,.12)',
   },
 
   {
     icon: '📚',
-
-    title:
-      'پنل محتوا',
-
+    title: 'پنل محتوا',
     description:
       'سؤال، منابع، برنامه و نمرات',
-
-    route:
-      '/admin/content',
-
-    color:
-      '#34D399',
-
+    route: '/admin/content',
+    color: '#34D399',
     soft:
       'rgba(16,185,129,.12)',
   },
@@ -358,13 +272,36 @@ export default function AdminHome() {
   const {
     data: subscription,
   } = useQuery({
-    queryKey:
-      ['subscription-admin-overview'],
+    queryKey: [
+      'subscription-admin-overview',
+    ],
 
     queryFn: () =>
       api
         .get(
           '/api/subscription-admin/overview'
+        )
+        .then(
+          (response) =>
+            response.data
+        ),
+
+    staleTime:
+      30_000,
+  });
+
+
+  const {
+    data: aiStatus,
+  } = useQuery({
+    queryKey: [
+      'ai-admin-config',
+    ],
+
+    queryFn: () =>
+      api
+        .get(
+          '/api/ai-admin/config'
         )
         .then(
           (response) =>
@@ -456,18 +393,12 @@ export default function AdminHome() {
             style={{
               width: 36,
               height: 36,
-
-              borderRadius:
-                12,
-
+              borderRadius: 12,
               background:
                 'var(--elev)',
-
               border:
                 '1px solid var(--bd)',
-
-              cursor:
-                'pointer',
+              cursor: 'pointer',
             }}
           >
             ↻
@@ -481,11 +412,8 @@ export default function AdminHome() {
             'card card-glow'
           }
           style={{
-            padding:
-              18,
-
-            marginBottom:
-              14,
+            padding: 18,
+            marginBottom: 14,
 
             background:
               'linear-gradient(145deg,rgba(245,158,11,.13),rgba(16,24,39,.95) 55%,rgba(59,130,246,.1))',
@@ -515,14 +443,16 @@ export default function AdminHome() {
               👑
             </span>
 
-            <div>
+            <div
+              style={{
+                flex: 1,
+              }}
+            >
               <div
                 style={{
                   color:
                     'var(--txm)',
-
-                  fontSize:
-                    10,
+                  fontSize: 10,
                 }}
               >
                 مرکز فرمان هامزیار
@@ -530,14 +460,9 @@ export default function AdminHome() {
 
               <b
                 style={{
-                  display:
-                    'block',
-
-                  fontSize:
-                    17,
-
-                  marginTop:
-                    2,
+                  display: 'block',
+                  fontSize: 17,
+                  marginTop: 2,
                 }}
               >
                 مدیریت کل سامانه
@@ -545,14 +470,10 @@ export default function AdminHome() {
 
               <div
                 style={{
-                  display:
-                    'flex',
-
-                  gap:
-                    5,
-
-                  marginTop:
-                    6,
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 5,
+                  marginTop: 6,
                 }}
               >
                 <span className="badge b-grn">
@@ -565,6 +486,20 @@ export default function AdminHome() {
 
                   {bot?.db_ping ||
                     '—'}
+                </span>
+
+                <span
+                  className={`badge ${
+                    aiStatus?.enabled
+                      ? 'b-pur'
+                      : 'b-gray'
+                  }`}
+                >
+                  هوشیار{' '}
+
+                  {aiStatus?.enabled
+                    ? 'فعال'
+                    : 'خاموش'}
                 </span>
               </div>
             </div>
@@ -722,11 +657,8 @@ export default function AdminHome() {
 
         <section
           style={{
-            display:
-              'grid',
-
-            gap:
-              9,
+            display: 'grid',
+            gap: 9,
           }}
         >
           {SECTIONS.map((item) => (
@@ -770,11 +702,8 @@ export default function AdminHome() {
               >
                 <b
                   style={{
-                    display:
-                      'block',
-
-                    fontSize:
-                      12.5,
+                    display: 'block',
+                    fontSize: 12.5,
                   }}
                 >
                   {item.title}
@@ -782,17 +711,11 @@ export default function AdminHome() {
 
                 <span
                   style={{
-                    display:
-                      'block',
-
+                    display: 'block',
                     color:
                       'var(--txm)',
-
-                    fontSize:
-                      9.5,
-
-                    marginTop:
-                      3,
+                    fontSize: 9.5,
+                    marginTop: 3,
                   }}
                 >
                   {item.description}
