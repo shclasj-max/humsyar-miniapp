@@ -9,23 +9,26 @@ import {
 } from '../../components/shared/Loading';
 import { haptic } from '../../lib/telegram';
 
-const toNumber = (value) => {
-  const number = Number(value);
+const number = (value) => {
+  const parsed = Number(value);
 
-  return Number.isFinite(number)
-    ? Math.max(0, number)
+  return Number.isFinite(parsed)
+    ? Math.max(0, parsed)
     : 0;
 };
 
-const toPercent = (value) =>
-  Math.min(100, toNumber(value));
+const percent = (value) =>
+  Math.min(
+    100,
+    number(value)
+  );
 
 function Ring({
-  pct = 0,
-  size = 72,
+  value = 0,
 }) {
-  const percentage = toPercent(pct);
-  const radius = 27;
+  const safe = percent(value);
+  const radius = 29;
+
   const circumference =
     2 * Math.PI * radius;
 
@@ -33,156 +36,283 @@ function Ring({
     <div
       style={{
         position: 'relative',
-        width: size,
-        height: size,
+        width: 82,
+        height: 82,
         flexShrink: 0,
       }}
     >
       <svg
-        width={size}
-        height={size}
-        viewBox={`0 0 ${size} ${size}`}
+        width="82"
+        height="82"
+        viewBox="0 0 82 82"
         style={{
-          transform: 'rotate(-90deg)',
+          transform:
+            'rotate(-90deg)',
         }}
       >
         <circle
-          cx={size / 2}
-          cy={size / 2}
+          cx="41"
+          cy="41"
           r={radius}
           fill="none"
           stroke="var(--ovr)"
-          strokeWidth={6}
+          strokeWidth="7"
         />
 
         <circle
-          cx={size / 2}
-          cy={size / 2}
+          cx="41"
+          cy="41"
           r={radius}
           fill="none"
-          stroke="var(--acc)"
-          strokeWidth={6}
+          stroke="url(#dashboard-ring)"
+          strokeWidth="7"
+          strokeLinecap="round"
           strokeDasharray={`${
-            (percentage / 100) *
+            (safe / 100) *
             circumference
           } ${circumference}`}
-          strokeLinecap="round"
         />
+
+        <defs>
+          <linearGradient
+            id="dashboard-ring"
+            x1="0"
+            y1="0"
+            x2="1"
+            y2="1"
+          >
+            <stop
+              stopColor="#3B82F6"
+            />
+
+            <stop
+              offset="1"
+              stopColor="#22D3EE"
+            />
+          </linearGradient>
+        </defs>
       </svg>
 
       <div
         style={{
           position: 'absolute',
           inset: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: 14,
-          fontWeight: 800,
-          color: 'var(--acc)',
+          display: 'grid',
+          placeItems: 'center',
         }}
       >
-        {percentage}٪
+        <div
+          style={{
+            textAlign: 'center',
+          }}
+        >
+          <div
+            style={{
+              color: 'var(--tx)',
+              fontSize: 17,
+              fontWeight: 900,
+              lineHeight: 1,
+            }}
+          >
+            {safe}٪
+          </div>
+
+          <div
+            style={{
+              color: 'var(--txm)',
+              fontSize: 8,
+              marginTop: 3,
+            }}
+          >
+            آمادگی
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-function WeekBar({
-  data = [],
+function Metric({
+  icon,
+  value,
+  label,
+  color,
+  soft,
 }) {
-  const values = Array.isArray(data)
-    ? data.map(toNumber)
-    : [];
+  return (
+    <div
+      className="card"
+      style={{
+        padding: 12,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+      }}
+    >
+      <div
+        style={{
+          width: 38,
+          height: 38,
+          borderRadius: 12,
+          display: 'grid',
+          placeItems: 'center',
+          background: soft,
+          fontSize: 18,
+        }}
+      >
+        {icon}
+      </div>
+
+      <div>
+        <div
+          style={{
+            color,
+            fontSize: 18,
+            fontWeight: 900,
+            lineHeight: 1.2,
+          }}
+        >
+          {value}
+        </div>
+
+        <div
+          style={{
+            color: 'var(--txm)',
+            fontSize: 9.5,
+            marginTop: 2,
+          }}
+        >
+          {label}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WeekChart({
+  rows = [],
+}) {
+  const values = rows.map(
+    (item) =>
+      number(item?.count)
+  );
 
   const max = Math.max(
     ...values,
     1
   );
 
-  const dayLabels = [
-    'ش',
-    'ی',
-    'د',
-    'س',
-    'چ',
-    'پ',
-    'ج',
-  ];
-
   return (
     <div
       style={{
         display: 'flex',
         alignItems: 'flex-end',
-        gap: 4,
-        height: 50,
+        height: 84,
+        gap: 7,
+        paddingTop: 8,
       }}
     >
-      {values.map(
-        (value, index) => (
-          <div
-            key={index}
-            style={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 2,
-            }}
-          >
+      {rows.map(
+        (item, index) => {
+          const value =
+            values[index];
+
+          return (
             <div
+              key={`${
+                item?.date || 'day'
+              }-${index}`}
               style={{
-                width: '100%',
-                borderRadius: 3,
-
-                background:
-                  value > 0
-                    ? 'var(--acc)'
-                    : 'var(--ovr)',
-
-                height: `${Math.max(
-                  (value / max) * 42,
-                  value > 0 ? 5 : 3
-                )}px`,
-
-                transition:
-                  'height .5s',
-              }}
-            />
-
-            <div
-              style={{
-                fontSize: 8,
-                color: 'var(--txm)',
+                flex: 1,
+                display: 'flex',
+                height: '100%',
+                flexDirection:
+                  'column',
+                alignItems:
+                  'center',
+                justifyContent:
+                  'flex-end',
+                gap: 5,
               }}
             >
-              {dayLabels[index] || ''}
+              <div
+                style={{
+                  color:
+                    'var(--tx2)',
+                  fontSize: 8.5,
+                }}
+              >
+                {value || ''}
+              </div>
+
+              <div
+                style={{
+                  width: '100%',
+                  minHeight: 4,
+
+                  height: `${Math.max(
+                    4,
+                    (
+                      value / max
+                    ) * 48
+                  )}px`,
+
+                  borderRadius:
+                    '7px 7px 3px 3px',
+
+                  background:
+                    value
+                      ? 'var(--grad-brand)'
+                      : 'var(--ovr)',
+
+                  boxShadow:
+                    value
+                      ? '0 5px 14px rgba(59,130,246,.18)'
+                      : 'none',
+                }}
+              />
+
+              <div
+                style={{
+                  color:
+                    'var(--txm)',
+                  fontSize: 8,
+                }}
+              >
+                {String(
+                  item?.date || ''
+                ).slice(-2)}
+              </div>
             </div>
-          </div>
-        )
+          );
+        }
       )}
     </div>
   );
 }
 
-function ErrorCard({
-  message,
+function ErrorState({
   onRetry,
-  loading = false,
+  loading,
 }) {
   return (
-    <div className="empty">
+    <div className="empty card">
       <div
         style={{
-          fontSize: 40,
-          marginBottom: 10,
+          fontSize: 42,
         }}
       >
         🌐
       </div>
 
-      <div>{message}</div>
+      <div
+        style={{
+          marginTop: 8,
+        }}
+      >
+        دریافت اطلاعات داشبورد انجام
+        نشد.
+      </div>
 
       <button
         className="btn btn-p"
@@ -203,7 +333,8 @@ function ErrorCard({
 }
 
 export default function Dashboard() {
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
   const [
     tab,
@@ -217,7 +348,9 @@ export default function Dashboard() {
     refetch,
     isRefetching,
   } = useQuery({
-    queryKey: ['dashboard'],
+    queryKey: [
+      'dashboard',
+    ],
 
     queryFn: () =>
       api
@@ -227,13 +360,16 @@ export default function Dashboard() {
             response.data
         ),
 
-    staleTime: 1000 * 60 * 3,
+    staleTime:
+      3 * 60 * 1000,
   });
 
   const {
-    data: weekData,
+    data: weeklyData = [],
   } = useQuery({
-    queryKey: ['weekly'],
+    queryKey: [
+      'weekly',
+    ],
 
     queryFn: () =>
       api
@@ -246,19 +382,25 @@ export default function Dashboard() {
               ?.weekly || []
         ),
 
-    staleTime: 1000 * 60 * 5,
+    staleTime:
+      5 * 60 * 1000,
   });
 
   const {
-    data: leaderboard,
+    data: leaderboard = [],
+
     isLoading:
-      leaderboardLoading,
+      rankLoading,
+
     isError:
-      leaderboardError,
+      rankError,
+
     refetch:
-      refetchLeaderboard,
+      refetchRank,
   } = useQuery({
-    queryKey: ['leaderboard'],
+    queryKey: [
+      'leaderboard',
+    ],
 
     queryFn: () =>
       api
@@ -271,8 +413,11 @@ export default function Dashboard() {
               ?.leaderboard || []
         ),
 
-    staleTime: 1000 * 60 * 5,
-    enabled: tab === 'rank',
+    enabled:
+      tab === 'rank',
+
+    staleTime:
+      5 * 60 * 1000,
   });
 
   const user =
@@ -281,15 +426,12 @@ export default function Dashboard() {
   const stats =
     data?.stats || {};
 
-  const percentage = toPercent(
-    stats.percentage
-  );
-
-  const exams = Array.isArray(
-    data?.upcoming_exams
-  )
-    ? data.upcoming_exams
-    : [];
+  const exams =
+    Array.isArray(
+      data?.upcoming_exams
+    )
+      ? data.upcoming_exams
+      : [];
 
   const weakTopics =
     Array.isArray(
@@ -299,8 +441,8 @@ export default function Dashboard() {
       : [];
 
   const weekly =
-    Array.isArray(weekData)
-      ? weekData
+    Array.isArray(weeklyData)
+      ? weeklyData
       : [];
 
   const leaders =
@@ -308,66 +450,72 @@ export default function Dashboard() {
       ? leaderboard
       : [];
 
-  const openTickets = toNumber(
-    data?.open_tickets
-  );
+  const openTickets =
+    number(
+      data?.open_tickets
+    );
 
-  const roleLabels = {
-    admin: '👑 ادمین',
+  const role = {
+    admin: '👑 مدیر',
+
     content_admin:
-      '🎓 ادمین محتوا',
-    support: '🛟 پشتیبان',
-  };
+      '🎓 مدیر محتوا',
+
+    support:
+      '🛟 پشتیبان',
+  }[user.role];
 
   return (
     <>
       <Header
         title="داشبورد"
         back={false}
-        subtitle={
-          data
-            ? `ورودی ${
-                user.intake || '—'
-              } | گروه ${
-                user.group || '—'
-              }`
-            : ''
-        }
+        subtitle={`ورودی ${
+          user.intake || '—'
+        } • گروه ${
+          user.group || '—'
+        }`}
         right={
           <button
+            type="button"
             onClick={() => {
               haptic();
               refetch();
             }}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: 18,
-              opacity:
-                isRefetching
-                  ? 0.5
-                  : 1,
-            }}
-            aria-label={
-              'به‌روزرسانی داشبورد'
-            }
             disabled={
               isRefetching
             }
+            aria-label="به‌روزرسانی"
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 12,
+
+              border:
+                '1px solid var(--bd)',
+
+              background:
+                'var(--elev)',
+
+              cursor:
+                'pointer',
+
+              opacity:
+                isRefetching
+                  ? .5
+                  : 1,
+            }}
           >
-            🔄
+            ↻
           </button>
         }
       />
 
-      <div className="page fade-up">
+      <main className="page fade-up">
         {isLoading ? (
           <div
             style={{
-              display: 'flex',
-              flexDirection:
-                'column',
+              display: 'grid',
               gap: 10,
             }}
           >
@@ -376,50 +524,77 @@ export default function Dashboard() {
             <SkeletonCard />
           </div>
         ) : isError ? (
-          <ErrorCard
-            message={
-              'دریافت اطلاعات داشبورد با مشکل مواجه شد.'
-            }
+          <ErrorState
             onRetry={refetch}
             loading={
               isRefetching
             }
           />
-        ) : data ? (
+        ) : (
           <div
             style={{
-              display: 'flex',
-              flexDirection:
-                'column',
+              display: 'grid',
               gap: 12,
             }}
           >
-            <div className="card card-glow">
+            <section
+              className={
+                'card card-glow'
+              }
+              style={{
+                padding: 17,
+
+                background:
+                  'linear-gradient(145deg,rgba(29,78,216,.2),rgba(16,24,39,.95) 48%,rgba(34,211,238,.08))',
+              }}
+            >
               <div
                 style={{
                   display: 'flex',
                   alignItems:
                     'center',
-                  justifyContent:
-                    'space-between',
+                  gap: 13,
                 }}
               >
-                <div>
+                <div
+                  className="avatar"
+                  style={{
+                    width: 52,
+                    height: 52,
+                    fontSize: 21,
+                  }}
+                >
+                  {user.name?.[0] ||
+                    'ه'}
+                </div>
+
+                <div
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                  }}
+                >
                   <div
                     style={{
                       color:
                         'var(--txm)',
-                      fontSize: 12,
+                      fontSize: 10.5,
                     }}
                   >
-                    سلام 👋
+                    سلام، خوش اومدی 👋
                   </div>
 
                   <div
                     style={{
-                      fontWeight: 800,
-                      fontSize: 20,
+                      fontSize: 19,
+                      fontWeight: 900,
                       marginTop: 2,
+                      overflow:
+                        'hidden',
+                      textOverflow:
+                        'ellipsis',
+                      whiteSpace:
+                        'nowrap',
                     }}
                   >
                     {user.name ||
@@ -429,53 +604,20 @@ export default function Dashboard() {
                   <div
                     style={{
                       display: 'flex',
-                      gap: 5,
-                      marginTop: 7,
                       flexWrap:
                         'wrap',
+                      gap: 5,
+                      marginTop: 7,
                     }}
                   >
-                    {roleLabels[
-                      user.role
-                    ] && (
+                    {role && (
                       <span className="badge b-yel">
-                        {
-                          roleLabels[
-                            user.role
-                          ]
-                        }
+                        {role}
                       </span>
                     )}
 
                     {stats.level && (
-                      <span
-                        style={{
-                          background: `${
-                            stats
-                              .level
-                              .color ||
-                            '#60A5FA'
-                          }20`,
-
-                          color:
-                            stats
-                              .level
-                              .color ||
-                            '#60A5FA',
-
-                          padding:
-                            '2px 8px',
-
-                          borderRadius:
-                            999,
-
-                          fontSize:
-                            11,
-
-                          fontWeight:
-                            700,
-                        }}
-                      >
+                      <span className="badge b-acc">
                         {stats
                           .level
                           .icon ||
@@ -491,24 +633,92 @@ export default function Dashboard() {
                 </div>
 
                 <Ring
-                  pct={percentage}
+                  value={
+                    stats.percentage
+                  }
                 />
               </div>
-            </div>
+            </section>
 
-            <div className="tab-bar">
+            <section className="grid2">
+              <Metric
+                icon="🧪"
+                value={
+                  number(
+                    stats
+                      .total_answers
+                  )
+                }
+                label="سؤال پاسخ‌داده"
+                color="#70A7FF"
+                soft={
+                  'rgba(59,130,246,.12)'
+                }
+              />
+
+              <Metric
+                icon="✅"
+                value={
+                  number(
+                    stats
+                      .correct_answers
+                  )
+                }
+                label="پاسخ صحیح"
+                color="#34D399"
+                soft={
+                  'rgba(16,185,129,.12)'
+                }
+              />
+
+              <Metric
+                icon="📥"
+                value={
+                  number(
+                    stats.downloads
+                  )
+                }
+                label="دانلود منابع"
+                color="#22D3EE"
+                soft={
+                  'rgba(34,211,238,.12)'
+                }
+              />
+
+              <Metric
+                icon="🔥"
+                value={
+                  number(
+                    stats
+                      .week_activity
+                  )
+                }
+                label="فعالیت این هفته"
+                color="#FCD34D"
+                soft={
+                  'rgba(245,158,11,.12)'
+                }
+              />
+            </section>
+
+            <div
+              className="tab-bar"
+              role="tablist"
+            >
               {[
                 [
                   'stats',
-                  '📈 آمار',
+                  '📈 عملکرد',
                 ],
+
                 [
                   'exams',
                   '⏳ امتحانات',
                 ],
+
                 [
                   'rank',
-                  '🏅 رتبه',
+                  '🏅 رتبه‌بندی',
                 ],
               ].map(
                 ([
@@ -516,22 +726,32 @@ export default function Dashboard() {
                   label,
                 ]) => (
                   <button
+                    type="button"
                     key={key}
+                    className="tab-btn"
+                    role="tab"
+                    aria-selected={
+                      tab === key
+                    }
                     onClick={() => {
                       haptic();
                       setTab(key);
                     }}
-                    className="tab-btn"
                     style={{
-                      background:
-                        tab === key
-                          ? 'var(--acc)'
-                          : 'transparent',
-
                       color:
                         tab === key
                           ? '#fff'
                           : 'var(--tx2)',
+
+                      background:
+                        tab === key
+                          ? 'var(--grad-brand)'
+                          : 'transparent',
+
+                      boxShadow:
+                        tab === key
+                          ? 'var(--shd-glow)'
+                          : 'none',
                     }}
                   >
                     {label}
@@ -542,135 +762,24 @@ export default function Dashboard() {
 
             {tab === 'stats' && (
               <>
-                <div className="grid2">
-                  {[
-                    [
-                      '🧪',
-                      toNumber(
-                        stats
-                          .total_answers
-                      ),
-                      'سوال',
-                      'var(--acc)',
-                    ],
-
-                    [
-                      '✅',
-                      toNumber(
-                        stats
-                          .correct_answers
-                      ),
-                      'صحیح',
-                      'var(--ok)',
-                    ],
-
-                    [
-                      '📥',
-                      toNumber(
-                        stats.downloads
-                      ),
-                      'دانلود',
-                      'var(--info)',
-                    ],
-
-                    [
-                      '🔥',
-                      toNumber(
-                        stats
-                          .week_activity
-                      ),
-                      'این هفته',
-                      'var(--warn)',
-                    ],
-                  ].map(
-                    ([
-                      icon,
-                      value,
-                      label,
-                      color,
-                    ]) => (
-                      <div
-                        key={label}
-                        className="card"
-                        style={{
-                          textAlign:
-                            'center',
-
-                          padding:
-                            '12px 8px',
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: 22,
-                          }}
-                        >
-                          {icon}
-                        </div>
-
-                        <div
-                          style={{
-                            fontSize: 21,
-
-                            fontWeight:
-                              800,
-
-                            color,
-
-                            margin:
-                              '3px 0',
-                          }}
-                        >
-                          {value}
-                        </div>
-
-                        <div
-                          style={{
-                            fontSize:
-                              10.5,
-
-                            color:
-                              'var(--txm)',
-                          }}
-                        >
-                          {label}
-                        </div>
-                      </div>
-                    )
-                  )}
-                </div>
-
                 {weekly.length >
                   0 && (
-                  <div className="card">
-                    <div
-                      style={{
-                        color:
-                          'var(--txm)',
-
-                        fontSize: 12,
-
-                        marginBottom:
-                          8,
-                      }}
-                    >
-                      فعالیت ۷ روز اخیر
+                  <section className="card">
+                    <div className="sec-title">
+                      فعالیت هفت روز اخیر
                     </div>
 
-                    <WeekBar
-                      data={weekly.map(
-                        (item) =>
-                          item?.count
-                      )}
+                    <WeekChart
+                      rows={weekly}
                     />
-                  </div>
+                  </section>
                 )}
 
                 {weakTopics.length >
                   0 && (
-                  <div className="card">
+                  <section className="card">
                     <div className="sec-title">
-                      ⚡ نقاط ضعف
+                      ⚡ مباحث نیازمند تمرین
                     </div>
 
                     <div
@@ -678,90 +787,74 @@ export default function Dashboard() {
                         display:
                           'flex',
 
-                        gap: 6,
-
                         flexWrap:
                           'wrap',
+
+                        gap: 7,
                       }}
                     >
                       {weakTopics.map(
                         (topic) => (
                           <button
+                            type="button"
                             key={topic}
-                            onClick={() => {
-                              haptic();
-
-                              navigate(
-                                '/learn/questions?mode=weak'
-                              );
-                            }}
+                            className={
+                              'badge b-red'
+                            }
                             style={{
-                              background:
-                                'rgba(239,68,68,.12)',
-
-                              color:
-                                'var(--err)',
-
-                              padding:
-                                '3px 10px',
-
-                              borderRadius:
-                                999,
-
-                              fontSize:
-                                12,
-
-                              fontWeight:
-                                700,
-
-                              border:
-                                'none',
+                              border: 0,
 
                               cursor:
                                 'pointer',
 
-                              fontFamily:
-                                'var(--font)',
+                              padding:
+                                '6px 11px',
                             }}
+                            onClick={() =>
+                              navigate(
+                                '/learn/questions?mode=weak'
+                              )
+                            }
                           >
                             {topic}
                           </button>
                         )
                       )}
                     </div>
-                  </div>
+                  </section>
                 )}
+
+                <button
+                  className={
+                    'btn btn-p btn-full'
+                  }
+                  onClick={() => {
+                    haptic(
+                      'medium'
+                    );
+
+                    navigate(
+                      '/learn/questions?mode=weak'
+                    );
+                  }}
+                >
+                  ⚡ شروع تمرین هوشمند
+                </button>
               </>
             )}
 
             {tab === 'exams' && (
-              <div
+              <section
                 style={{
-                  display: 'flex',
-                  flexDirection:
-                    'column',
-                  gap: 8,
+                  display: 'grid',
+                  gap: 9,
                 }}
               >
                 {exams.length ===
                 0 ? (
-                  <div className="empty">
-                    <div
-                      style={{
-                        fontSize:
-                          40,
-
-                        marginBottom:
-                          10,
-                      }}
-                    >
-                      📭
-                    </div>
-
-                    <div>
-                      امتحانی در ۷ روز
-                      آینده نیست
-                    </div>
+                  <div className="empty card">
+                    📭 امتحانی در هفت روز
+                    آینده ثبت نشده است.
                   </div>
                 ) : (
                   exams.map(
@@ -769,24 +862,23 @@ export default function Dashboard() {
                       exam,
                       index
                     ) => {
-                      const daysLeft =
+                      const days =
                         exam.days_left ==
                         null
                           ? null
-                          : toNumber(
+                          : number(
                               exam.days_left
                             );
 
                       const urgent =
-                        daysLeft !==
-                          null &&
-                        daysLeft <= 3;
+                        days != null &&
+                        days <= 3;
 
                       return (
                         <div
                           key={
                             exam.id ||
-                            `${exam.lesson}-${exam.date}-${index}`
+                            index
                           }
                           className="card"
                           style={{
@@ -804,7 +896,7 @@ export default function Dashboard() {
                               alignItems:
                                 'center',
 
-                              gap: 12,
+                              gap: 11,
                             }}
                           >
                             <div
@@ -815,28 +907,22 @@ export default function Dashboard() {
                                 height:
                                   44,
 
+                                display:
+                                  'grid',
+
+                                placeItems:
+                                  'center',
+
                                 borderRadius:
-                                  'var(--r-md)',
+                                  13,
 
                                 background:
                                   urgent
-                                    ? 'rgba(239,68,68,.1)'
-                                    : 'rgba(59,130,246,.1)',
-
-                                display:
-                                  'flex',
-
-                                alignItems:
-                                  'center',
-
-                                justifyContent:
-                                  'center',
+                                    ? 'rgba(239,68,68,.12)'
+                                    : 'var(--acc-soft)',
 
                                 fontSize:
                                   20,
-
-                                flexShrink:
-                                  0,
                               }}
                             >
                               📝
@@ -850,15 +936,7 @@ export default function Dashboard() {
                               <div
                                 style={{
                                   fontWeight:
-                                    700,
-
-                                  fontSize:
-                                    13.5,
-
-                                  color:
-                                    urgent
-                                      ? 'var(--err)'
-                                      : 'var(--tx)',
+                                    800,
                                 }}
                               >
                                 {exam.lesson ||
@@ -867,47 +945,40 @@ export default function Dashboard() {
 
                               <div
                                 style={{
-                                  fontSize:
-                                    11,
-
                                   color:
                                     'var(--txm)',
 
+                                  fontSize:
+                                    10.5,
+
                                   marginTop:
-                                    2,
+                                    3,
                                 }}
                               >
                                 {exam.date ||
                                   'تاریخ نامشخص'}
 
-                                {' '}
-
                                 {exam.time
-                                  ? `• ${exam.time}`
+                                  ? ` • ${exam.time}`
                                   : ''}
                               </div>
                             </div>
 
-                            {daysLeft !==
+                            {days !=
                               null && (
                               <span
                                 className={`badge ${
-                                  daysLeft ===
-                                  0
+                                  urgent
                                     ? 'b-red'
-                                    : daysLeft <=
-                                        3
-                                      ? 'b-yel'
-                                      : 'b-grn'
+                                    : 'b-grn'
                                 }`}
                               >
-                                {daysLeft ===
-                                0
-                                  ? 'امروز!'
-                                  : daysLeft ===
+                                {days === 0
+                                  ? 'امروز'
+                                  : days ===
                                       1
-                                    ? 'فردا!'
-                                    : `${daysLeft} روز`}
+                                    ? 'فردا'
+                                    : `${days} روز`}
                               </span>
                             )}
                           </div>
@@ -916,251 +987,203 @@ export default function Dashboard() {
                     }
                   )
                 )}
-              </div>
+
+                <button
+                  className={
+                    'btn btn-dark btn-full'
+                  }
+                  onClick={() =>
+                    navigate(
+                      '/schedule'
+                    )
+                  }
+                >
+                  مشاهده برنامه کامل
+                </button>
+              </section>
             )}
 
             {tab === 'rank' && (
-              <>
-                <div
-                  className="card"
-                  style={{
-                    background:
-                      'linear-gradient(135deg,rgba(245,158,11,.08),rgba(59,130,246,.06))',
-
-                    borderColor:
-                      'rgba(245,158,11,.25)',
-
-                    textAlign:
-                      'center',
-
-                    padding: 22,
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: 38,
-                    }}
-                  >
-                    🏅
-                  </div>
-
-                  <div
-                    style={{
-                      fontSize: 18,
-
-                      fontWeight:
-                        800,
-
-                      color:
-                        'var(--warn)',
-
-                      marginTop: 8,
-                    }}
-                  >
-                    جدول رتبه‌بندی
-                  </div>
+              <section className="card">
+                <div className="sec-title">
+                  🏆 برترین دانشجویان
                 </div>
 
-                {leaderboardLoading ? (
-                  <SkeletonCard />
-                ) : leaderboardError ? (
-                  <ErrorCard
-                    message={
-                      'دریافت رتبه‌بندی با مشکل مواجه شد.'
+                {rankLoading ? (
+                  <div
+                    style={{
+                      display: 'grid',
+                      placeItems:
+                        'center',
+                      padding: 30,
+                    }}
+                  >
+                    <Spinner />
+                  </div>
+                ) : rankError ? (
+                  <button
+                    className={
+                      'btn btn-dark btn-full'
                     }
-                    onRetry={
-                      refetchLeaderboard
+                    onClick={() =>
+                      refetchRank()
                     }
-                  />
+                  >
+                    تلاش دوباره
+                  </button>
                 ) : leaders.length ===
                   0 ? (
                   <div className="empty">
-                    هنوز اطلاعات رتبه‌بندی
-                    ثبت نشده است.
+                    هنوز رتبه‌ای ثبت نشده
+                    است.
                   </div>
                 ) : (
-                  <div className="card">
-                    <div className="sec-title">
-                      🏆 برترین‌ها
-                    </div>
+                  leaders.map(
+                    (
+                      item,
+                      index
+                    ) => (
+                      <div
+                        key={`${
+                          item.rank
+                        }-${
+                          item.name
+                        }-${index}`}
+                        style={{
+                          display:
+                            'flex',
 
-                    {leaders.map(
-                      (
-                        item,
-                        index
-                      ) => (
+                          alignItems:
+                            'center',
+
+                          gap: 10,
+
+                          padding:
+                            '10px 0',
+
+                          borderBottom:
+                            index <
+                            leaders.length -
+                              1
+                              ? '1px solid var(--bd)'
+                              : 0,
+                        }}
+                      >
                         <div
-                          key={`${
-                            item.rank ||
-                            index
-                          }-${
-                            item.name ||
-                            'user'
-                          }`}
                           style={{
-                            display:
-                              'flex',
-
-                            alignItems:
+                            width: 30,
+                            textAlign:
                               'center',
+                            fontWeight:
+                              900,
+                          }}
+                        >
+                          {item.rank ===
+                          1
+                            ? '🥇'
+                            : item.rank ===
+                                2
+                              ? '🥈'
+                              : item.rank ===
+                                  3
+                                ? '🥉'
+                                : item.rank}
+                        </div>
 
-                            gap: 10,
+                        <div
+                          style={{
+                            flex: 1,
 
-                            padding:
-                              '8px 0',
+                            color:
+                              item.is_me
+                                ? 'var(--acc2)'
+                                : 'var(--tx)',
 
-                            borderBottom:
-                              index <
-                              leaders.length -
-                                1
-                                ? '1px solid var(--bd)'
-                                : 'none',
+                            fontWeight:
+                              item.is_me
+                                ? 800
+                                : 600,
+                          }}
+                        >
+                          {item.name ||
+                            'کاربر'}
+
+                          {item.is_me
+                            ? ' • شما'
+                            : ''}
+                        </div>
+
+                        <div
+                          style={{
+                            textAlign:
+                              'left',
                           }}
                         >
                           <div
                             style={{
-                              width:
-                                26,
+                              color:
+                                'var(--ok)',
 
-                              textAlign:
-                                'center',
+                              fontSize:
+                                12,
 
                               fontWeight:
                                 800,
-
-                              color:
-                                item.rank <=
-                                3
-                                  ? '#FCD34D'
-                                  : 'var(--txm)',
-
-                              fontSize:
-                                item.rank <=
-                                3
-                                  ? 16
-                                  : 12,
                             }}
                           >
-                            {item.rank ===
-                            1
-                              ? '🥇'
-                              : item.rank ===
-                                  2
-                                ? '🥈'
-                                : item.rank ===
-                                    3
-                                  ? '🥉'
-                                  : `#${
-                                      item.rank ||
-                                      index +
-                                        1
-                                    }`}
+                            {percent(
+                              item.percent
+                            )}
+                            ٪
                           </div>
 
                           <div
                             style={{
-                              flex: 1,
-
-                              fontWeight:
-                                item.is_me
-                                  ? 700
-                                  : 400,
-
-                              color:
-                                item.is_me
-                                  ? 'var(--acc)'
-                                  : 'var(--tx)',
-
-                              fontSize:
-                                13,
-                            }}
-                          >
-                            {item.name ||
-                              'کاربر'}
-
-                            {item.is_me
-                              ? ' (من)'
-                              : ''}
-                          </div>
-
-                          <div
-                            style={{
-                              fontSize:
-                                11,
-
                               color:
                                 'var(--txm)',
 
-                              textAlign:
-                                'left',
+                              fontSize:
+                                9,
                             }}
                           >
-                            <span
-                              style={{
-                                color:
-                                  'var(--ok)',
-
-                                fontWeight:
-                                  700,
-                              }}
-                            >
-                              {toNumber(
-                                item.correct
-                              )}
-                            </span>
-
+                            {number(
+                              item.correct
+                            )}
                             /
-
-                            {toNumber(
+                            {number(
                               item.total
                             )}
-
-                            <span
-                              style={{
-                                color:
-                                  'var(--warn)',
-
-                                marginRight:
-                                  6,
-
-                                fontWeight:
-                                  700,
-                              }}
-                            >
-                              {toPercent(
-                                item.percent
-                              )}
-                              ٪
-                            </span>
                           </div>
                         </div>
-                      )
-                    )}
-                  </div>
+                      </div>
+                    )
+                  )
                 )}
-              </>
+              </section>
             )}
 
             {openTickets > 0 && (
               <button
+                type="button"
+                className={
+                  'card card-tap'
+                }
                 onClick={() =>
                   navigate(
                     '/me/tickets'
                   )
                 }
-                className="card"
                 style={{
-                  cursor: 'pointer',
                   display: 'flex',
                   alignItems:
                     'center',
-                  gap: 12,
-                  borderColor:
-                    'rgba(245,158,11,.3)',
-                  background:
-                    'rgba(245,158,11,.04)',
+                  gap: 11,
                   width: '100%',
-                  textAlign: 'right',
+                  textAlign:
+                    'right',
+
+                  borderColor:
+                    'rgba(245,158,11,.25)',
                 }}
               >
                 <span
@@ -1171,61 +1194,38 @@ export default function Dashboard() {
                   🎫
                 </span>
 
-                <div
+                <span
                   style={{
                     flex: 1,
                   }}
                 >
-                  <div
-                    style={{
-                      fontWeight: 700,
-                      fontSize: 13,
-                    }}
-                  >
+                  <b>
                     {openTickets} تیکت باز
-                  </div>
+                  </b>
 
-                  <div
+                  <span
                     style={{
-                      fontSize: 11,
+                      display:
+                        'block',
+
                       color:
                         'var(--txm)',
+
+                      fontSize:
+                        10.5,
                     }}
                   >
-                    برو به پشتیبانی
-                  </div>
-                </div>
-
-                <span
-                  style={{
-                    color:
-                      'var(--txm)',
-                  }}
-                >
-                  ←
+                    پیگیری گفت‌وگوهای
+                    پشتیبانی
+                  </span>
                 </span>
+
+                <span>←</span>
               </button>
             )}
-
-            <button
-              className="btn btn-p btn-full"
-              onClick={() => {
-                haptic('medium');
-
-                navigate(
-                  '/learn/questions?mode=weak'
-                );
-              }}
-            >
-              🧪 تمرین هوشمند
-            </button>
-          </div>
-        ) : (
-          <div className="empty">
-            اطلاعات داشبورد در دسترس نیست.
           </div>
         )}
-      </div>
+      </main>
     </>
   );
 }
