@@ -59,7 +59,7 @@ export default function Dashboard() {
 
   return (
     <>
-      <Header title="داشبورد"
+      <Header title="داشبورد" back={false}
         subtitle={data ? `ورودی ${data.user.intake} | گروه ${data.user.group}` : ''}
         right={<button onClick={() => { haptic(); refetch(); }} style={{ background:'none',border:'none',cursor:'pointer',fontSize:18,opacity:isRefetching?.5:1 }}>🔄</button>}
       />
