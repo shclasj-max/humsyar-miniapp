@@ -2,32 +2,37 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../lib/api';
 import Header from '../../components/layout/Header';
-import { SkeletonCard, Spinner } from '../../components/shared/Loading';
+import {
+  SkeletonCard,
+  Spinner,
+} from '../../components/shared/Loading';
 import { haptic } from '../../lib/telegram';
 import { useAuthStore } from '../../stores/authStore';
 
-const TYPE_CONFIG = {
+const TYPES = {
   class: {
     icon: '🏫',
-    color: 'var(--acc)',
-    soft: 'rgba(59,130,246,.12)',
     label: 'کلاس‌ها',
+    color: '#70A7FF',
+    soft: 'rgba(59,130,246,.12)',
   },
+
   exam: {
     icon: '📝',
-    color: 'var(--err)',
-    soft: 'rgba(239,68,68,.11)',
     label: 'امتحانات',
+    color: '#FB7185',
+    soft: 'rgba(239,68,68,.12)',
   },
+
   makeup: {
     icon: '🔄',
-    color: 'var(--warn)',
-    soft: 'rgba(245,158,11,.11)',
     label: 'جبرانی',
+    color: '#FCD34D',
+    soft: 'rgba(245,158,11,.12)',
   },
 };
 
-const safeDays = (value) => {
+const days = (value) => {
   if (
     value === null ||
     value === undefined ||
@@ -36,30 +41,66 @@ const safeDays = (value) => {
     return null;
   }
 
-  const number = Number(value);
+  const parsed = Number(value);
 
-  return Number.isFinite(number)
-    ? Math.max(0, Math.floor(number))
+  return Number.isFinite(parsed)
+    ? Math.max(
+        0,
+        Math.floor(parsed)
+      )
     : null;
 };
 
-const groupLabel = (group) => {
-  if (!group || group === '0') {
+const groupName = (value) => {
+  if (
+    !value ||
+    value === '0'
+  ) {
     return '';
   }
 
-  if (group === 'هر دو') {
+  if (value === 'هر دو') {
     return 'هر دو گروه';
   }
 
-  return `گروه ${group}`;
+  return `گروه ${value}`;
 };
 
+function Empty({
+  type,
+}) {
+  return (
+    <div className="empty card">
+      <div
+        style={{
+          fontSize: 42,
+        }}
+      >
+        {TYPES[type].icon}
+      </div>
+
+      <div
+        style={{
+          marginTop: 8,
+        }}
+      >
+        موردی در بخش{' '}
+        {TYPES[type].label}{' '}
+        ثبت نشده است.
+      </div>
+    </div>
+  );
+}
+
 export default function Schedule() {
-  const [tab, setTab] = useState('class');
+  const [
+    tab,
+    setTab,
+  ] = useState('class');
 
   const userGroup = useAuthStore(
-    (state) => state.user?.group || ''
+    (state) =>
+      state.user?.group || ''
   );
 
   const {
@@ -69,335 +110,637 @@ export default function Schedule() {
     refetch,
     isRefetching,
   } = useQuery({
-    queryKey: ['schedule', userGroup],
+    queryKey: [
+      'schedule',
+      userGroup,
+    ],
 
     queryFn: () =>
       api
         .get('/api/schedule')
-        .then((response) => response.data),
+        .then(
+          (response) =>
+            response.data
+        ),
 
-    staleTime: 1000 * 60 * 5,
-    refetchOnMount: 'always',
+    staleTime:
+      5 * 60 * 1000,
+
+    refetchOnMount:
+      'always',
   });
 
-  const schedule = Array.isArray(
-    data?.schedule
-  )
-    ? data.schedule
-    : [];
+  const schedule =
+    Array.isArray(
+      data?.schedule
+    )
+      ? data.schedule
+      : [];
 
-  const items = schedule.filter(
-    (item) => item?.type === tab
-  );
+  const items =
+    schedule.filter(
+      (item) =>
+        item?.type === tab
+    );
 
-  const config = TYPE_CONFIG[tab];
+  const config =
+    TYPES[tab];
 
-  const counts = Object.keys(
-    TYPE_CONFIG
-  ).reduce((result, type) => {
-    result[type] = schedule.filter(
-      (item) => item?.type === type
-    ).length;
+  const counts =
+    Object.fromEntries(
+      Object.keys(TYPES).map(
+        (type) => [
+          type,
 
-    return result;
-  }, {});
+          schedule.filter(
+            (item) =>
+              item?.type === type
+          ).length,
+        ]
+      )
+    );
+
+  const nearestExam =
+    schedule.find(
+      (item) =>
+        item?.type === 'exam'
+    );
+
+  const nearestDays =
+    days(
+      nearestExam?.days_left
+    );
 
   return (
     <>
       <Header
-        title="برنامه"
-        subtitle={`گروه ${
-          data?.group || userGroup || '—'
+        title="برنامه درسی"
+        subtitle={`برنامه شخصی ${
+          groupName(
+            data?.group ||
+            userGroup
+          ) || 'شما'
         }`}
         back={false}
         right={
           <button
+            type="button"
+            aria-label="به‌روزرسانی"
+            disabled={
+              isRefetching
+            }
             onClick={() => {
               haptic();
               refetch();
             }}
-            disabled={isRefetching}
-            aria-label="به‌روزرسانی برنامه"
             style={{
-              background: 'none',
-              border: 'none',
-              cursor: isRefetching
-                ? 'default'
-                : 'pointer',
-              fontSize: 18,
-              opacity: isRefetching ? 0.5 : 1,
+              width: 36,
+              height: 36,
+
+              borderRadius:
+                12,
+
+              border:
+                '1px solid var(--bd)',
+
+              background:
+                'var(--elev)',
+
+              cursor:
+                'pointer',
+
+              opacity:
+                isRefetching
+                  ? .5
+                  : 1,
             }}
           >
-            🔄
+            ↻
           </button>
         }
       />
 
-      <div className="page fade-up">
-        <div className="tab-bar">
-          {Object.entries(
-            TYPE_CONFIG
-          ).map(([key, item]) => (
-            <button
-              key={key}
-              onClick={() => {
-                haptic();
-                setTab(key);
-              }}
-              className="tab-btn"
-              style={{
-                background:
-                  tab === key
-                    ? item.color
-                    : 'transparent',
+      <main className="page fade-up">
+        <section
+          className={
+            'card card-glow'
+          }
+          style={{
+            padding: 17,
+            marginBottom: 14,
 
-                color:
-                  tab === key
-                    ? '#fff'
-                    : 'var(--tx2)',
+            background:
+              'linear-gradient(145deg,rgba(29,78,216,.2),rgba(16,24,39,.95) 52%,rgba(34,211,238,.08))',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 13,
+            }}
+          >
+            <div
+              style={{
+                width: 52,
+                height: 52,
+
+                display: 'grid',
+                placeItems: 'center',
+
+                borderRadius:
+                  16,
+
+                background:
+                  'var(--grad-brand)',
+
+                boxShadow:
+                  'var(--shd-glow)',
+
+                fontSize: 24,
               }}
             >
-              {item.icon} {item.label}
+              📅
+            </div>
 
-              {counts[key] > 0
-                ? ` (${counts[key]})`
-                : ''}
-            </button>
-          ))}
+            <div
+              style={{
+                flex: 1,
+              }}
+            >
+              <div
+                style={{
+                  color:
+                    'var(--txm)',
+
+                  fontSize:
+                    10.5,
+                }}
+              >
+                برنامه ترم جاری
+              </div>
+
+              <div
+                style={{
+                  fontSize: 17,
+
+                  fontWeight:
+                    900,
+
+                  marginTop:
+                    2,
+                }}
+              >
+                {groupName(
+                  data?.group ||
+                  userGroup
+                ) ||
+                  'گروه نامشخص'}
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+
+                  gap: 5,
+
+                  marginTop:
+                    7,
+                }}
+              >
+                <span className="badge b-acc">
+                  {counts.class ||
+                    0}{' '}
+                  کلاس
+                </span>
+
+                <span className="badge b-red">
+                  {counts.exam ||
+                    0}{' '}
+                  امتحان
+                </span>
+              </div>
+            </div>
+
+            {nearestExam &&
+              nearestDays !==
+                null && (
+                <div
+                  style={{
+                    minWidth:
+                      58,
+
+                    textAlign:
+                      'center',
+
+                    padding:
+                      '8px 7px',
+
+                    borderRadius:
+                      14,
+
+                    background:
+                      nearestDays <=
+                      3
+                        ? 'rgba(239,68,68,.12)'
+                        : 'var(--acc-soft)',
+
+                    border:
+                      `1px solid ${
+                        nearestDays <=
+                        3
+                          ? 'rgba(239,68,68,.24)'
+                          : 'var(--bdg)'
+                      }`,
+                  }}
+                >
+                  <div
+                    style={{
+                      color:
+                        nearestDays <=
+                        3
+                          ? 'var(--err)'
+                          : 'var(--acc2)',
+
+                      fontSize:
+                        18,
+
+                      fontWeight:
+                        900,
+                    }}
+                  >
+                    {nearestDays}
+                  </div>
+
+                  <div
+                    style={{
+                      color:
+                        'var(--txm)',
+
+                      fontSize:
+                        8,
+                    }}
+                  >
+                    {nearestDays ===
+                    0
+                      ? 'امروز'
+                      : 'روز تا امتحان'}
+                  </div>
+                </div>
+              )}
+          </div>
+        </section>
+
+        <div
+          className="tab-bar"
+          role="tablist"
+        >
+          {Object.entries(
+            TYPES
+          ).map(
+            ([key, item]) => (
+              <button
+                type="button"
+                role="tab"
+                aria-selected={
+                  tab === key
+                }
+                key={key}
+                className="tab-btn"
+                onClick={() => {
+                  haptic();
+                  setTab(key);
+                }}
+                style={{
+                  color:
+                    tab === key
+                      ? '#fff'
+                      : 'var(--tx2)',
+
+                  background:
+                    tab === key
+                      ? 'var(--grad-brand)'
+                      : 'transparent',
+
+                  boxShadow:
+                    tab === key
+                      ? 'var(--shd-glow)'
+                      : 'none',
+                }}
+              >
+                {item.icon}{' '}
+                {item.label}{' '}
+
+                {counts[key]
+                  ? `(${counts[key]})`
+                  : ''}
+              </button>
+            )
+          )}
         </div>
 
         {isLoading ? (
           <div
             style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 8,
+              display: 'grid',
+              gap: 9,
             }}
           >
-            {[1, 2, 3].map((item) => (
-              <SkeletonCard key={item} />
-            ))}
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
           </div>
         ) : isError ? (
-          <div className="empty">
+          <div className="empty card">
             <div
               style={{
                 fontSize: 40,
-                marginBottom: 10,
               }}
             >
               🌐
             </div>
 
-            <div>
-              دریافت برنامه با مشکل مواجه شد.
+            <div
+              style={{
+                marginTop: 8,
+              }}
+            >
+              دریافت برنامه انجام نشد.
             </div>
 
             <button
               className="btn btn-p"
-              style={{ marginTop: 14 }}
-              onClick={() => refetch()}
-              disabled={isRefetching}
+              style={{
+                marginTop: 13,
+              }}
+              onClick={() =>
+                refetch()
+              }
+              disabled={
+                isRefetching
+              }
             >
               {isRefetching ? (
-                <Spinner size={16} />
+                <Spinner size={15} />
               ) : (
                 'تلاش دوباره'
               )}
             </button>
           </div>
         ) : items.length === 0 ? (
-          <div className="empty">
-            <div
-              style={{
-                fontSize: 40,
-                marginBottom: 10,
-              }}
-            >
-              📭
-            </div>
-
-            <div>
-              موردی در این بخش ثبت نشده است.
-            </div>
-          </div>
+          <Empty type={tab} />
         ) : (
-          <div
+          <section
             style={{
-              display: 'flex',
-              flexDirection: 'column',
+              display: 'grid',
               gap: 9,
             }}
           >
-            {items.map((item, index) => {
-              const daysLeft = safeDays(
-                item.days_left
-              );
+            {items.map(
+              (item, index) => {
+                const remaining =
+                  days(
+                    item.days_left
+                  );
 
-              const urgent =
-                item.type === 'exam' &&
-                daysLeft !== null &&
-                daysLeft <= 3;
+                const urgent =
+                  item.type ===
+                    'exam' &&
+                  remaining !==
+                    null &&
+                  remaining <= 3;
 
-              const sharedGroup = groupLabel(
-                item.group
-              );
+                const note =
+                  item.note ||
+                  item.flex_note ||
+                  '';
 
-              const note =
-                item.note ||
-                item.flex_note ||
-                '';
-
-              return (
-                <div
-                  key={
-                    item.id ||
-                    `${item.lesson}-${item.date}-${item.time}-${index}`
-                  }
-                  className="card"
-                  style={{
-                    borderColor: urgent
-                      ? 'rgba(239,68,68,.3)'
-                      : 'var(--bd)',
-                  }}
-                >
-                  <div
+                return (
+                  <article
+                    key={
+                      item.id ||
+                      `${item.lesson}-${index}`
+                    }
+                    className="card"
                     style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: 12,
+                      padding: 13,
+
+                      borderColor:
+                        urgent
+                          ? 'rgba(239,68,68,.3)'
+                          : 'var(--bd)',
                     }}
                   >
                     <div
                       style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius:
-                          'var(--r-md)',
-                        background:
-                          config.soft,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent:
-                          'center',
-                        fontSize: 20,
-                        flexShrink: 0,
-                      }}
-                    >
-                      {config.icon}
-                    </div>
+                        display:
+                          'flex',
 
-                    <div
-                      style={{
-                        flex: 1,
-                        minWidth: 0,
+                        alignItems:
+                          'flex-start',
+
+                        gap: 11,
                       }}
                     >
                       <div
                         style={{
-                          fontWeight: 700,
-                          fontSize: 14,
-                          color: urgent
-                            ? 'var(--err)'
-                            : 'var(--tx)',
+                          display:
+                            'grid',
+
+                          flex:
+                            '0 0 46px',
+
+                          height:
+                            46,
+
+                          placeItems:
+                            'center',
+
+                          borderRadius:
+                            14,
+
+                          background:
+                            urgent
+                              ? 'rgba(239,68,68,.12)'
+                              : config.soft,
+
+                          fontSize:
+                            21,
                         }}
                       >
-                        {item.lesson ||
-                          'بدون عنوان'}
+                        {config.icon}
                       </div>
-
-                      {item.teacher && (
-                        <div
-                          style={{
-                            fontSize: 11.5,
-                            color:
-                              'var(--tx2)',
-                            marginTop: 2,
-                          }}
-                        >
-                          استاد: {item.teacher}
-                        </div>
-                      )}
 
                       <div
                         style={{
-                          display: 'flex',
-                          gap: 5,
-                          marginTop: 6,
-                          flexWrap: 'wrap',
+                          flex: 1,
+                          minWidth: 0,
                         }}
                       >
-                        <span className="badge b-acc">
-                          {item.date ||
-                            'تاریخ نامشخص'}
-                        </span>
-
-                        {item.time && (
-                          <span className="badge b-gray">
-                            ⏰ {item.time}
-                          </span>
-                        )}
-
-                        {item.location && (
-                          <span className="badge b-gray">
-                            📍 {item.location}
-                          </span>
-                        )}
-
-                        {sharedGroup && (
-                          <span className="badge b-gray">
-                            {sharedGroup}
-                          </span>
-                        )}
-
-                        {item.flex_type ===
-                          'flexible' && (
-                          <span className="badge b-yel">
-                            زمان منعطف
-                          </span>
-                        )}
-                      </div>
-
-                      {note && (
                         <div
                           style={{
-                            fontSize: 11,
-                            color:
-                              'var(--txm)',
-                            marginTop: 7,
-                            lineHeight: 1.7,
+                            display:
+                              'flex',
+
+                            alignItems:
+                              'center',
+
+                            gap: 6,
                           }}
                         >
-                          📝 {note}
-                        </div>
-                      )}
-                    </div>
+                          <h3
+                            style={{
+                              overflow:
+                                'hidden',
 
-                    {item.type === 'exam' &&
-                      daysLeft !== null && (
-                        <span
-                          className={`badge ${
-                            daysLeft === 0
-                              ? 'b-red'
-                              : daysLeft <= 3
-                                ? 'b-yel'
+                              fontSize:
+                                13.5,
+
+                              fontWeight:
+                                850,
+
+                              textOverflow:
+                                'ellipsis',
+
+                              whiteSpace:
+                                'nowrap',
+                            }}
+                          >
+                            {item.lesson ||
+                              'بدون عنوان'}
+                          </h3>
+
+                          {item.flex_type ===
+                            'flexible' && (
+                            <span className="badge b-yel">
+                              منعطف
+                            </span>
+                          )}
+                        </div>
+
+                        {item.teacher && (
+                          <div
+                            style={{
+                              color:
+                                'var(--tx2)',
+
+                              fontSize:
+                                10.5,
+
+                              marginTop:
+                                3,
+                            }}
+                          >
+                            👨‍🏫{' '}
+                            {item.teacher}
+                          </div>
+                        )}
+
+                        <div
+                          style={{
+                            display:
+                              'flex',
+
+                            flexWrap:
+                              'wrap',
+
+                            gap: 5,
+
+                            marginTop:
+                              7,
+                          }}
+                        >
+                          <span className="badge b-acc">
+                            📆{' '}
+                            {item.date ||
+                              'تاریخ نامشخص'}
+                          </span>
+
+                          {item.time && (
+                            <span className="badge b-gray">
+                              ⏰{' '}
+                              {item.time}
+                            </span>
+                          )}
+
+                          {item.location && (
+                            <span className="badge b-gray">
+                              📍{' '}
+                              {
+                                item.location
+                              }
+                            </span>
+                          )}
+
+                          {groupName(
+                            item.group
+                          ) && (
+                            <span className="badge b-gray">
+                              {groupName(
+                                item.group
+                              )}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {item.type ===
+                        'exam' &&
+                        remaining !==
+                          null && (
+                          <span
+                            className={`badge ${
+                              urgent
+                                ? 'b-red'
                                 : 'b-grn'
-                          }`}
-                        >
-                          {daysLeft === 0
-                            ? 'امروز!'
-                            : daysLeft === 1
-                              ? 'فردا!'
-                              : `${daysLeft} روز`}
-                        </span>
-                      )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                            }`}
+                          >
+                            {remaining ===
+                            0
+                              ? 'امروز'
+                              : remaining ===
+                                  1
+                                ? 'فردا'
+                                : `${remaining} روز`}
+                          </span>
+                        )}
+                    </div>
+
+                    {note && (
+                      <div
+                        style={{
+                          marginTop:
+                            10,
+
+                          padding:
+                            '8px 10px',
+
+                          color:
+                            'var(--tx2)',
+
+                          background:
+                            'rgba(100,116,139,.08)',
+
+                          borderRadius:
+                            11,
+
+                          fontSize:
+                            10.5,
+
+                          lineHeight:
+                            1.7,
+                        }}
+                      >
+                        📝 {note}
+                      </div>
+                    )}
+                  </article>
+                );
+              }
+            )}
+          </section>
         )}
-      </div>
+      </main>
     </>
   );
 }
