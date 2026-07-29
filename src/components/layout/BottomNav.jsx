@@ -48,6 +48,13 @@ const TABS = [
 
 const MORE = [
   {
+    path: '/ai',
+    icon: '🤖',
+    label: 'هوشیار',
+    desc: 'دستیار آموزشی هوشمند',
+  },
+
+  {
     path: '/me/profile',
     icon: '👤',
     label: 'پروفایل',
@@ -114,6 +121,7 @@ function MoreSheet({
   const navigate =
     useNavigate();
 
+
   useEffect(() => {
     const previousOverflow =
       document.body
@@ -152,7 +160,9 @@ function MoreSheet({
 
   const open = (path) => {
     haptic('light');
+
     onClose();
+
     navigate(path);
   };
 
@@ -182,7 +192,10 @@ function MoreSheet({
         </div>
 
         {MORE.map(
-          (item, index) => (
+          (
+            item,
+            index
+          ) => (
             <button
               type="button"
               key={item.path}
@@ -211,6 +224,12 @@ function MoreSheet({
                   {item.desc}
                 </span>
               </span>
+
+              {item.path === '/ai' && (
+                <span className="badge b-pur">
+                  AI
+                </span>
+              )}
 
               <span className="more-sheet__arrow">
                 ←
@@ -315,10 +334,14 @@ export default function BottomNav() {
         />
 
         {TABS.map(
-          (tab, index) => {
+          (
+            tab,
+            index
+          ) => {
             const active =
               !moreActive &&
-              index === activeIndex;
+              index ===
+                activeIndex;
 
             return (
               <button
@@ -368,6 +391,7 @@ export default function BottomNav() {
           }
           onClick={() => {
             haptic('light');
+
             setShowMore(true);
           }}
           aria-label="بیشتر"
