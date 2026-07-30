@@ -1,9 +1,11 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
 } from 'react';
 
 import {
+  useLocation,
   useNavigate,
 } from 'react-router-dom';
 
@@ -13,15 +15,70 @@ import {
 } from '../../lib/telegram';
 
 
+/* ─────────────────────────────────────────────
+   آیا تاریخچه مرورگر صفحه‌ی قبلی داخل مینی‌اپ
+   دارد؟ (react-router در history.state.idx
+   موقعیت فعلی را نگه می‌دارد)
+───────────────────────────────────────────── */
+function canGoBackInApp() {
+  try {
+    const state = window.history.state;
+
+    return (
+      typeof state?.idx === 'number' &&
+      state.idx > 0
+    );
+
+  } catch (_) {
+    return false;
+  }
+}
+
+
+/* ─────────────────────────────────────────────
+   مسیر والد را از آدرس فعلی استخراج می‌کند؛
+   مثال: /admin/content/questions → /admin/content
+         /me/tickets              → /me
+───────────────────────────────────────────── */
+function deriveParentPath(pathname) {
+  const parts = pathname
+    .split('/')
+    .filter(Boolean);
+
+  parts.pop();
+
+  return parts.length
+    ? `/${parts.join('/')}`
+    : '/';
+}
+
+
 export default function Header({
   title,
   subtitle,
   right,
   back = true,
   onBack,
+  backTo,
 }) {
   const navigate =
     useNavigate();
+
+  const location =
+    useLocation();
+
+
+  /* مسیر برگشت اضطراری: اولویت با
+     backTo صریح، بعد مسیر والد خودکار */
+  const fallbackPath = useMemo(
+    () =>
+      backTo ||
+      deriveParentPath(
+        location.pathname
+      ),
+
+    [backTo, location.pathname]
+  );
 
 
   const handleBack =
@@ -33,12 +90,31 @@ export default function Header({
         'function'
       ) {
         onBack();
-      } else {
-        navigate(-1);
+        return;
       }
+
+      /* اگر صفحه‌ی قبلی داخل خود مینی‌اپ
+         هست، به آن برمی‌گردیم؛ وگرنه (مثل
+         باز شدن مستقیم از لینک ربات) به
+         مسیر والد می‌رویم تا دکمه بازگشت
+         همیشه کار کند. */
+      if (canGoBackInApp()) {
+        navigate(-1);
+      } else if (
+        location.pathname !==
+        fallbackPath
+      ) {
+        navigate(
+          fallbackPath,
+          { replace: true }
+        );
+      }
+
     }, [
       navigate,
       onBack,
+      fallbackPath,
+      location.pathname,
     ]);
 
 
