@@ -18,6 +18,10 @@ import {
 
 import api from '../../lib/api';
 
+import SubscriptionLock, {
+  isSubscriptionLock,
+} from '../../components/shared/SubscriptionLock';
+
 import {
   haptic,
   hapticNotif,
@@ -293,6 +297,7 @@ export default function Resources() {
     data: terms = [],
     isLoading: termsLoading,
     isError: termsError,
+    error: termsErr,
     refetch: refetchTerms,
   } = useQuery({
     queryKey: [
@@ -319,6 +324,7 @@ export default function Resources() {
     data: lessons = [],
     isLoading: lessonsLoading,
     isError: lessonsError,
+    error: lessonsErr,
     refetch: refetchLessons,
   } = useQuery({
     queryKey: [
@@ -351,6 +357,7 @@ export default function Resources() {
     data: sessions = [],
     isLoading: sessionsLoading,
     isError: sessionsError,
+    error: sessionsErr,
     refetch: refetchSessions,
   } = useQuery({
     queryKey: [
@@ -381,6 +388,7 @@ export default function Resources() {
     data: files = [],
     isLoading: filesLoading,
     isError: filesError,
+    error: filesErr,
     refetch: refetchFiles,
   } = useQuery({
     queryKey: [
@@ -414,6 +422,7 @@ export default function Resources() {
     data: results = [],
     isFetching: searching,
     isError: searchError,
+    error: searchErr,
   } = useQuery({
     queryKey: [
       'resource-search',
@@ -558,6 +567,19 @@ export default function Resources() {
     });
   };
 
+  /* 🔒 گیت اشتراک — بک‌اند مرجع نهایی است.
+     اگر هرکدام از کوئری‌های این صفحه 403 با
+     detail='subscription_required' بگیرند (دقیقاً
+     همان قانون has_access ربات)، به‌جای کارت خطای
+     عمومی، صفحه‌ی قفل حرفه‌ای نمایش داده می‌شود */
+  const subLock =
+    isSubscriptionLock(termsErr) ||
+    isSubscriptionLock(lessonsErr) ||
+    isSubscriptionLock(sessionsErr) ||
+    isSubscriptionLock(filesErr) ||
+    isSubscriptionLock(searchErr);
+
+
   const goBack = () => {
     haptic('light');
 
@@ -655,7 +677,14 @@ export default function Resources() {
         className="page fade-up"
         style={styles.page}
       >
+        {subLock && (
+          <SubscriptionLock
+            feature="منابع علوم پایه"
+          />
+        )}
+
         {
+          !subLock &&
           view === 'terms'
           && (
             <>
