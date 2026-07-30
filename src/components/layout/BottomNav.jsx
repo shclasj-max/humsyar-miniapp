@@ -55,6 +55,13 @@ const MORE = [
   },
 
   {
+    path: '/search',
+    icon: '🔍',
+    label: 'جست‌وجوی سراسری',
+    desc: 'سؤال، منبع و کتاب در یک‌جا',
+  },
+
+  {
     path: '/me/profile',
     icon: '👤',
     label: 'پروفایل',
