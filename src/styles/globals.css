@@ -880,12 +880,16 @@ input:focus-visible
 }
 
 .app-header__back {
+  position: relative;
+
   display: grid;
   flex: 0 0 auto;
-  width: 35px;
-  height: 35px;
+  width: 42px;
+  height: 42px;
   place-items: center;
   color: var(--tx);
+  font-size: 19px;
+  line-height: 1;
 
   background:
     rgba(30, 41, 59, .8);
@@ -893,17 +897,114 @@ input:focus-visible
   border:
     1px solid var(--bd);
 
-  border-radius: 11px;
+  border-radius: 13px;
   cursor: pointer;
 
+  /* هدف لمسی مؤثر ۴۴px+ از طریق پدینگ نامرئی
+     دور دکمه (بدون بزرگ‌شدن بصری) */
+  margin: -1px;
+  padding: 1px;
+
   transition:
-    transform .15s
+    transform .22s
       var(--ease-spring),
-    background .2s;
+    background .2s,
+    border-color .2s,
+    box-shadow .2s;
 }
 
 .app-header__back:active {
-  transform: scale(.9);
+  transform:
+    scale(.88)
+    translateX(1.5px);
+
+  border-color:
+    rgba(34, 211, 238, .35);
+
+  box-shadow:
+    0 0 0 4px
+    rgba(34, 211, 238, .1);
+}
+
+/* زون نامرئی ژست بازگشت — نوار باریک لبه‌ی
+   راست؛ محتوای صفحات از پدینگ امن فاصله دارد
+   پس تعامل معمول را مختل نمی‌کند */
+.swipe-edge {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  z-index: 96;
+
+  width: 13px;
+
+  touch-action: pan-y;
+
+  -webkit-tap-highlight-color:
+    transparent;
+}
+
+/* نشان شناور سوایپ‌بک — پیل شیشه‌ای که از لبه
+   به‌تبع انگشت بیرون می‌آید */
+.swipe-ind {
+  position: fixed;
+  top: 50%;
+  right: 6px;
+  z-index: 97;
+
+  display: grid;
+  width: 40px;
+  height: 52px;
+  place-items: center;
+
+  color: #fff;
+  font-size: 20px;
+
+  border:
+    1px solid
+    rgba(34, 211, 238, .32);
+
+  border-radius:
+    14px 0 0 14px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(29, 78, 216, .88),
+      rgba(12, 18, 31, .92)
+    );
+
+  box-shadow:
+    -8px 10px 30px
+    rgba(0, 0, 0, .42);
+
+  opacity: 0;
+
+  transform:
+    translateY(-50%)
+    translateX(46px);
+
+  transition:
+    transform .26s
+      var(--ease-spring),
+    opacity .18s;
+
+  pointer-events: none;
+}
+
+.swipe-ind--out {
+  transition: none;
+}
+
+.swipe-ind--ready {
+  border-color:
+    rgba(34, 211, 238, .65);
+
+  box-shadow:
+    -8px 10px 30px
+    rgba(0, 0, 0, .42),
+    0 0 0 5px
+    rgba(34, 211, 238, .12);
 }
 
 .app-header__text {
