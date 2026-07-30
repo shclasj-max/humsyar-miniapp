@@ -1,3 +1,4 @@
+import { confirmAction } from '../../lib/confirm';
 import { useState } from 'react';
 
 import {
@@ -853,12 +854,12 @@ export function AdminUserDetail() {
   };
 
 
-  const run = (
+  const run = async (
     type,
     message
   ) => {
     if (
-      window.confirm(message)
+      await confirmAction(message)
     ) {
       action.mutate({
         type,
@@ -1711,9 +1712,9 @@ export function AdminIntakes() {
 
                   <button
                     className="btn btn-d"
-                    onClick={() => {
+                    onClick={async () => {
                       const accepted =
-                        window.confirm(
+                        await confirmAction(
                           'این ورودی حذف شود؟'
                         );
 
@@ -2059,9 +2060,9 @@ export function AdminContentAdmins() {
                       padding:
                         '5px 9px',
                     }}
-                    onClick={() => {
+                    onClick={async () => {
                       const accepted =
-                        window.confirm(
+                        await confirmAction(
                           'دسترسی لغو شود؟'
                         );
 
@@ -2354,9 +2355,9 @@ export function AdminBlacklist() {
                     disabled={
                       mutation.isPending
                     }
-                    onClick={() => {
+                    onClick={async () => {
                       const accepted =
-                        window.confirm(
+                        await confirmAction(
                           'مسدودیت برداشته شود؟'
                         );
 
