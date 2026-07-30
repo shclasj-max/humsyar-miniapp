@@ -9,6 +9,10 @@ import {
 } from '../../lib/telegram';
 
 import {
+  hideBackButton,
+} from '../../lib/backButton';
+
+import {
   useAuthStore,
 } from '../../stores/authStore';
 
@@ -155,7 +159,7 @@ export default function Onboarding() {
     if (!shouldShow) return undefined;
 
     try {
-      tg?.BackButton?.hide?.();
+      hideBackButton();
       tg?.MainButton?.hide?.();
     } catch (_) {
       /* نسخه قدیمی */
