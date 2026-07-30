@@ -55,8 +55,10 @@ function Screen({
         padding: '24px 16px',
         overflow: 'hidden',
         color: 'var(--tx)',
-        background:
-          'var(--grad-page),linear-gradient(180deg,var(--bg-soft),var(--bg))',
+
+        /* شفاف — لایه‌ی fixed مشترک body؛
+           بدون پرش نور هنگام ورود/خروج ویزارد */
+        background: 'transparent',
       }}
     >
       <div
