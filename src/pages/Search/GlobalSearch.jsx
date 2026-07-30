@@ -9,6 +9,9 @@ import {
 } from 'react-router-dom';
 
 import api from '../../lib/api';
+import {
+  useDebouncedValue,
+} from '../../lib/useDebounce';
 import Header from '../../components/layout/Header';
 
 import {
@@ -60,6 +63,10 @@ export default function GlobalSearch() {
     setQuery,
   ] = useState('');
 
+  /* ✅ جلوگیری از ریکوئست با هر ضربه کلید */
+  const debouncedQuery =
+    useDebouncedValue(query, 380);
+
   const [
     type,
     setType,
@@ -77,7 +84,7 @@ export default function GlobalSearch() {
   } = useQuery({
     queryKey: [
       'global-search',
-      query,
+      debouncedQuery.trim(),
     ],
 
     queryFn: () =>
@@ -88,7 +95,7 @@ export default function GlobalSearch() {
           {
             params: {
               q:
-                query.trim(),
+                debouncedQuery.trim(),
             },
           }
         )
@@ -98,7 +105,7 @@ export default function GlobalSearch() {
         ),
 
     enabled:
-      query.trim().length >= 2,
+      debouncedQuery.trim().length >= 2,
 
     staleTime:
       60_000,
