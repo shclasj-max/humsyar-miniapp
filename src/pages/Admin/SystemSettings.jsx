@@ -135,6 +135,187 @@ function SettingRow({
 }
 
 
+/* ═══════════ کارت گروه لاگ ═══════════ */
+
+function LogGroupCard({
+  icon,
+  title,
+  savedId,
+  value,
+  dirty,
+  saving,
+  testing,
+  onChange,
+  onSave,
+  onTest,
+}) {
+  const trimmed = value.trim();
+  const invalid =
+    trimmed !== '' &&
+    !/^-\d+$/.test(trimmed);
+
+  return (
+    <div
+      className="card"
+      style={{ marginBottom: 12 }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          marginBottom: 10,
+        }}
+      >
+        <span
+          style={{
+            display: 'grid',
+            flex: '0 0 40px',
+            height: 40,
+            placeItems: 'center',
+            borderRadius: 12,
+            background:
+              'rgba(59,130,246,.1)',
+            fontSize: 19,
+          }}
+        >
+          {icon}
+        </span>
+
+        <span
+          style={{
+            flex: 1,
+            minWidth: 0,
+          }}
+        >
+          <b
+            style={{
+              display: 'block',
+              fontSize: 12.3,
+            }}
+          >
+            {title}
+          </b>
+
+          <span
+            style={{
+              display: 'block',
+              color: savedId
+                ? '#4ADE80'
+                : 'var(--txm)',
+              fontSize: 9.6,
+              marginTop: 2,
+            }}
+          >
+            {savedId ? (
+              <>
+                تنظیم شده ✅{' '}
+                <code
+                  dir="ltr"
+                  style={{
+                    fontSize: 9.4,
+                  }}
+                >
+                  {savedId}
+                </code>
+              </>
+            ) : (
+              'تنظیم نشده — لاگ فقط در دیتابیس ذخیره می‌شود'
+            )}
+          </span>
+        </span>
+      </div>
+
+      <input
+        className="inp"
+        inputMode="numeric"
+        dir="ltr"
+        placeholder="-1001234567890"
+        value={value}
+        onChange={(event) =>
+          onChange(event.target.value)
+        }
+        style={{
+          width: '100%',
+          textAlign: 'left',
+        }}
+      />
+
+      {invalid && (
+        <span
+          style={{
+            display: 'block',
+            color: 'var(--err)',
+            fontSize: 9,
+            marginTop: 6,
+          }}
+        >
+          آیدی گروه باید عدد منفی
+          باشد (مثل -1001234567890)
+        </span>
+      )}
+
+      <div
+        style={{
+          display: 'flex',
+          gap: 8,
+          marginTop: 10,
+        }}
+      >
+        <button
+          className="btn btn-p"
+          style={{
+            flex: 1,
+            minHeight: 34,
+            fontSize: 10.5,
+          }}
+          disabled={
+            !dirty || invalid || saving
+          }
+          onClick={onSave}
+        >
+          {saving ? (
+            <Spinner size={14} />
+          ) : (
+            '💾 ذخیره'
+          )}
+        </button>
+
+        <button
+          className="btn btn-dark"
+          style={{
+            minHeight: 34,
+            fontSize: 10.5,
+          }}
+          disabled={!savedId || testing}
+          onClick={onTest}
+        >
+          {testing ? (
+            <Spinner size={14} />
+          ) : (
+            '🧪 تست'
+          )}
+        </button>
+      </div>
+
+      <span
+        style={{
+          display: 'block',
+          color: 'var(--txm)',
+          fontSize: 8.8,
+          marginTop: 8,
+          lineHeight: 1.8,
+        }}
+      >
+        برای حذف تنظیم، فیلد را خالی
+        کن و ذخیره بزن. ربات باید عضو
+        گروه باشد.
+      </span>
+    </div>
+  );
+}
+
+
 /* ═══════════ صفحه اصلی ═══════════ */
 
 export default function SystemSettings() {
@@ -173,6 +354,22 @@ export default function SystemSettings() {
     useState(false);
 
 
+  /* گروه‌های لاگ — آیدی خام به‌صورت رشته
+     نگه داشته می‌شود تا ورودی کنترل‌شده
+     بماند و هنگام ذخیره به عدد تبدیل شود */
+  const [logAdmin, setLogAdmin] =
+    useState('');
+
+  const [logContent, setLogContent] =
+    useState('');
+
+  const [logAdminDirty, setLogAdminDirty] =
+    useState(false);
+
+  const [logContentDirty, setLogContentDirty] =
+    useState(false);
+
+
   /* وقتی تنظیمات لود شد، متن را هم‌گام کن
      (فقط اگر کاربر دست نزده باشد) */
   useEffect(() => {
@@ -184,6 +381,36 @@ export default function SystemSettings() {
   }, [
     data?.maintenance_text,
     textDirty,
+  ]);
+
+
+  /* هم‌گام‌سازی فیلدهای گروه لاگ با سرور —
+     مثل الگوی متن تعمیر، فقط تا وقتی کاربر
+     فیلد را دست نزده باشد */
+  useEffect(() => {
+    if (!logAdminDirty) {
+      setLogAdmin(
+        data?.log_group_admin
+          ? String(data.log_group_admin)
+          : ''
+      );
+    }
+  }, [
+    data?.log_group_admin,
+    logAdminDirty,
+  ]);
+
+  useEffect(() => {
+    if (!logContentDirty) {
+      setLogContent(
+        data?.log_group_content
+          ? String(data.log_group_content)
+          : ''
+      );
+    }
+  }, [
+    data?.log_group_content,
+    logContentDirty,
   ]);
 
 
@@ -220,6 +447,21 @@ export default function SystemSettings() {
           '✅ حالت تعمیر غیرفعال شد',
           'success'
         );
+      } else if (
+        'log_group_admin' in payload ||
+        'log_group_content' in payload
+      ) {
+        const removed =
+          payload.log_group_admin ===
+            null ||
+          payload.log_group_content ===
+            null;
+        toast(
+          removed
+            ? '🗑 تنظیم گروه لاگ حذف شد'
+            : '✅ گروه لاگ به‌روزرسانی شد',
+          'success'
+        );
       } else {
         toast(
           'تنظیمات ذخیره شد',
@@ -237,6 +479,38 @@ export default function SystemSettings() {
       );
     },
   });
+
+
+  /* تست گروه لاگ — پیام واقعی از مسیر
+     کامل وب ← ربات ← گروه می‌رود */
+  const testMutation = useMutation({
+    mutationFn: (kind) =>
+      api.post(
+        '/api/admin/settings/test-log-group',
+        { kind }
+      ),
+
+    onSuccess: (response) => {
+      hapticNotif('success');
+      toast(
+        response.data?.message ||
+          '🧪 پیام تست در راه است',
+        'success',
+        4000
+      );
+    },
+
+    onError: (error) => {
+      hapticNotif('error');
+      toast(
+        error?.response?.data
+          ?.detail ||
+          'ارسال پیام تست انجام نشد',
+        'error'
+      );
+    },
+  });
+
 
   const busyKey =
     patchMutation.isPending
@@ -257,6 +531,45 @@ export default function SystemSettings() {
     patchMutation.mutate({
       maintenance_text:
         maintenanceText.trim(),
+    });
+  };
+
+
+  /* ذخیره گروه لاگ — فیلد خالی یعنی حذف
+     تنظیم (null صریح برای بک‌اند) */
+  const saveLogGroup = (kind) => {
+    haptic('light');
+
+    const raw = (
+      kind === 'admin'
+        ? logAdmin
+        : logContent
+    ).trim();
+
+    if (
+      raw !== '' &&
+      !/^-\d+$/.test(raw)
+    ) {
+      toast(
+        'آیدی گروه باید عدد منفی باشد (مثل -1001234567890)',
+        'error'
+      );
+      return;
+    }
+
+    if (kind === 'admin') {
+      setLogAdminDirty(false);
+    } else {
+      setLogContentDirty(false);
+    }
+
+    patchMutation.mutate({
+      [kind === 'admin'
+        ? 'log_group_admin'
+        : 'log_group_content']:
+        raw === ''
+          ? null
+          : parseInt(raw, 10),
     });
   };
 
@@ -446,6 +759,7 @@ export default function SystemSettings() {
               className="card"
               style={{
                 padding: '0 14px',
+                marginBottom: 15,
               }}
             >
               <SettingRow
@@ -468,6 +782,98 @@ export default function SystemSettings() {
                 }
               />
             </section>
+
+            <div className="sec-title">
+              🛡 گروه‌های لاگ تلگرام
+            </div>
+
+            <LogGroupCard
+              icon="🛡"
+              title="گروه لاگ مدیریت"
+              savedId={
+                data?.log_group_admin ||
+                null
+              }
+              value={logAdmin}
+              dirty={logAdminDirty}
+              saving={
+                patchMutation.isPending &&
+                busyKey?.log_group_admin !==
+                  undefined
+              }
+              testing={
+                testMutation.isPending &&
+                testMutation.variables ===
+                  'admin'
+              }
+              onChange={(value) => {
+                setLogAdmin(value);
+                setLogAdminDirty(true);
+              }}
+              onSave={() =>
+                saveLogGroup('admin')
+              }
+              onTest={() =>
+                testMutation.mutate(
+                  'admin'
+                )
+              }
+            />
+
+            <LogGroupCard
+              icon="🎓"
+              title="گروه لاگ محتوا"
+              savedId={
+                data?.log_group_content ||
+                null
+              }
+              value={logContent}
+              dirty={logContentDirty}
+              saving={
+                patchMutation.isPending &&
+                busyKey?.log_group_content !==
+                  undefined
+              }
+              testing={
+                testMutation.isPending &&
+                testMutation.variables ===
+                  'content'
+              }
+              onChange={(value) => {
+                setLogContent(value);
+                setLogContentDirty(
+                  true
+                );
+              }}
+              onSave={() =>
+                saveLogGroup('content')
+              }
+              onTest={() =>
+                testMutation.mutate(
+                  'content'
+                )
+              }
+            />
+
+            <div
+              className="page-hint"
+              style={{ marginTop: 2 }}
+            >
+              <span>💡</span>
+
+              <span>
+                آیدی گروه همیشه{' '}
+                <b>عدد منفی</b> است. برای
+                پیدا کردنش، یک پیام از
+                گروه را به{' '}
+                <b>@RawDataBot</b>{' '}
+                فوروارد کن و مقدار{' '}
+                <b>chat.id</b> را اینجا
+                وارد کن. همه‌ی لاگ‌های ربات
+                و پنل وب با یک قالب یکسان به
+                همین گروه‌ها می‌رسند.
+              </span>
+            </div>
 
             <div
               className="page-hint"
