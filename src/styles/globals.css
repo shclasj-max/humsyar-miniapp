@@ -454,12 +454,12 @@ select {
   -webkit-touch-callout: none;
 }
 
-/* ── تب فعال — کلاس یکدست برای استفاده‌ی آینده
-   (نسخه‌های فعلی استایل inline دارند و همچنان کار
-   می‌کنند؛ این قراردادِ Design System است) ── */
+/* ── تب فعال — قرارداد یکدست موج ۳.۱۰؛ دقیقاً
+   همان ظاهرِ گرادیانی که قبلاً inline در
+   داشبورد/برنامه/ادمین تکرار می‌شد ── */
 .tab-btn--on {
   color: #fff;
-  background: var(--acc);
+  background: var(--grad-brand);
   box-shadow: var(--shd-glow);
 }
 
@@ -3939,6 +3939,185 @@ textarea:focus:not(:focus-visible) {
 
   50% {
     opacity: 0;
+  }
+}
+
+/* ═══════════════════════════════════════
+   ✅ موج ۳.۱۰ «خلاقیت کنترل‌شده»
+   استخراج قراردادهای مشترک از الگوهایی که
+   در ۱۵+ صفحه inline تکرار شده بودند —
+   بدون هیچ تغییری در زبان بصری؛ فقط
+   یکدستی، پختگی و قابل‌نگه‌داشتی بیشتر
+═══════════════════════════════════════ */
+
+/* ─────────────────────────────────────
+   ۱) کارت قهرمانِ بالای صفحه
+   قبلاً ۶ نسخه‌ی تقریباً یکسان با آلفاهای
+   .18/.2/.22/.24 و پدینگ ۱۶ تا ۲۵ inline
+   داشتیم؛ حالا یک دستورِ واحد
+───────────────────────────────────── */
+
+.hero-card {
+  padding: 17px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(29, 78, 216, .22),
+      rgba(16, 24, 39, .95) 52%,
+      rgba(34, 211, 238, .08)
+    );
+}
+
+/* واریانت بنفشِ مخصوص بخش‌های آموزشی/تمرین
+   (همان رنگی که در بانک سؤال و مرکز آزمون
+   قبل‌تر استفاده می‌شد) */
+.hero-card--purple {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(139, 92, 246, .15),
+      rgba(16, 24, 39, .95) 55%,
+      rgba(59, 130, 246, .09)
+    );
+}
+
+/* ─────────────────────────────────────
+   ۲) دکمه‌ی آیکونی مربعیِ هدر (↻ ✎ …)
+   قبلاً استایلِ inline ۳۶px در ۱۲ صفحه
+   تکرار می‌شد؛ حالا با حالت‌های hover و
+   press و disabled استاندارد
+───────────────────────────────────── */
+
+.icon-btn {
+  display: grid;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+
+  color: var(--tx2);
+  font-size: 16px;
+  line-height: 1;
+
+  background: var(--elev);
+
+  border:
+    1px solid var(--bd);
+
+  border-radius: 12px;
+  cursor: pointer;
+
+  -webkit-user-select: none;
+  user-select: none;
+
+  -webkit-touch-callout: none;
+
+  transition:
+    transform .18s
+      var(--ease-spring),
+    background .2s,
+    border-color .2s,
+    color .2s,
+    opacity .15s;
+}
+
+.icon-btn:active:not(:disabled) {
+  transform: scale(.9);
+
+  border-color:
+    rgba(148, 163, 184, .26);
+
+  color: var(--tx);
+}
+
+.icon-btn:disabled {
+  opacity: .5;
+  cursor: default;
+}
+
+/* گلیف چرخان هنگام رفرش — فیدبک زنده به‌جای
+   فقط کم‌رنگ‌شدن دکمه (چرخش روی GPU) */
+.icon-btn__spin {
+  display: inline-grid;
+  place-items: center;
+
+  animation:
+    spin .8s
+    linear
+    infinite;
+}
+
+/* ─────────────────────────────────────
+   ۳) لیبل فرم استاندارد
+   قبلاً در برخی فرم‌ها label خامِ بدون
+   استایل با فونت ۱۵px پیش‌فرض دیده می‌شد
+───────────────────────────────────── */
+
+.fld-label {
+  display: block;
+
+  color: var(--txm);
+  font-size: 9.5px;
+  font-weight: 700;
+}
+
+/* ─────────────────────────────────────
+   ۴) نشانِ کلیک‌پذیر — قبلاً در هر صفحه
+   border:0 و cursor:pointer تکرار می‌شد و
+   هیچ فیدبک لمسی نداشت
+───────────────────────────────────── */
+
+button.badge {
+  border: 0;
+  cursor: pointer;
+
+  transition:
+    transform .15s
+      var(--ease-spring),
+    filter .18s;
+}
+
+button.badge:active {
+  transform: scale(.94);
+}
+
+/* ─────────────────────────────────────
+   ۵) آیکونِ استیت خالی — یکدستی اندازه
+   (قبلاً ۴۰/۴۲/۴۴ به‌صورت inline)
+───────────────────────────────────── */
+
+.empty__ic {
+  font-size: 42px;
+  line-height: 1.3;
+}
+
+/* ─────────────────────────────────────
+   ۶) فیدبک فشردنِ گزینه‌ی سؤال
+   (کارت سؤال قبلاً ترنزیشن transform داشت
+   اما هیچ مقیاس لحظه‌ای نمی‌گرفت)
+───────────────────────────────────── */
+
+.q-option:active:not(:disabled) {
+  transform: scale(.985);
+}
+
+/* ── hover دسکتاپِ مکمل ── */
+
+@media (
+  hover: hover
+) and (
+  pointer: fine
+) {
+  .icon-btn:hover:not(:disabled) {
+    color: var(--tx);
+
+    border-color:
+      rgba(148, 163, 184, .26);
+  }
+
+  button.badge:hover {
+    filter: brightness(1.12);
   }
 }
 
