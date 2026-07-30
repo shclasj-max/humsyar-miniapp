@@ -937,7 +937,16 @@ export default function App() {
       </Routes>
       </ErrorBoundary>
 
-      <BottomNav />
+      {/* کرومِ ناوبری بیرون از دیوارِ صفحه‌هاست؛
+          پس دیوارِ مخصوصِ خودش را دارد — fallback={null}
+          یعنی اگر نوار کرش کند فقط نوار می‌رود و اپ
+          زنده می‌ماند (هیچ خطای تک‌کامپوننتی دیگر کل
+          درخت را با خود نمی‌برد = پایان صفحه‌ی تاریک) */}
+      <ErrorBoundary
+        fallback={null}
+      >
+        <BottomNav />
+      </ErrorBoundary>
     </div>
   );
 }
