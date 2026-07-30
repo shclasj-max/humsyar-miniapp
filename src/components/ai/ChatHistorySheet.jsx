@@ -7,77 +7,16 @@ import {
   haptic,
 } from '../../lib/telegram';
 
-import {
-  confirmAction,
-} from '../../lib/confirm';
+import ConvActionSheet from './ConvActionSheet';
+import ConvRows from './ConvRows';
 
 
 /* ─────────────────────────────────────────────
-   شیت تاریخچه‌ی گفت‌وگوهای هوشیار
-   الگو همان more-sheet طراحی‌شده در سیستم است
-   تا گسترش/بستن، بلر و حرکت کاملاً هم‌خانواده
-   با بقیه‌ی اپ باشد.
+   شیت سوییچ سریع گفت‌وگوها — داخل صفحه‌ی چت
+   (دسترسی کامل به فهرست تاریخچه در خود صفحه‌ی
+   /ai است؛ این شیت برای پرش سریع بدون ترک چت
+   به‌کار می‌رود)
 ───────────────────────────────────────────── */
-
-
-/* زمان نسبی فارسی برای متا‌خط هر گفت‌وگو */
-function relativeTime(value) {
-  if (!value) {
-    return '—';
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return '—';
-  }
-
-  const diffMinutes = Math.floor(
-    (Date.now() - date.getTime()) / 60000,
-  );
-
-  if (diffMinutes < 1) {
-    return 'هم‌اکنون';
-  }
-
-  if (diffMinutes < 60) {
-    return (
-      diffMinutes.toLocaleString('fa-IR') +
-      ' دقیقه پیش'
-    );
-  }
-
-  const diffHours = Math.floor(
-    diffMinutes / 60,
-  );
-
-  if (diffHours < 24) {
-    return (
-      diffHours.toLocaleString('fa-IR') +
-      ' ساعت پیش'
-    );
-  }
-
-  const diffDays = Math.floor(
-    diffHours / 24,
-  );
-
-  if (diffDays === 1) {
-    return 'دیروز';
-  }
-
-  if (diffDays < 30) {
-    return (
-      diffDays.toLocaleString('fa-IR') +
-      ' روز پیش'
-    );
-  }
-
-  return date.toLocaleDateString('fa-IR', {
-    month: 'short',
-    day: 'numeric',
-  });
-}
 
 
 export default function ChatHistorySheet({
@@ -91,23 +30,20 @@ export default function ChatHistorySheet({
   onSelect,
   onNew,
   onRename,
-  onTogglePin,
-  onToggleArchive,
-  onDelete,
+  onAction,
 }) {
   const [query, setQuery] = useState('');
 
-  // وضعیت تغییرنام این‌لاین — فقط یک ردیف در
-  // هر لحظه می‌تواند در حالت ویرایش باشد
+  // ردیفِ در حال تغییرنام (فقط یکی در هر لحظه)
   const [renameId, setRenameId] =
     useState(null);
 
-  const [renameDraft, setRenameDraft] =
-    useState('');
+  // گفت‌وگویی که اکشن‌شیتش باز است
+  const [actionItem, setActionItem] =
+    useState(null);
 
 
-  // قفل اسکرول بدنه + بستن با Escape — دقیقاً
-  // همان قرارداد MoreSheet
+  // قفل اسکرول بدنه + بستن با Escape
   useEffect(() => {
     const previousOverflow =
       document.body.style.overflow;
@@ -154,51 +90,21 @@ export default function ChatHistorySheet({
     : conversations;
 
 
-  const startRename = (item) => {
-    haptic('light');
-
-    setRenameId(item.id);
-
-    setRenameDraft(
-      String(item.title || ''),
-    );
-  };
-
-
-  const commitRename = () => {
-    const title = renameDraft.trim();
-
-    if (
-      !title ||
-      !renameId
-    ) {
-      setRenameId(null);
+  const handleAction = (actionId) => {
+    if (!actionItem) {
       return;
     }
 
-    onRename(renameId, title);
+    // تغییرنام این‌لاین در خودِ ردیف انجام می‌شود
+    if (actionId === 'rename') {
+      haptic('light');
 
-    setRenameId(null);
-  };
+      setRenameId(actionItem.id);
 
-
-  const askDelete = async (item) => {
-    haptic('medium');
-
-    const confirmed = item.legacy
-      ? await confirmAction(
-          'حافظه‌ی مشترک هوشیار در ربات و ' +
-          'وب‌اپ کاملاً پاک شود؟ ' +
-          'این کار برگشت‌ناپذیر است.',
-        )
-      : await confirmAction(
-          `گفت‌وگوی «${item.title}» ` +
-          'برای همیشه حذف شود؟',
-        );
-
-    if (confirmed) {
-      onDelete(item);
+      return;
     }
+
+    onAction(actionItem, actionId);
   };
 
 
@@ -235,15 +141,21 @@ export default function ChatHistorySheet({
           ＋ گفت‌وگوی جدید
         </button>
 
-        <input
-          className="inp conv-search"
-          value={query}
-          onChange={(event) =>
-            setQuery(event.target.value)
-          }
-          placeholder="جست‌وجو در گفت‌وگوها..."
-          aria-label="جست‌وجو در گفت‌وگوها"
-        />
+        <div className="conv-searchbox">
+          <span className="conv-searchbox__icon">
+            🔍
+          </span>
+
+          <input
+            className="inp"
+            value={query}
+            onChange={(event) =>
+              setQuery(event.target.value)
+            }
+            placeholder="جست‌وجو در گفت‌وگوها..."
+            aria-label="جست‌وجو در گفت‌وگوها"
+          />
+        </div>
 
         <div className="conv-list">
           {
@@ -268,273 +180,24 @@ export default function ChatHistorySheet({
                     }
                   </div>
                 )
-                : filtered.map((item) => {
-                    const isActive =
-                      item.id === activeId;
+                : (
+                  <ConvRows
+                    items={filtered}
+                    activeId={activeId}
+                    renameId={renameId}
+                    onRenameDone={() =>
+                      setRenameId(null)
+                    }
+                    onRename={onRename}
+                    onSelect={onSelect}
+                    onOpenActions={(item) => {
+                      haptic('light');
 
-                    const renaming =
-                      renameId === item.id;
-
-                    return (
-                      <div
-                        key={item.id}
-                        className={
-                          'conv' +
-                          (
-                            isActive
-                              ? ' conv--active'
-                              : ''
-                          ) +
-                          (
-                            item.archived
-                              ? ' conv--archived'
-                              : ''
-                          )
-                        }
-                      >
-                        <span className="conv__icon">
-                          {
-                            item.legacy
-                              ? '🤖'
-                              : item.archived
-                                ? '📦'
-                                : '💬'
-                          }
-                        </span>
-
-                        {
-                          renaming
-                            ? (
-                              <div className="conv-rename">
-                                <input
-                                  className={
-                                    'inp ' +
-                                    'conv-rename__inp'
-                                  }
-                                  autoFocus
-                                  value={renameDraft}
-                                  maxLength={80}
-                                  onChange={(event) =>
-                                    setRenameDraft(
-                                      event.target
-                                        .value,
-                                    )
-                                  }
-                                  onKeyDown={(event) => {
-                                    if (
-                                      event.key ===
-                                      'Enter'
-                                    ) {
-                                      commitRename();
-                                    }
-
-                                    if (
-                                      event.key ===
-                                      'Escape'
-                                    ) {
-                                      setRenameId(
-                                        null,
-                                      );
-                                    }
-                                  }}
-                                  aria-label="نام جدید گفت‌وگو"
-                                />
-                              </div>
-                            )
-                            : (
-                              <button
-                                type="button"
-                                className="conv__main"
-                                onClick={() =>
-                                  onSelect(item.id)
-                                }
-                              >
-                                <span className="conv__body">
-                                  <span className="conv__title">
-                                    <span>
-                                      {item.title}
-                                    </span>
-
-                                    {
-                                      item.pinned
-                                      && (
-                                        <span
-                                          className="conv__pin"
-                                          title="پین‌شده"
-                                        >
-                                          📌
-                                        </span>
-                                      )
-                                    }
-
-                                    {
-                                      item.legacy
-                                      && (
-                                        <span className="badge b-pur">
-                                          مشترک با ربات
-                                        </span>
-                                      )
-                                    }
-                                  </span>
-
-                                  {
-                                    item.preview
-                                    && (
-                                      <span
-                                        className="conv__preview"
-                                        dir="auto"
-                                      >
-                                        {item.preview}
-                                      </span>
-                                    )
-                                  }
-
-                                  <span className="conv__meta">
-                                    {
-                                      relativeTime(
-                                        item.updated_at,
-                                      )
-                                    }
-
-                                    <span className="conv__count">
-                                      {
-                                        Number(
-                                          item.count || 0,
-                                        ).toLocaleString(
-                                          'fa-IR',
-                                        )
-                                      }
-                                      {' پیام'}
-                                    </span>
-                                  </span>
-                                </span>
-                              </button>
-                            )
-                        }
-
-                        <span className="conv__acts">
-                          {
-                            renaming
-                              ? (
-                                <>
-                                  <button
-                                    type="button"
-                                    className={
-                                      'conv__act ' +
-                                      'conv__act--on'
-                                    }
-                                    onClick={commitRename}
-                                    aria-label="ذخیره‌ی نام"
-                                  >
-                                    ✓
-                                  </button>
-
-                                  <button
-                                    type="button"
-                                    className="conv__act"
-                                    onClick={() =>
-                                      setRenameId(null)
-                                    }
-                                    aria-label="انصراف"
-                                  >
-                                    ✕
-                                  </button>
-                                </>
-                              )
-                              : (
-                                <>
-                                  {
-                                    !item.legacy
-                                    && !item.archived
-                                    && (
-                                      <button
-                                        type="button"
-                                        className={
-                                          'conv__act' +
-                                          (
-                                            item.pinned
-                                              ? ' conv__act--on'
-                                              : ''
-                                          )
-                                        }
-                                        onClick={() =>
-                                          onTogglePin(item)
-                                        }
-                                        disabled={busy}
-                                        aria-label={
-                                          item.pinned
-                                            ? 'برداشتن پین'
-                                            : 'پین‌کردن'
-                                        }
-                                      >
-                                        📌
-                                      </button>
-                                    )
-                                  }
-
-                                  {
-                                    !item.legacy
-                                    && (
-                                      <button
-                                        type="button"
-                                        className="conv__act"
-                                        onClick={() =>
-                                          startRename(item)
-                                        }
-                                        disabled={busy}
-                                        aria-label="تغییر نام"
-                                      >
-                                        ✏️
-                                      </button>
-                                    )
-                                  }
-
-                                  {
-                                    !item.legacy
-                                    && (
-                                      <button
-                                        type="button"
-                                        className="conv__act"
-                                        onClick={() =>
-                                          onToggleArchive(item)
-                                        }
-                                        disabled={busy}
-                                        aria-label={
-                                          item.archived
-                                            ? 'خروج از بایگانی'
-                                            : 'بایگانی'
-                                        }
-                                      >
-                                        {
-                                          item.archived
-                                            ? '📤'
-                                            : '📥'
-                                        }
-                                      </button>
-                                    )
-                                  }
-
-                                  <button
-                                    type="button"
-                                    className={
-                                      'conv__act ' +
-                                      'conv__act--danger'
-                                    }
-                                    onClick={() =>
-                                      askDelete(item)
-                                    }
-                                    disabled={busy}
-                                    aria-label="حذف گفت‌وگو"
-                                  >
-                                    🗑
-                                  </button>
-                                </>
-                              )
-                          }
-                        </span>
-                      </div>
-                    );
-                  })
+                      setActionItem(item);
+                    }}
+                    busy={busy}
+                  />
+                )
           }
         </div>
 
@@ -550,6 +213,20 @@ export default function ChatHistorySheet({
           }
         </button>
       </div>
+
+      {
+        actionItem
+        && (
+          <ConvActionSheet
+            conv={actionItem}
+            busy={busy}
+            onClose={() =>
+              setActionItem(null)
+            }
+            onAction={handleAction}
+          />
+        )
+      }
     </div>
   );
 }
