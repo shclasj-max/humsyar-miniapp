@@ -16,9 +16,23 @@ export function initTelegram() {
 
   safeCall(() => tg.ready());
   safeCall(() => tg.expand());
-  safeCall(() => tg.setHeaderColor('#0A0E1A'));
-  safeCall(() => tg.setBackgroundColor('#0A0E1A'));
+
+  /* هم‌ترازی دقیق کروم تلگرام با گرادیان ثابت صفحه —
+     هدر با بالای گرادیان، ناحیه overscroll با پایین آن
+     تا هیچ ناپیوستگی نوری لمس نشود */
+  safeCall(() => tg.setHeaderColor('#0A1020'));
+  safeCall(() => tg.setBackgroundColor('#070B14'));
+
   safeCall(() => tg.enableClosingConfirmation());
+
+  /* جلوگیری از بسته‌شدن تصادفی اپ با سوایپ عمودی به
+     پایین (Bot API 7.7+ — در کلاینت‌های قدیمی presence
+     چک می‌شود و بی‌خطر رد می‌شود) */
+  safeCall(() => {
+    if (typeof tg.disableVerticalSwipes === 'function') {
+      tg.disableVerticalSwipes();
+    }
+  });
 }
 
 export const getInitData = () => tg?.initData || '';
