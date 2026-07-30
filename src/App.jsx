@@ -3,10 +3,12 @@ import {
   Route,
   Navigate,
   useLocation,
+  useNavigationType,
 } from 'react-router-dom';
 
 import {
   useEffect,
+  useRef,
 } from 'react';
 
 import {
@@ -18,6 +20,7 @@ import {
 } from './stores/authStore';
 
 import BottomNav from './components/layout/BottomNav';
+import SwipeBack from './components/layout/SwipeBack';
 import Toast from './components/shared/Toast';
 
 import {
@@ -137,18 +140,151 @@ import AcademicGradesAdmin from './pages/Admin/AcademicGradesAdmin';
 
 
 /* ─────────────────────────────────────────────
-   FIX پرش صفحه: با هر تغییر مسیر، اسکرول به
-   ابتدای صفحه برمی‌گردد تا نه موقعیت دید کاربر
-   ناگهان جابه‌جا شود و نه بخش پرواز نور. فوری و
-   بدون انیمیشن انجام می‌شود تا کاملاً نامحسوس
-   باشد (رفتار استاندارد اپ‌های Premium).
+   بازیابی موقعیت اسکرول (Scroll Restoration)
+
+   - POP (برگشت/جلو): موقعیت ذخیره‌شده‌ی همان
+     ورودیِ تاریخچه بازیابی می‌شود — کاربر دقیقاً
+     به جایی که بود برمی‌گردد
+   - PUSH: از بالای صفحه‌ی جدید
+   - REPLACE با همان pathname (مثل سینک پارامتر
+     جست‌وجو): اسکرول دست‌نخورده می‌ماند
+   - کلید ذخیره‌سازی location.key است که در POP
+     همان کلیدِ قبلی برمی‌گردد (قرارداد
+     react-router)
 ───────────────────────────────────────────── */
-function ScrollToTop() {
-  const { pathname } = useLocation();
+const scrollPositions = new Map();
+
+
+function ScrollRestoration() {
+  const location = useLocation();
+  const navigationType = useNavigationType();
+
+  const keyRef = useRef(location.key);
+  const pathRef = useRef(location.pathname);
+
+  // مرورگر نباید خودش بازیابی کند — ما
+  // مسئولیم تا رفتار با POP/PUSH سازگار بماند
+  useEffect(() => {
+    try {
+      if (
+        'scrollRestoration' in window.history
+      ) {
+        const previous =
+          window.history.scrollRestoration;
+
+        window.history.scrollRestoration =
+          'manual';
+
+        return () => {
+          window.history.scrollRestoration =
+            previous;
+        };
+
+      }
+
+    } catch (_) {
+      // ignore
+    }
+
+    return undefined;
+  }, []);
+
+
+  // ذخیره‌ی پیوسته‌ی موقعیت ورودیِ جاری
+  useEffect(() => {
+    let raf = 0;
+
+    const onScroll = () => {
+      window.cancelAnimationFrame(raf);
+
+      raf = window.requestAnimationFrame(
+        () => {
+          scrollPositions.set(
+            keyRef.current,
+            window.scrollY,
+          );
+
+          // سقف حافظه — قدیمی‌ترین ورودی‌ها
+          // حذف می‌شوند
+          if (scrollPositions.size > 80) {
+            const oldest =
+              scrollPositions
+                .keys()
+                .next()
+                .value;
+
+            scrollPositions.delete(oldest);
+          }
+        },
+      );
+    };
+
+    window.addEventListener(
+      'scroll',
+      onScroll,
+      { passive: true },
+    );
+
+    return () => {
+      window.cancelAnimationFrame(raf);
+
+      window.removeEventListener(
+        'scroll',
+        onScroll,
+      );
+    };
+  }, []);
+
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
+    const previousPath = pathRef.current;
+
+    const pathChanged =
+      previousPath !== location.pathname;
+
+    pathRef.current = location.pathname;
+    keyRef.current = location.key;
+
+    const saved =
+      navigationType === 'POP'
+        ? scrollPositions.get(location.key)
+        : undefined;
+
+    if (typeof saved === 'number') {
+      // بازیابی — دو فریم صبر تا پِیِنت کامل
+      // شود + یک تلاش مجدد برای محتوای دیررشد
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          window.scrollTo(0, saved);
+        });
+      });
+
+      const retry = window.setTimeout(() => {
+        if (
+          window.scrollY === 0 &&
+          saved > 0
+        ) {
+          window.scrollTo(0, saved);
+        }
+      }, 340);
+
+      return () =>
+        window.clearTimeout(retry);
+    }
+
+    if (
+      pathChanged ||
+      navigationType === 'PUSH'
+    ) {
+      window.scrollTo(0, 0);
+    }
+
+    return undefined;
+
+    // eslint-disable-next-line
+    // react-hooks/exhaustive-deps
+  }, [location.key]);
+
 
   return null;
 }
@@ -309,13 +445,18 @@ export default function App() {
       className="app-root"
       dir="rtl"
     >
-      <ScrollToTop />
+      <ScrollRestoration />
 
       <Toast />
 
       {/* معرفی اولین ورود — بعد از
           تأیید حساب نمایش داده می‌شود */}
       <Onboarding />
+
+      {/* ژست بازگشت از لبه‌ی راست — کل
+          ناوبری را با همان قواعد Header هدایت
+          می‌کند */}
+      <SwipeBack />
 
       <Routes>
         {/* صفحات اصلی */}
