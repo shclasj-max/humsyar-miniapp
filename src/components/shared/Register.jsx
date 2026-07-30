@@ -18,6 +18,10 @@ import {
 } from '../../lib/telegram';
 
 import {
+  hideBackButton,
+} from '../../lib/backButton';
+
+import {
   useAuthStore,
 } from '../../stores/authStore';
 
@@ -36,7 +40,7 @@ function Screen({
      بک نیتیو تلگرام نباید گیر کند */
   useEffect(() => {
     try {
-      tg?.BackButton?.hide?.();
+      hideBackButton();
     } catch (_) {
       /* نسخه قدیمی */
     }
