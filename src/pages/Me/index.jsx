@@ -287,9 +287,10 @@ export default function Me() {
       <main className="page fade-up">
         {isLoading ? (
           <div
+            className="swap-in"
             style={{
               display: 'grid',
-              gap: 10,
+              gap: 13,
             }}
           >
             <SkeletonCard />
@@ -324,6 +325,7 @@ export default function Me() {
           </div>
         ) : (
           <div
+            className="swap-in"
             style={{
               display: 'grid',
               gap: 13,
