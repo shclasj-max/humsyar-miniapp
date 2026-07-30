@@ -79,6 +79,9 @@ import ContentHome from './pages/Admin/ContentHome';
 import SubscriptionAdmin from './pages/Admin/SubscriptionAdmin';
 import AiAdmin from './pages/Admin/AiAdmin';
 
+import Analytics from './pages/Admin/Analytics';
+import AuditLog from './pages/Admin/AuditLog';
+
 
 /* مدیریت کاربران */
 
@@ -399,6 +402,27 @@ export default function App() {
           element={
             <AdminRoute>
               <AiAdmin />
+            </AdminRoute>
+          }
+        />
+
+
+        {/* آمار و لاگ فعالیت */}
+
+        <Route
+          path="/admin/analytics"
+          element={
+            <AdminRoute>
+              <Analytics />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/audit"
+          element={
+            <AdminRoute>
+              <AuditLog />
             </AdminRoute>
           }
         />
