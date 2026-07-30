@@ -643,9 +643,7 @@ export default function Resources() {
       <Header
         title={title}
         subtitle={subtitle}
-        back={
-          view !== 'terms'
-        }
+        back
         onBack={
           view !== 'terms'
             ? goBack
@@ -1261,10 +1259,12 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: 13,
-    padding: 16,
+    padding: 17,
 
+    /* موج ۳.۱۰ — دقیقاً همان دستورِ
+       .hero-card مشترکِ کل مینی‌اپ */
     background:
-      'linear-gradient(145deg,rgba(29,78,216,.2),rgba(16,24,39,.96) 58%,rgba(34,211,238,.08))',
+      'linear-gradient(145deg,rgba(29,78,216,.22),rgba(16,24,39,.95) 52%,rgba(34,211,238,.08))',
   },
 
   heroIcon: {
