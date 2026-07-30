@@ -316,17 +316,12 @@ function DesignQuestion({
       <main className="page fade-up">
         <section
           className={
-            'card card-glow'
+            'card card-glow ' +
+            'hero-card hero-card--purple'
           }
           style={{
-            padding:
-              17,
-
             marginBottom:
               12,
-
-            background:
-              'linear-gradient(145deg,rgba(139,92,246,.15),rgba(16,24,39,.95))',
           }}
         >
           <div
@@ -544,9 +539,6 @@ function DesignQuestion({
                       index
                         ? '1px solid rgba(16,185,129,.3)'
                         : '1px solid var(--bd)',
-
-                    cursor:
-                      'pointer',
                   }}
                 >
                   {LETTERS[index]}
@@ -1027,17 +1019,12 @@ export default function Questions() {
           <>
             <section
               className={
-                'card card-glow'
+                'card card-glow ' +
+                'hero-card hero-card--purple'
               }
               style={{
-                padding:
-                  17,
-
                 marginBottom:
                   14,
-
-                background:
-                  'linear-gradient(145deg,rgba(139,92,246,.15),rgba(16,24,39,.95) 55%,rgba(59,130,246,.09))',
               }}
             >
               <div
