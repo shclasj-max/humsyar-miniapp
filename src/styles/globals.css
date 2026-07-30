@@ -1316,6 +1316,26 @@ input:focus-visible
     both;
 }
 
+/* ورود نرمِ محتوا هنگام جایگزینی اسکلت — فقط opacity؛
+   چون مرز/پس‌زمینه دوباره paint نمی‌شود، فلش سفیدِ
+   لحظه‌ی پایان لودینگ از ریشه حذف می‌شود */
+.swap-in {
+  animation:
+    swapIn .22s
+    var(--ease-out)
+    both;
+}
+
+@keyframes swapIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
 .pop-in {
   animation:
     popIn .3s
