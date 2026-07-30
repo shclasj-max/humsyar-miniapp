@@ -269,6 +269,7 @@ export default function QuestionCard({
               <button
                 type="button"
                 key={index}
+                className="q-option"
                 onClick={() =>
                   choose(index)
                 }
