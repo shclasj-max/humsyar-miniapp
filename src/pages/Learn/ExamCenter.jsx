@@ -1,3 +1,4 @@
+import { confirmAction } from '../../lib/confirm';
 import {
   useEffect,
   useState,
@@ -508,7 +509,7 @@ export default function ExamCenter() {
         <main className="page fade-up">
           <section
             className={
-              'card card-glow'
+              'card card-glow hero-card'
             }
             style={{
               marginBottom:
@@ -516,9 +517,6 @@ export default function ExamCenter() {
 
               padding:
                 13,
-
-              background:
-                'linear-gradient(145deg,rgba(29,78,216,.18),rgba(16,24,39,.95))',
             }}
           >
             <div
@@ -694,9 +692,9 @@ export default function ExamCenter() {
               abandonMutation
                 .isPending
             }
-            onClick={() => {
+            onClick={async () => {
               const accepted =
-                window.confirm(
+                await confirmAction(
                   'آزمون رها شود؟'
                 );
 
@@ -732,7 +730,7 @@ export default function ExamCenter() {
         <main className="page fade-up">
           <section
             className={
-              'card card-glow'
+              'card card-glow hero-card'
             }
             style={{
               padding:
@@ -740,9 +738,6 @@ export default function ExamCenter() {
 
               textAlign:
                 'center',
-
-              background:
-                'linear-gradient(145deg,rgba(29,78,216,.2),rgba(16,24,39,.95) 55%,rgba(34,211,238,.08))',
             }}
           >
             <div
@@ -1114,17 +1109,12 @@ export default function ExamCenter() {
       <main className="page fade-up">
         <section
           className={
-            'card card-glow'
+            'card card-glow ' +
+            'hero-card hero-card--purple'
           }
           style={{
-            padding:
-              18,
-
             marginBottom:
               14,
-
-            background:
-              'linear-gradient(145deg,rgba(139,92,246,.16),rgba(16,24,39,.95) 55%,rgba(59,130,246,.1))',
           }}
         >
           <div
@@ -1225,7 +1215,7 @@ export default function ExamCenter() {
               10,
           }}
         >
-          <label>
+          <label className="fld-label">
             درس
           </label>
 
@@ -1268,7 +1258,7 @@ export default function ExamCenter() {
             </select>
           )}
 
-          <label>
+          <label className="fld-label">
             مبحث
           </label>
 
@@ -1309,7 +1299,7 @@ export default function ExamCenter() {
 
           <div className="grid2">
             <div>
-              <label>
+              <label className="fld-label">
                 تعداد سؤال
               </label>
 
@@ -1351,7 +1341,7 @@ export default function ExamCenter() {
             </div>
 
             <div>
-              <label>
+              <label className="fld-label">
                 زمان
               </label>
 
