@@ -190,7 +190,7 @@ function MoreSheet({
       <div
         className={
           'more-sheet__panel ' +
-          'glass fade-up'
+          'glass sheet-in'
         }
         role="dialog"
         aria-modal="true"
