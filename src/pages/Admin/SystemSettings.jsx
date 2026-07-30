@@ -316,6 +316,156 @@ function LogGroupCard({
 }
 
 
+/* ═══════════ کارت لینک حمایت مالی ═══════════ */
+
+function DonationLinkCard({
+  savedLink,
+  enabled,
+  value,
+  dirty,
+  saving,
+  onChange,
+  onSave,
+}) {
+  const trimmed = value.trim();
+  const invalid =
+    trimmed !== '' &&
+    !/^https?:\/\/.+/.test(trimmed);
+
+  return (
+    <div
+      className="card"
+      style={{ marginBottom: 15 }}
+    >
+      <b
+        style={{
+          display: 'block',
+          fontSize: 12.3,
+          marginBottom: 8,
+        }}
+      >
+        🔗 لینک صفحه حمایت مالی
+      </b>
+
+      {enabled && !savedLink && (
+        <div
+          style={{
+            marginBottom: 10,
+            padding: '9px 11px',
+            borderRadius: 10,
+            fontSize: 9.8,
+            lineHeight: 1.8,
+            color: '#FCD34D',
+            background:
+              'rgba(252,211,77,.07)',
+            border:
+              '1px solid rgba(252,211,77,.25)',
+          }}
+        >
+          ⚠️ بخش فعال است اما لینکی
+          تنظیم نشده — تا لینک ثبت
+          نشود، دکمه‌ی حمایت در
+          داشبورد کاربران نمایش داده
+          نمی‌شود.
+        </div>
+      )}
+
+      <input
+        className="inp"
+        dir="ltr"
+        placeholder="https://reymit.org/humsyar"
+        maxLength={300}
+        value={value}
+        onChange={(event) =>
+          onChange(event.target.value)
+        }
+        style={{
+          width: '100%',
+          textAlign: 'left',
+        }}
+      />
+
+      {invalid && (
+        <span
+          style={{
+            display: 'block',
+            color: 'var(--err)',
+            fontSize: 9,
+            marginTop: 6,
+          }}
+        >
+          لینک باید با http:// یا
+          https:// شروع شود
+        </span>
+      )}
+
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent:
+            'space-between',
+          gap: 10,
+          marginTop: 10,
+        }}
+      >
+        <span
+          style={{
+            color: 'var(--txm)',
+            fontSize: 8.8,
+            lineHeight: 1.8,
+            flex: 1,
+          }}
+        >
+          {savedLink
+            ? '✅ لینک فعلی ذخیره شده است'
+            : 'هنوز لینکی ثبت نشده'}
+          {' — '}
+          خالی = حذف لینک
+        </span>
+
+        <button
+          className="btn btn-p"
+          style={{
+            minHeight: 34,
+            padding: '6px 14px',
+            fontSize: 10.5,
+          }}
+          disabled={
+            !dirty || invalid || saving
+          }
+          onClick={onSave}
+        >
+          {saving ? (
+            <Spinner size={14} />
+          ) : (
+            '💾 ذخیره'
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
+/* ═══════════ دکمه‌های دریافت بکاپ ═══════════ */
+
+const BACKUP_BUTTONS = [
+  {
+    section: 'all',
+    label: '💾 پشتیبان کامل (همه بخش‌ها)',
+    wide: true,
+  },
+  { section: 'users', label: '👥 کاربران' },
+  { section: 'content', label: '📚 علوم پایه' },
+  { section: 'refs', label: '📖 رفرنس‌ها' },
+  { section: 'qbank', label: '🧪 بانک سوال' },
+  { section: 'subscription', label: '💳 اشتراک' },
+  { section: 'grades', label: '📊 نمرات' },
+  { section: 'access', label: '🔐 دسترسی‌ها' },
+];
+
+
 /* ═══════════ صفحه اصلی ═══════════ */
 
 export default function SystemSettings() {
@@ -370,6 +520,22 @@ export default function SystemSettings() {
     useState(false);
 
 
+  /* 💙 لینک حمایت مالی */
+  const [donationLink, setDonationLink] =
+    useState('');
+
+  const [donationDirty, setDonationDirty] =
+    useState(false);
+
+
+  /* 💾 ساعت بکاپ خودکار */
+  const [backupHour, setBackupHour] =
+    useState('3');
+
+  const [backupHourDirty, setBackupHourDirty] =
+    useState(false);
+
+
   /* وقتی تنظیمات لود شد، متن را هم‌گام کن
      (فقط اگر کاربر دست نزده باشد) */
   useEffect(() => {
@@ -414,6 +580,34 @@ export default function SystemSettings() {
   ]);
 
 
+  /* 💙 هم‌گام‌سازی لینک حمایت مالی */
+  useEffect(() => {
+    if (!donationDirty) {
+      setDonationLink(
+        data?.donation_link || ''
+      );
+    }
+  }, [
+    data?.donation_link,
+    donationDirty,
+  ]);
+
+
+  /* 💾 هم‌گام‌سازی ساعت بکاپ خودکار */
+  useEffect(() => {
+    if (!backupHourDirty) {
+      setBackupHour(
+        String(
+          data?.auto_backup_hour ?? 3
+        )
+      );
+    }
+  }, [
+    data?.auto_backup_hour,
+    backupHourDirty,
+  ]);
+
+
   const patchMutation = useMutation({
     mutationFn: (payload) =>
       api.patch(
@@ -445,6 +639,54 @@ export default function SystemSettings() {
       ) {
         toast(
           '✅ حالت تعمیر غیرفعال شد',
+          'success'
+        );
+      } else if (
+        payload.donation_enabled ===
+        true
+      ) {
+        toast(
+          '💙 بخش حمایت مالی فعال شد',
+          'success'
+        );
+      } else if (
+        payload.donation_enabled ===
+        false
+      ) {
+        toast(
+          'بخش حمایت مالی غیرفعال شد',
+          'success'
+        );
+      } else if (
+        'donation_link' in payload
+      ) {
+        toast(
+          payload.donation_link
+            ? '✅ لینک حمایت مالی ذخیره شد'
+            : '🗑 لینک حمایت مالی حذف شد',
+          'success'
+        );
+      } else if (
+        payload.auto_backup_enabled ===
+        true
+      ) {
+        toast(
+          '⏰ بکاپ خودکار روزانه فعال شد',
+          'success'
+        );
+      } else if (
+        payload.auto_backup_enabled ===
+        false
+      ) {
+        toast(
+          'بکاپ خودکار غیرفعال شد',
+          'success'
+        );
+      } else if (
+        'auto_backup_hour' in payload
+      ) {
+        toast(
+          '✅ ساعت بکاپ خودکار ذخیره شد',
           'success'
         );
       } else if (
@@ -506,6 +748,37 @@ export default function SystemSettings() {
         error?.response?.data
           ?.detail ||
           'ارسال پیام تست انجام نشد',
+        'error'
+      );
+    },
+  });
+
+
+  /* 💾 درخواست فایل پشتیبان — فایل JSON
+     با الگوی خروجی اکسل از طریق ربات به
+     چت ادمین ارسال می‌شود */
+  const backupMutation = useMutation({
+    mutationFn: (section) =>
+      api.post('/api/admin/backup', {
+        section,
+      }),
+
+    onSuccess: (response) => {
+      hapticNotif('success');
+      toast(
+        response.data?.message ||
+          '💾 فایل پشتیبان در راه است',
+        'success',
+        4500
+      );
+    },
+
+    onError: (error) => {
+      hapticNotif('error');
+      toast(
+        error?.response?.data
+          ?.detail ||
+          'درخواست بکاپ انجام نشد',
         'error'
       );
     },
@@ -574,9 +847,76 @@ export default function SystemSettings() {
   };
 
 
+  /* 💙 ذخیره لینک حمایت — فیلد خالی یعنی
+     حذف لینک (مثل کلمه «حذف» در ربات) */
+  const saveDonationLink = () => {
+    haptic('light');
+
+    const trimmed = donationLink.trim();
+
+    if (
+      trimmed &&
+      !/^https?:\/\//.test(trimmed)
+    ) {
+      toast(
+        'لینک باید با http:// یا https:// شروع شود',
+        'error'
+      );
+      return;
+    }
+
+    setDonationDirty(false);
+    patchMutation.mutate({
+      donation_link: trimmed,
+    });
+  };
+
+
+  /* 💾 ذخیره ساعت بکاپ خودکار */
+  const saveBackupHour = () => {
+    haptic('light');
+
+    const hour = parseInt(
+      backupHour,
+      10
+    );
+
+    if (
+      Number.isNaN(hour) ||
+      hour < 0 ||
+      hour > 23
+    ) {
+      toast(
+        'ساعت باید بین ۰ تا ۲۳ باشد',
+        'error'
+      );
+      return;
+    }
+
+    setBackupHourDirty(false);
+    patchMutation.mutate({
+      auto_backup_hour: hour,
+    });
+  };
+
+
   const maintenanceOn = Boolean(
     data?.maintenance_mode
   );
+
+  const donationOn = Boolean(
+    data?.donation_enabled
+  );
+
+
+  const autoBackupLastRun =
+    data?.auto_backup_last_run
+      ? String(
+          data.auto_backup_last_run
+        )
+          .slice(0, 16)
+          .replace('T', ' ')
+      : null;
 
 
   return (
@@ -781,6 +1121,274 @@ export default function SystemSettings() {
                   )
                 }
               />
+            </section>
+
+            <div className="sec-title">
+              💙 حمایت مالی
+            </div>
+
+            <section
+              className="card"
+              style={{
+                padding: '0 14px',
+                marginBottom: 12,
+              }}
+            >
+              <SettingRow
+                icon="💙"
+                title="بخش حمایت مالی"
+                desc="نمایش دکمه‌ی «💙 حمایت مالی» در داشبورد و صفحه‌ی «من» — همان تاگل پنل ربات"
+                checked={donationOn}
+                busy={
+                  patchMutation.isPending &&
+                  busyKey?.donation_enabled !==
+                    undefined
+                }
+                onToggle={(value) =>
+                  toggle(
+                    'donation_enabled',
+                    value
+                  )
+                }
+              />
+            </section>
+
+            <DonationLinkCard
+              savedLink={
+                data?.donation_link ||
+                null
+              }
+              enabled={donationOn}
+              value={donationLink}
+              dirty={donationDirty}
+              saving={
+                patchMutation.isPending &&
+                busyKey?.donation_link !==
+                  undefined
+              }
+              onChange={(value) => {
+                setDonationLink(value);
+                setDonationDirty(true);
+              }}
+              onSave={saveDonationLink}
+            />
+
+            <div className="sec-title">
+              💾 پشتیبان‌گیری
+            </div>
+
+            <section
+              className="card"
+              style={{
+                padding: '0 14px',
+                marginBottom: 12,
+              }}
+            >
+              <SettingRow
+                icon="⏰"
+                title="بکاپ خودکار روزانه"
+                desc={
+                  <>
+                    هر روز فایل کامل JSON
+                    می‌سازد و در چت ربات
+                    می‌فرستد
+                    {autoBackupLastRun
+                      ? ` • آخرین اجرا: ${autoBackupLastRun}`
+                      : ' • هنوز اجرا نشده'}
+                  </>
+                }
+                checked={Boolean(
+                  data?.auto_backup_enabled
+                )}
+                busy={
+                  patchMutation.isPending &&
+                  busyKey?.auto_backup_enabled !==
+                    undefined
+                }
+                onToggle={(value) =>
+                  toggle(
+                    'auto_backup_enabled',
+                    value
+                  )
+                }
+              />
+            </section>
+
+            <section
+              className="card"
+              style={{ marginBottom: 12 }}
+            >
+              <b
+                style={{
+                  display: 'block',
+                  fontSize: 12.3,
+                  marginBottom: 4,
+                }}
+              >
+                🕐 ساعت اجرای بکاپ خودکار
+              </b>
+
+              <span
+                style={{
+                  display: 'block',
+                  color: 'var(--txm)',
+                  fontSize: 9.4,
+                  marginBottom: 10,
+                  lineHeight: 1.8,
+                }}
+              >
+                به‌وقت تهران — مثل
+                تنظیمات «⏰ بکاپ خودکار»
+                در پنل ربات
+              </span>
+
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 8,
+                }}
+              >
+                <select
+                  className="inp"
+                  dir="ltr"
+                  value={backupHour}
+                  onChange={(event) => {
+                    setBackupHour(
+                      event.target.value
+                    );
+                    setBackupHourDirty(
+                      true
+                    );
+                  }}
+                  style={{
+                    flex: 1,
+                    textAlign: 'left',
+                  }}
+                >
+                  {Array.from(
+                    { length: 24 },
+                    (_unused, hour) => (
+                      <option
+                        key={hour}
+                        value={String(hour)}
+                      >
+                        {String(
+                          hour
+                        ).padStart(
+                          2,
+                          '0'
+                        )}
+                        :00
+                      </option>
+                    )
+                  )}
+                </select>
+
+                <button
+                  className="btn btn-p"
+                  style={{
+                    minHeight: 34,
+                    padding:
+                      '6px 16px',
+                    fontSize: 10.5,
+                  }}
+                  disabled={
+                    !backupHourDirty ||
+                    patchMutation.isPending
+                  }
+                  onClick={saveBackupHour}
+                >
+                  {patchMutation.isPending &&
+                  busyKey?.auto_backup_hour !==
+                    undefined ? (
+                    <Spinner size={14} />
+                  ) : (
+                    '💾 ذخیره'
+                  )}
+                </button>
+              </div>
+            </section>
+
+            <section
+              className="card"
+              style={{ marginBottom: 15 }}
+            >
+              <b
+                style={{
+                  display: 'block',
+                  fontSize: 12.3,
+                  marginBottom: 4,
+                }}
+              >
+                📦 دریافت فایل پشتیبان
+                (JSON)
+              </b>
+
+              <span
+                style={{
+                  display: 'block',
+                  color: 'var(--txm)',
+                  fontSize: 9.4,
+                  marginBottom: 12,
+                  lineHeight: 1.8,
+                }}
+              >
+                فایل مثل خروجی اکسل، توسط
+                ربات به چت شخصی تو ارسال
+                می‌شود — با همان سازنده‌ی
+                مشترک منوی «💾 پشتیبان» در
+                ربات.
+              </span>
+
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns:
+                    '1fr 1fr',
+                  gap: 8,
+                }}
+              >
+                {BACKUP_BUTTONS.map(
+                  (button) => {
+                    const pending =
+                      backupMutation.isPending &&
+                      backupMutation.variables ===
+                        button.section;
+
+                    return (
+                      <button
+                        key={button.section}
+                        className="btn btn-dark"
+                        style={{
+                          minHeight: 36,
+                          fontSize: 10,
+                          gridColumn:
+                            button.wide
+                              ? '1 / -1'
+                              : undefined,
+                        }}
+                        disabled={
+                          backupMutation.isPending
+                        }
+                        onClick={() => {
+                          haptic('light');
+                          backupMutation.mutate(
+                            button.section
+                          );
+                        }}
+                      >
+                        {pending ? (
+                          <Spinner
+                            size={14}
+                          />
+                        ) : (
+                          button.label
+                        )}
+                      </button>
+                    );
+                  }
+                )}
+              </div>
             </section>
 
             <div className="sec-title">
