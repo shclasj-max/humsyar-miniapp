@@ -123,6 +123,64 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overscroll-behavior-y: none;
+
+  -webkit-text-size-adjust: 100%;
+
+  text-size-adjust: 100%;
+
+  /* هیچ سرریز افقی‌ای نباید اسکرول دومِ تصادفی
+     بسازد */
+  overflow-x: clip;
+}
+
+/* ── FIX فلیکر صفحه‌ها: پس‌زمینه‌ی محصول یک لایه‌ی
+   ثابتِ متصل به viewport است، نه وابسته به ارتفاع
+   .app-root. قبلاً radial glow ها به درصدِ ارتفاع
+   app-root لنگر می‌خوردند و با هر تغییر مسیر (کوتاه/
+   بلند بودن صفحه) جابه‌جا می‌شدند — همان «پرش نور»
+   گزارش‌شده. با این لایه‌ی fixed، پس‌زمینه در تمام
+   مسیرها، صفحه‌های لودینگ/ثبت‌نام/خطا و Onboarding
+   عیناً یکسان و بی‌تغییر می‌ماند. ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+
+  background:
+    var(--grad-page),
+    linear-gradient(
+      180deg,
+      var(--bg-soft),
+      var(--bg)
+    );
+}
+
+/* ── الگوی گرید ظریف — هم‌تراز بر همان لایه‌ی fixed ── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: .35;
+
+  background-image:
+    linear-gradient(
+      rgba(255, 255, 255, .012)
+      1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, .012)
+      1px,
+      transparent 1px
+    );
+
+  background-size:
+    28px 28px;
 }
 
 button,
@@ -181,38 +239,10 @@ a {
   margin: 0 auto;
   overflow: clip;
 
-  background:
-    var(--grad-page),
-    linear-gradient(
-      180deg,
-      var(--bg-soft),
-      var(--bg)
-    );
-}
-
-.app-root::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  opacity: .35;
-
-  background-image:
-    linear-gradient(
-      rgba(255, 255, 255, .012)
-      1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      90deg,
-      rgba(255, 255, 255, .012)
-      1px,
-      transparent 1px
-    );
-
-  background-size:
-    28px 28px;
+  /* پس‌زمینه عمداً شفاف — لایه‌ی fixed مشترک body
+     نقش بک‌گراند را دارد تا بین مسیرها هیچ پرش نور/
+     رنگی رخ ندهد */
+  background: transparent;
 }
 
 .page {
@@ -392,6 +422,47 @@ a {
   width: 100%;
 }
 
+/* ── لایه‌ی میکرو-اینترکشن سراسری ──
+   touch-action: حذف تاخیر ۳۰۰ms و زوم دابل‌تاپ روی
+   عناصر تعاملی؛ user-select: جلوگیری از انتخاب تصادفی
+   متن هنگام لمس‌های سریع — حس نیتیو و Premium. ── */
+button,
+a,
+[role='button'],
+input,
+textarea,
+select {
+  touch-action: manipulation;
+}
+
+.btn,
+.menu-row,
+.more-sheet__item,
+.card-tap,
+.chip,
+.tab-btn,
+.choice-card,
+.bottom-nav__item,
+.app-header__back,
+.switch,
+.toggle-wrap {
+  -webkit-user-select: none;
+  user-select: none;
+
+  /* حذف ذره‌بین/منوی callout آیفون روی لمس‌طولانی
+     دکمه‌ها — حس کاملاً نیتیو */
+  -webkit-touch-callout: none;
+}
+
+/* ── تب فعال — کلاس یکدست برای استفاده‌ی آینده
+   (نسخه‌های فعلی استایل inline دارند و همچنان کار
+   می‌کنند؛ این قراردادِ Design System است) ── */
+.tab-btn--on {
+  color: #fff;
+  background: var(--acc);
+  box-shadow: var(--shd-glow);
+}
+
 /* Badges */
 
 .badge {
@@ -529,11 +600,24 @@ a {
   box-shadow: var(--shd-glow);
 }
 
+/* ── حالت خالی — چیدمان ستونی، مركز‌گرا و نفس‌دار
+   تا در هر ۲۶ نقطه‌ی پروژه حس حرفه‌ای بدهد ── */
 .empty {
-  padding: 52px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 46px 20px;
   color: var(--txm);
-  line-height: 1.8;
+  font-size: 11px;
+  line-height: 1.9;
   text-align: center;
+}
+
+.empty > .btn,
+.empty > button {
+  margin-top: 4px;
 }
 
 /* Inputs */
@@ -996,7 +1080,17 @@ input:focus-visible
   padding-top: 30px;
 
   background:
-    rgba(3, 6, 13, .74);
+    rgba(3, 6, 13, .68);
+
+  /* بلر ملایم دیمر — تفکیک لایه‌ها به‌جای
+     سیاه‌کردنِ خشک صفحه */
+  backdrop-filter:
+    blur(7px)
+    saturate(130%);
+
+  -webkit-backdrop-filter:
+    blur(7px)
+    saturate(130%);
 
   animation:
     overlayIn .2s ease both;
@@ -1106,7 +1200,7 @@ input:focus-visible
 
 .fade-up {
   animation:
-    fadeUp .35s
+    fadeUp .3s
     var(--ease-out)
     both;
 }
@@ -1114,6 +1208,15 @@ input:focus-visible
 .pop-in {
   animation:
     popIn .3s
+    var(--ease-spring)
+    both;
+}
+
+/* ── ورود واقعی bottom-sheet از پایین — متفاوت از
+   fade-up عمومی تا حس «کشویی» طبیعی منتقل شود ── */
+.sheet-in {
+  animation:
+    sheetIn .34s
     var(--ease-spring)
     both;
 }
@@ -1142,7 +1245,21 @@ input:focus-visible
   from {
     opacity: 0;
     transform:
-      translateY(12px);
+      translateY(9px);
+  }
+
+  to {
+    opacity: 1;
+    transform:
+      translateY(0);
+  }
+}
+
+@keyframes sheetIn {
+  from {
+    opacity: .001;
+    transform:
+      translateY(34px);
   }
 
   to {
@@ -1245,6 +1362,35 @@ input:focus-visible
 
   .app-header__back:hover {
     background: var(--ovr);
+  }
+
+  /* ── hover همه‌ی واریانت‌های دکمه — قبلاً فقط
+     btn-p حالت hover داشت و بقیه در دسکتاپ «مرده»
+     به‌نظر می‌رسیدند ── */
+  .btn-g:hover:not(:disabled) {
+    filter: brightness(1.12);
+    border-color:
+      rgba(59, 130, 246, .5);
+  }
+
+  .btn-dark:hover:not(:disabled) {
+    color: var(--tx);
+    border-color:
+      rgba(148, 163, 184, .26);
+    background:
+      rgba(38, 50, 71, .85);
+  }
+
+  .btn-d:hover:not(:disabled) {
+    filter: brightness(1.12);
+    border-color:
+      rgba(239, 68, 68, .4);
+  }
+
+  .chip:hover {
+    color: var(--tx2);
+    border-color:
+      rgba(148, 163, 184, .26);
   }
 }
 
@@ -1781,13 +1927,10 @@ input:focus-visible
   padding: 36px 24px
     calc(24px + env(safe-area-inset-bottom));
   overflow: hidden;
-  background:
-    var(--grad-page),
-    linear-gradient(
-      180deg,
-      var(--bg-soft),
-      var(--bg)
-    );
+
+  /* شفاف — لایه‌ی fixed مشترک body نمایان است تا
+     ورود/خروج Onboarding هیچ پرش نوری نداشته باشد */
+  background: transparent;
 }
 
 .onb__glow {
