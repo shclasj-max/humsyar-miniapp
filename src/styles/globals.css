@@ -1741,3 +1741,150 @@ input:focus-visible
     var(--ease-out) infinite;
 }
 
+/* ═══════════════════════════════════════
+   ✅ NEW — Badge ناوبری (پاسخ جدید)
+═══════════════════════════════════════ */
+
+.nav-badge {
+  position: absolute;
+  top: -5px;
+  left: -9px;
+  display: grid;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  place-items: center;
+  border: 2px solid var(--bg);
+  border-radius: 999px;
+  background: var(--err);
+  color: #fff;
+  font-size: 8.5px;
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: 0 2px 8px
+    rgba(239, 68, 68, .5);
+  animation:
+    popIn .3s var(--ease-spring);
+}
+
+/* ═══════════════════════════════════════
+   ✅ NEW — Onboarding (ورود اول)
+═══════════════════════════════════════ */
+
+.onb {
+  position: fixed;
+  z-index: 400;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 36px 24px
+    calc(24px + env(safe-area-inset-bottom));
+  overflow: hidden;
+  background:
+    var(--grad-page),
+    linear-gradient(
+      180deg,
+      var(--bg-soft),
+      var(--bg)
+    );
+}
+
+.onb__glow {
+  position: absolute;
+  top: 8%;
+  right: 50%;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  filter: blur(70px);
+  transform: translateX(50%);
+  transition: background .5s
+    var(--ease-out);
+}
+
+.onb__body {
+  position: relative;
+  text-align: center;
+}
+
+.onb__icon {
+  display: grid;
+  width: 104px;
+  height: 104px;
+  place-items: center;
+  margin: 0 auto 24px;
+  border: 1px solid
+    rgba(255, 255, 255, .14);
+  border-radius: 32px;
+  font-size: 50px;
+  box-shadow: var(--shd-3);
+}
+
+.onb__title {
+  font-size: 21px;
+  font-weight: 900;
+}
+
+.onb__text {
+  margin: 12px auto 0;
+  max-width: 320px;
+  color: var(--tx2);
+  font-size: 11.5px;
+  line-height: 2;
+  white-space: pre-line;
+}
+
+.onb__dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: 30px 0 22px;
+}
+
+.onb__dots .step-dot {
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.onb__actions {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+.onb__skip {
+  display: block;
+  margin: 12px auto 0;
+  padding: 6px 14px;
+  border: 0;
+  background: none;
+  color: var(--txm);
+  font: inherit;
+  font-size: 10.5px;
+  cursor: pointer;
+  transition: color .15s;
+}
+
+.onb__skip:active {
+  color: var(--tx2);
+}
+
+/* ═══════════════════════════════════════
+   ✅ NEW — دسترس‌پذیری صفحه‌کلید
+═══════════════════════════════════════ */
+
+:focus-visible {
+  outline: 2px solid var(--acc2);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+button:focus:not(:focus-visible),
+input:focus:not(:focus-visible),
+textarea:focus:not(:focus-visible) {
+  outline: none;
+}
+
