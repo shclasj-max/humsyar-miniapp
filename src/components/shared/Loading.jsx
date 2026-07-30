@@ -310,3 +310,73 @@ export function SkeletonCard({
     </div>
   );
 }
+
+/* اسکلتِ هم‌قامت با کارت hero (دایره‌ی ۹۰ + سه خط) —
+   برای جابه‌جاییِ بدون پرشِ ارتفاع بین اسکلت و محتوا
+   در صفحاتی مثل نمرات (ریشه‌ی Layout Shift) */
+export function SkeletonHero() {
+  return (
+    <div
+      className="card"
+      aria-hidden="true"
+      style={{
+        display:
+          'flex',
+
+        alignItems:
+          'center',
+
+        gap:
+          15,
+
+        minHeight:
+          124,
+      }}
+    >
+      <div
+        className="skeleton"
+        style={{
+          width:
+            90,
+
+          height:
+            90,
+
+          flexShrink:
+            0,
+
+          borderRadius:
+            '50%',
+        }}
+      />
+
+      <div
+        style={{
+          display:
+            'grid',
+
+          flex:
+            1,
+
+          gap:
+            9,
+        }}
+      >
+        <SkeletonLine
+          width="58%"
+          height={13}
+        />
+
+        <SkeletonLine
+          height={10}
+        />
+
+        <SkeletonLine
+          width="74%"
+          height={10}
+        />
+      </div>
+    </div>
+  );
+}
+
