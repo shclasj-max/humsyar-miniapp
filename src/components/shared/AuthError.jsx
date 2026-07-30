@@ -1,4 +1,8 @@
 import {
+  useEffect,
+} from 'react';
+
+import {
   tg,
   haptic,
 } from '../../lib/telegram';
@@ -170,6 +174,17 @@ export default function AuthError({
       retry:
         true,
     };
+
+
+  /* صفحه فول‌اسکرین خطا → دکمه بک
+     نیتیو تلگرام نباید قابل دیدن باشد */
+  useEffect(() => {
+    try {
+      tg?.BackButton?.hide?.();
+    } catch (_) {
+      /* نسخه قدیمی */
+    }
+  }, []);
 
 
   const reload = () => {
