@@ -226,6 +226,17 @@ const SECTIONS = [
   },
 
   {
+    icon: '⚙️',
+    title: 'تنظیمات ربات',
+    description:
+      'حالت تعمیر و تنظیمات ثبت‌نام',
+    route: '/admin/settings',
+    color: '#94A3B8',
+    soft:
+      'rgba(148,163,184,.14)',
+  },
+
+  {
     icon: '📚',
     title: 'پنل محتوا',
     description:
