@@ -968,32 +968,24 @@ input:focus-visible
 
   padding: 6px;
 
-  /* درگ افقی: جابه‌جایی لحظه‌ای با --drag-x
-     (جاوااسکریپت imperative مقداردهی می‌کند تا
-     هیچ رندر مجدد React در حین درگ رخ ندهد) */
+  /* کپسول کاملاً ثابت می‌ماند — هیچ transform
+     و هیچ جابه‌جایی روی خودِ بار؛ تنها چیزی که
+     نفس می‌کشد و جریان دارد اندیکاتور فعال است */
   transform:
-    translateX(-50%)
-    translateX(var(--drag-x, 0px));
-
-  /* اسکرول عمودی صفحه آزاد می‌ماند؛ فقط حرکت
-     افقی را خودمان مدیریت می‌کنیم */
-  touch-action: pan-y;
-
-  will-change: transform;
-
-  /* اسنپ فنری هنگام رها — حین درگ با کلاس
-     bottom-nav--drag غیرفعال می‌شود */
-  transition:
-    transform .3s
-    var(--ease-spring);
-
-  cursor: grab;
+    translateX(-50%);
 
   border:
     1px solid var(--bd);
 
   border-radius: var(--r-xl);
-  box-shadow: var(--shd-3);
+
+  /* سایه‌ی چندلایه‌ی بسیار نرم — حس شناوری
+     ملایم بدون سنگینی */
+  box-shadow:
+    0 14px 38px
+    rgba(0, 0, 0, .38),
+    0 3px 10px
+    rgba(0, 0, 0, .22);
 }
 
 .bottom-nav__indicator {
@@ -2105,34 +2097,23 @@ textarea:focus:not(:focus-visible) {
 }
 
 /* ═══════════════════════════════════════
-   ✅ NEW — موج ۲.۸۰ «بازطراحی پریمیوم»
-   ناوبری شناور تعاملی + تجربه‌ی چت در کلاس
-   ChatGPT / Claude / Gemini
+   ✅ موج ۲.۸۰/۲.۹۰ «بازطراحی پریمیوم»
+   ناوبری شناورِ ثابت با اندیکاتور مایع +
+   تجربه‌ی چت در کلاس ChatGPT/Claude/Gemini
 
-   قانون طلایی پرفورمنس: همه‌ی انیمیشن‌ها
-   فقط transform / opacity — هیچ layout
-   thrash و هیچ پرشی در تعویض صفحه.
+   قانون طلایی پرفورمنس: انیمیشن‌های بصری
+   فقط transform / opacity؛ حرکت اندیکاتور
+   روی right است اما محدود به یک کپسول ۶۶px
+   (ری‌پِینتِ کوچک، بدون ری‌لِی‌اوتِ صفحه).
 ═══════════════════════════════════════ */
 
 /* ─────────────────────────────────────
-   ۱) ناوبری شناور — درگ، ریپل، تأکید فعال
+   ۱) ناوبری شناور — ریپل و تأکید فعال
+   (خودِ بار ثابت است؛ فقط اندیکاتور تاب
+   فعال جریان دارد)
 ───────────────────────────────────── */
 
-/* حین درگ: بدون ترنزیشن (پاسخ ۱:۱ به انگشت)،
-   سایه عمیق‌تر برای حس «بلندشدن» از صفحه */
-.bottom-nav--drag {
-  cursor: grabbing;
-
-  transition: none;
-
-  box-shadow:
-    0 28px 62px
-    rgba(0, 0, 0, .58);
-}
-
 .bottom-nav__item {
-  touch-action: pan-y;
-
   -webkit-tap-highlight-color:
     transparent;
 }
@@ -2193,18 +2174,26 @@ textarea:focus:not(:focus-visible) {
    شفاف متمایز است */
 .bottom-nav__icon {
   transition:
-    transform .28s
+    transform .3s
       var(--ease-spring),
-    filter .22s;
+    opacity .24s,
+    filter .28s;
 }
 
+/* آیکون فعال: برآمده + کمی بزرگ‌تر + هاله‌ی
+   نور بسیار ملایم برند (drop-shadow روی خودِ
+   گلیف — GPU-friendly برخلاف blur روی باکس) */
 .bottom-nav__item--active
 .bottom-nav__icon {
-  filter: none;
+  filter:
+    drop-shadow(
+      0 2px 9px
+      rgba(34, 211, 238, .5)
+    );
 
   transform:
     translateY(-2px)
-    scale(1.14);
+    scale(1.16);
 }
 
 .bottom-nav__item:not(
@@ -2217,6 +2206,17 @@ textarea:focus:not(:focus-visible) {
   transition:
     opacity .22s,
     color .22s;
+}
+
+/* اندیکاتور فعال — تنها بخشِ جاریِ ناوبری.
+   جابه‌جایی مکان با ترنزیشنِ فنریِ right و
+   کش‌وجمع ارگانیک (squash & stretch) با WAAPI
+   روی transform انجام می‌شود؛ مدت‌زمان هم با
+   مسافتِ تب‌ها تطبیق داده می‌شود (inline) */
+.bottom-nav__indicator {
+  transform-origin: center;
+
+  will-change: transform;
 }
 
 .bottom-nav__item:not(
@@ -2479,8 +2479,8 @@ textarea:focus:not(:focus-visible) {
 
 .msg__text {
   color: inherit;
-  font-size: 12.5px;
-  line-height: 2;
+  font-size: 12.7px;
+  line-height: 2.05;
   overflow-wrap: anywhere;
   text-align: start;
   white-space: pre-wrap;
@@ -3693,6 +3693,151 @@ textarea:focus:not(:focus-visible) {
 
   .sugg {
     padding: 8px;
+  }
+}
+
+/* ═══════════════════════════════════════
+   ✅ NEW — موج ۲.۹۰ «تعمیق تجربه»
+   صفحه‌ی تاریخچه، اکشن‌شیت ۷عملی، زنجیره‌ی
+   حباب‌ها و کرتِ استریم نرم
+═══════════════════════════════════════ */
+
+/* ── جعبه‌ی جست‌وجو با آیکون داخلی ── */
+
+.conv-searchbox {
+  position: relative;
+  margin-bottom: 9px;
+}
+
+.conv-searchbox .inp {
+  width: 100%;
+  min-height: 44px;
+  padding-right: 40px;
+}
+
+.conv-searchbox__icon {
+  position: absolute;
+  top: 50%;
+  right: 13px;
+
+  color: var(--txm);
+  font-size: 14px;
+
+  transform: translateY(-50%);
+
+  pointer-events: none;
+}
+
+/* ── نشان همگام‌سازی ردیف‌ها ── */
+
+.sync-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+
+  color: rgb(52, 211, 153);
+  font-size: 8px;
+  font-weight: 700;
+
+  border:
+    1px solid
+    rgba(16, 185, 129, .25);
+
+  border-radius: 999px;
+
+  background:
+    rgba(16, 185, 129, .08);
+}
+
+.sync-chip--pending {
+  color: #FCD34D;
+
+  border-color:
+    rgba(245, 158, 11, .3);
+
+  background:
+    rgba(245, 158, 11, .08);
+}
+
+/* ردیف بزرگ‌ترِ نسخه‌ی صفحه‌ی تاریخچه */
+.conv--page {
+  padding: 10px 9px;
+}
+
+.conv--page .conv__icon {
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+
+  font-size: 19px;
+}
+
+/* ── اکشن‌شیت عملیات گفت‌وگو ──
+   روی همان الگوی more-sheet، با نوعِ خطرناک */
+
+.more-sheet__item--danger {
+  color: #FCA5A5;
+}
+
+.more-sheet__item--danger
+.more-sheet__item-icon {
+  color: #FCA5A5;
+
+  border-color:
+    rgba(239, 68, 68, .25);
+
+  background:
+    rgba(239, 68, 68, .09);
+}
+
+.more-sheet__item--danger
+.more-sheet__item-desc {
+  color:
+    rgba(252, 165, 165, .62);
+}
+
+/* ── زنجیره‌ی حباب‌های هم‌نویسنده‌ی پشت‌سرهم —
+   ملایم به هم می‌چسبند تا خوانش رشته‌ای روان
+   شود (بدون حذف فاصله‌ی داخلی) ── */
+
+.chat-scroll {
+  gap: 10px;
+}
+
+.msg-row--tight {
+  margin-top: -5px;
+}
+
+/* ── کرتِ چشمک‌زنِ استریم نرم در انتهای متنِ
+   در حال نمایش ── */
+
+.msg-caret {
+  display: inline-block;
+
+  width: 2px;
+  height: 13px;
+  margin-inline-start: 2px;
+
+  vertical-align: -2px;
+
+  border-radius: 1px;
+
+  background: var(--acc2);
+
+  animation:
+    caretBlink .85s
+    steps(2, jump-none)
+    infinite;
+}
+
+@keyframes caretBlink {
+  0%, 100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
   }
 }
 
