@@ -459,8 +459,10 @@ export default function AuthError({
         >
           کد وضعیت:{' '}
 
-          {error ||
-            'unknown_error'}
+          {typeof error ===
+          'string'
+            ? error
+            : 'error'}
         </div>
       </section>
     </main>
