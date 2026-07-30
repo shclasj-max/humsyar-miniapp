@@ -1,4 +1,7 @@
-import { useState } from 'react';
+import {
+  useEffect,
+  useState,
+} from 'react';
 
 import {
   useQuery,
@@ -6,6 +9,7 @@ import {
 
 import {
   useNavigate,
+  useSearchParams,
 } from 'react-router-dom';
 
 import api from '../../lib/api';
@@ -58,19 +62,92 @@ const TYPES = {
 
 
 export default function GlobalSearch() {
+  /* ── منبع حقیقت: پارامترهای URL ──
+     عبارت جست‌وجو و فیلتر نوع در آدرس ماندگار
+     می‌شوند تا با بازگشت (Back) از صفحه‌ی
+     نتیجه، دقیقاً همان وضعیت بازیابی شود —
+     بدون اینکه دیپ‌لینک هم قابل اشتراک باشد */
+  const [
+    searchParams,
+    setSearchParams,
+  ] = useSearchParams();
+
+  const urlQuery =
+    searchParams.get('q') || '';
+
+  const type =
+    searchParams.get('type') || 'all';
+
   const [
     query,
-    setQuery,
-  ] = useState('');
+    setQueryLocal,
+  ] = useState(urlQuery);
+
+  // URL → ورودی (مثل بازگشت با Back)
+  useEffect(() => {
+    setQueryLocal(urlQuery);
+  }, [urlQuery]);
+
+  // ورودی → URL با دیبونس (بدون ساخت رکورد
+  // جدید در تاریخچه — replace)
+  const queryForUrl =
+    useDebouncedValue(query, 420);
+
+  useEffect(() => {
+    const current =
+      searchParams.get('q') || '';
+
+    if (current === queryForUrl) {
+      return;
+    }
+
+    setSearchParams(
+      (previous) => {
+        const next = new URLSearchParams(
+          previous,
+        );
+
+        if (queryForUrl) {
+          next.set('q', queryForUrl);
+
+        } else {
+          next.delete('q');
+        }
+
+        return next;
+      },
+      { replace: true },
+    );
+
+    // eslint-disable-next-line
+    // react-hooks/exhaustive-deps
+  }, [queryForUrl]);
+
+  const setQuery = (value) =>
+    setQueryLocal(value);
+
+  const setType = (value) =>
+    setSearchParams(
+      (previous) => {
+        const next = new URLSearchParams(
+          previous,
+        );
+
+        if (value && value !== 'all') {
+          next.set('type', value);
+
+        } else {
+          next.delete('type');
+        }
+
+        return next;
+      },
+      { replace: true },
+    );
 
   /* ✅ جلوگیری از ریکوئست با هر ضربه کلید */
   const debouncedQuery =
     useDebouncedValue(query, 380);
-
-  const [
-    type,
-    setType,
-  ] = useState('all');
 
   const navigate =
     useNavigate();
