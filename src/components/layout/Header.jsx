@@ -25,6 +25,9 @@ import {
    - حل‌مسیر یکپارچه از lib/navBack
    - BackButton نیتیو تلگرام هم سینک می‌شود تا
      دکمه‌ی فیزیکی Android کاربر را بیرون نیندازد
+   - onRefresh: دکمه‌ی ↻ استاندارد Design System
+     (موج ۳.۱۰) با چرخشِ زنده حین به‌روزرسانی —
+     جایگزین استایل inline تکراریِ ۱۲ صفحه
 ───────────────────────────────────────────── */
 
 
@@ -35,6 +38,8 @@ export default function Header({
   back = true,
   onBack,
   backTo,
+  onRefresh,
+  refreshing = false,
 }) {
   const navigate =
     useNavigate();
@@ -60,6 +65,14 @@ export default function Header({
       onBack,
       backTo,
     ]);
+
+
+  const handleRefresh =
+    useCallback(() => {
+      haptic('light');
+      onRefresh?.();
+
+    }, [onRefresh]);
 
 
   // سینک دکمه‌ی برگشت پلتفرم (Android hardware
@@ -140,9 +153,31 @@ export default function Header({
         </div>
       </div>
 
-      {right && (
+      {(right || onRefresh) && (
         <div className="app-header__right">
           {right}
+
+          {onRefresh && (
+            <button
+              type="button"
+              className="icon-btn"
+              onClick={
+                handleRefresh
+              }
+              disabled={refreshing}
+              aria-label="به‌روزرسانی"
+            >
+              <span
+                className={
+                  refreshing
+                    ? 'icon-btn__spin'
+                    : undefined
+                }
+              >
+                ↻
+              </span>
+            </button>
+          )}
         </div>
       )}
     </header>
