@@ -91,6 +91,17 @@ function Stat({
 
 const SECTIONS = [
   {
+    icon: '📈',
+    title: 'آمار تحلیلی',
+    description:
+      'ترند عضویت، فعالیت و اوج ساعات',
+    route: '/admin/analytics',
+    color: '#22D3EE',
+    soft:
+      'rgba(34,211,238,.12)',
+  },
+
+  {
     icon: '👥',
     title: 'مدیریت کاربران',
     description:
@@ -198,6 +209,17 @@ const SECTIONS = [
     description:
       'مشاهده و رفع مسدودیت کاربران',
     route: '/admin/blacklist',
+    color: '#FB7185',
+    soft:
+      'rgba(239,68,68,.12)',
+  },
+
+  {
+    icon: '🛡',
+    title: 'لاگ فعالیت مدیران',
+    description:
+      'ردیابی اقدامات حساس سامانه',
+    route: '/admin/audit',
     color: '#FB7185',
     soft:
       'rgba(239,68,68,.12)',
