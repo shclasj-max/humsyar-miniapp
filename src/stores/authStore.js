@@ -39,13 +39,19 @@ export const useAuthStore = create((set) => ({
     } catch (error) {
       const detail = error.response?.data?.detail;
 
+      /* 🧯 فقط رشتهً‌ رشته! detail در خطاهای
+         422 لیست/آبجکت است و اگر به AuthError
+         برسد، رندرش کرش می‌کند (صفحه‌ی تاریک) */
       set({
         loading: false,
-        error: detail || (
-          error.response
+
+        error:
+          typeof detail === 'string'
+            ? detail
+
+          : error.response
             ? 'error'
-            : 'network_error'
-        ),
+            : 'network_error',
       });
     }
   },
