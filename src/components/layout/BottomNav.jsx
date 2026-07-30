@@ -305,6 +305,27 @@ export default function BottomNav() {
   // می‌شود)
   const prevIndexRef = useRef(null);
 
+  const firstRunRef = useRef(true);
+
+
+  /* 🧯 قانون طلایی هوک‌های React (ریشه‌ی باگ
+     صفحه‌ی تاریک): هیچ هوکی نباید بعد از یک
+     return شرطی بیاید. نسخه‌ی قبلی دو هوک
+     (useRef + useEffect) را بعد از
+     «if (…/admin) return null» صدا می‌زد؛
+     با هر ورود به بخش مدیریت شمار هوک‌ها
+     ۹→۷ کم می‌شد، React خطای مرگبارِ
+     "Rendered fewer hooks than expected"
+     می‌انداخت و چون این کامپوننت بیرونِ
+     ErrorBoundary بود، کل درخت اپ unmount
+     می‌شد. حالا همه‌ی هوک‌ها قبل از هر
+     return شرطی‌اند و ترتیبشان در همه‌ی
+     مسیرها ثابت است. */
+  const isAdminSection =
+    location.pathname.startsWith(
+      '/admin',
+    );
+
 
   useEffect(() => {
     setShowMore(false);
@@ -314,7 +335,12 @@ export default function BottomNav() {
   /* ✅ Badge پاسخ جدید پشتیبانی —
      پولینگ سبک هر ۴۵ ثانیه؛ وقتی کاربر
      گفت‌وگو را باز کند، سمت سرور seen
-     می‌شود و Badge خودکار پاک می‌شود */
+     می‌شود و Badge خودکار پاک می‌شود.
+     در مسیرهای مدیریت نوار دیده نمی‌شود،
+     پس پولینگ خاموش است ولی خودِ هوک
+     همیشه صدا زده می‌شود تا ترتیب هوک‌ها
+     ثابت بماند (enabled گزینه است، هوک
+     شرطی نیست). */
   const {
     data: unreadData,
   } = useQuery({
@@ -331,21 +357,13 @@ export default function BottomNav() {
     refetchInterval: 45_000,
     staleTime: 20_000,
     retry: false,
+    enabled: !isAdminSection,
   });
 
   const unread = Math.max(
     0,
     Number(unreadData?.unread) || 0,
   );
-
-
-  if (
-    location.pathname.startsWith(
-      '/admin',
-    )
-  ) {
-    return null;
-  }
 
 
   const moreActive =
@@ -394,10 +412,17 @@ export default function BottomNav() {
 
   // کش‌وجمع ارگانیک اندیکاتور (squash & stretch)
   // — تنها چیزی که در ناوبری «جریان» دارد همین
-  // کپسول است؛ خودِ بار کاملاً بی‌حرکت می‌ماند
-  const firstRunRef = useRef(true);
-
+  // کپسول است؛ خودِ بار کاملاً بی‌حرکت می‌ماند.
+  // نکته: guard مسیر مدیریت «داخل» افکت است —
+  // خودِ هوک همیشه ثبت می‌شود (ترتیب هوک‌ها
+  // ثابت می‌ماند) ولی در /admin هیچ کاری نمی‌کند
+  // و prevIndex به‌روز نمی‌شود تا با بازگشت،
+  // انیمیشن از همان تبِ قبلی ادامه یابد.
   useEffect(() => {
+    if (isAdminSection) {
+      return;
+    }
+
     prevIndexRef.current = activeIndex;
 
     if (firstRunRef.current) {
@@ -410,6 +435,8 @@ export default function BottomNav() {
 
     if (
       !indicator ||
+      typeof indicator.animate !==
+        'function' ||
       prefersReducedMotion()
     ) {
       return;
@@ -447,6 +474,14 @@ export default function BottomNav() {
     // eslint-disable-next-line
     // react-hooks/exhaustive-deps
   }, [location.pathname]);
+
+
+  /* در بخش مدیریت (پنل/محتوا) نوار پایین
+     نمایش داده نمی‌شود — این تنها return
+     شرطی مجاز است: بعد از ثبتِ همه‌ی هوک‌ها */
+  if (isAdminSection) {
+    return null;
+  }
 
 
   const go = (path) => {
