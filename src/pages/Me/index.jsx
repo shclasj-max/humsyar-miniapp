@@ -297,28 +297,17 @@ export default function Me() {
           </div>
         ) : isError ? (
           <div className="empty card">
-            <div
-              style={{
-                fontSize: 40,
-              }}
-            >
+            <div className="empty__ic">
               🌐
             </div>
 
-            <div
-              style={{
-                marginTop: 8,
-              }}
-            >
+            <div>
               دریافت اطلاعات حساب انجام
               نشد.
             </div>
 
             <button
               className="btn btn-p"
-              style={{
-                marginTop: 13,
-              }}
               onClick={() =>
                 refetch()
               }
@@ -342,7 +331,8 @@ export default function Me() {
           >
             <section
               className={
-                'card card-glow card-tap'
+                'card card-glow card-tap ' +
+                'hero-card'
               }
               role="button"
               tabIndex={0}
@@ -362,11 +352,7 @@ export default function Me() {
                 }
               }}
               style={{
-                padding: 17,
                 cursor: 'pointer',
-
-                background:
-                  'linear-gradient(145deg,rgba(29,78,216,.22),rgba(16,24,39,.95) 52%,rgba(34,211,238,.08))',
               }}
             >
               <div
