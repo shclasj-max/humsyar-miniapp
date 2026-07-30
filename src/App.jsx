@@ -2,6 +2,7 @@ import {
   Routes,
   Route,
   Navigate,
+  useLocation,
 } from 'react-router-dom';
 
 import {
@@ -133,6 +134,24 @@ import {
 import AcademicScheduleAdmin from './pages/Admin/AcademicScheduleAdmin';
 
 import AcademicGradesAdmin from './pages/Admin/AcademicGradesAdmin';
+
+
+/* ─────────────────────────────────────────────
+   FIX پرش صفحه: با هر تغییر مسیر، اسکرول به
+   ابتدای صفحه برمی‌گردد تا نه موقعیت دید کاربر
+   ناگهان جابه‌جا شود و نه بخش پرواز نور. فوری و
+   بدون انیمیشن انجام می‌شود تا کاملاً نامحسوس
+   باشد (رفتار استاندارد اپ‌های Premium).
+───────────────────────────────────────────── */
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+}
 
 
 function AdminRoute({
@@ -290,6 +309,8 @@ export default function App() {
       className="app-root"
       dir="rtl"
     >
+      <ScrollToTop />
+
       <Toast />
 
       {/* معرفی اولین ورود — بعد از
