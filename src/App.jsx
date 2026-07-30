@@ -41,7 +41,7 @@ import Grades from './pages/Grades';
 
 /* هوشیار و جست‌وجو */
 
-import AiChat from './pages/Ai/AiChat';
+import AiHome from './pages/Ai/AiHome';
 
 import GlobalSearch from './pages/Search/GlobalSearch';
 
@@ -354,7 +354,14 @@ export default function App() {
         <Route
           path="/ai"
           element={
-            <AiChat />
+            <AiHome />
+          }
+        />
+
+        <Route
+          path="/ai/c/:convId"
+          element={
+            <AiHome />
           }
         />
 
