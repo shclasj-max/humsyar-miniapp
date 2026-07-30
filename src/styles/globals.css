@@ -968,8 +968,26 @@ input:focus-visible
 
   padding: 6px;
 
+  /* درگ افقی: جابه‌جایی لحظه‌ای با --drag-x
+     (جاوااسکریپت imperative مقداردهی می‌کند تا
+     هیچ رندر مجدد React در حین درگ رخ ندهد) */
   transform:
-    translateX(-50%);
+    translateX(-50%)
+    translateX(var(--drag-x, 0px));
+
+  /* اسکرول عمودی صفحه آزاد می‌ماند؛ فقط حرکت
+     افقی را خودمان مدیریت می‌کنیم */
+  touch-action: pan-y;
+
+  will-change: transform;
+
+  /* اسنپ فنری هنگام رها — حین درگ با کلاس
+     bottom-nav--drag غیرفعال می‌شود */
+  transition:
+    transform .3s
+    var(--ease-spring);
+
+  cursor: grab;
 
   border:
     1px solid var(--bd);
@@ -2084,5 +2102,1597 @@ button:focus:not(:focus-visible),
 input:focus:not(:focus-visible),
 textarea:focus:not(:focus-visible) {
   outline: none;
+}
+
+/* ═══════════════════════════════════════
+   ✅ NEW — موج ۲.۸۰ «بازطراحی پریمیوم»
+   ناوبری شناور تعاملی + تجربه‌ی چت در کلاس
+   ChatGPT / Claude / Gemini
+
+   قانون طلایی پرفورمنس: همه‌ی انیمیشن‌ها
+   فقط transform / opacity — هیچ layout
+   thrash و هیچ پرشی در تعویض صفحه.
+═══════════════════════════════════════ */
+
+/* ─────────────────────────────────────
+   ۱) ناوبری شناور — درگ، ریپل، تأکید فعال
+───────────────────────────────────── */
+
+/* حین درگ: بدون ترنزیشن (پاسخ ۱:۱ به انگشت)،
+   سایه عمیق‌تر برای حس «بلندشدن» از صفحه */
+.bottom-nav--drag {
+  cursor: grabbing;
+
+  transition: none;
+
+  box-shadow:
+    0 28px 62px
+    rgba(0, 0, 0, .58);
+}
+
+.bottom-nav__item {
+  touch-action: pan-y;
+
+  -webkit-tap-highlight-color:
+    transparent;
+}
+
+/* ریپل لمسی نرم — دایره‌ای که از مرکز آیتم
+   باز شده و محو می‌شود */
+.bottom-nav__item::after {
+  content: '';
+
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: -1;
+
+  width: 46px;
+  height: 46px;
+
+  border-radius: 50%;
+
+  background:
+    rgba(255, 255, 255, .14);
+
+  opacity: 0;
+
+  transform:
+    translate(-50%, -50%)
+    scale(.3);
+
+  pointer-events: none;
+}
+
+.bottom-nav__item:active::after {
+  animation:
+    navRipple .5s
+    var(--ease-out);
+}
+
+@keyframes navRipple {
+  0% {
+    opacity: .75;
+
+    transform:
+      translate(-50%, -50%)
+      scale(.3);
+  }
+
+  100% {
+    opacity: 0;
+
+    transform:
+      translate(-50%, -50%)
+      scale(1.45);
+  }
+}
+
+/* آیتم غیرفعال: کمی کوچک‌تر و کم‌رنگ‌تر ولی
+   خوانا — آیتم فعال با آیکون برآمده و لیبل
+   شفاف متمایز است */
+.bottom-nav__icon {
+  transition:
+    transform .28s
+      var(--ease-spring),
+    filter .22s;
+}
+
+.bottom-nav__item--active
+.bottom-nav__icon {
+  filter: none;
+
+  transform:
+    translateY(-2px)
+    scale(1.14);
+}
+
+.bottom-nav__item:not(
+  .bottom-nav__item--active
+) {
+  transform: scale(.97);
+}
+
+.bottom-nav__label {
+  transition:
+    opacity .22s,
+    color .22s;
+}
+
+.bottom-nav__item:not(
+  .bottom-nav__item--active
+)
+.bottom-nav__label {
+  opacity: .66;
+}
+
+/* ─────────────────────────────────────
+   ۲) هوشیار — نوار وضعیت فشرده
+───────────────────────────────────── */
+
+.ai-strip {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  gap: 9px;
+  padding: 7px 10px;
+
+  border:
+    1px solid var(--bd);
+
+  border-radius: var(--r-lg);
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(29, 78, 216, .16),
+      rgba(16, 24, 39, .9) 58%,
+      rgba(34, 211, 238, .06)
+    );
+}
+
+.ai-orb {
+  position: relative;
+
+  display: grid;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+
+  color: #fff;
+  font-size: 16px;
+
+  border-radius: 11px;
+
+  background: var(--grad-brand);
+
+  box-shadow: var(--shd-glow);
+}
+
+/* نبض نرم اورب — زنده بودن دستیار */
+.ai-orb::after {
+  content: '';
+
+  position: absolute;
+  inset: -1px;
+
+  border-radius: 12px;
+
+  animation:
+    orbPulse 2.6s
+    var(--ease-out)
+    infinite;
+}
+
+@keyframes orbPulse {
+  0%, 100% {
+    opacity: 0;
+
+    box-shadow:
+      0 0 0 0
+      rgba(59, 130, 246, .4);
+  }
+
+  50% {
+    opacity: 1;
+
+    box-shadow:
+      0 0 0 7px
+      rgba(59, 130, 246, 0);
+  }
+}
+
+.ai-strip__txt {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.ai-strip__title {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ai-strip__sub {
+  overflow: hidden;
+  color: var(--tx2);
+  font-size: 9.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* چیپ سند مرجع داخل نوار */
+.ref-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 132px;
+  gap: 4px;
+  padding: 4px 7px;
+
+  color: #FCD34D;
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 700;
+
+  border:
+    1px solid
+    rgba(245, 158, 11, .3);
+
+  border-radius: 999px;
+
+  background:
+    rgba(245, 158, 11, .1);
+
+  cursor: pointer;
+}
+
+.ref-chip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ─────────────────────────────────────
+   ۳) جریان پیام‌ها و حباب‌ها
+───────────────────────────────────── */
+
+.chat-scroll {
+  display: flex;
+  min-height: 40vh;
+  flex-direction: column;
+  gap: 9px;
+  padding: 3px 1px;
+}
+
+.msg-row {
+  display: flex;
+  width: 100%;
+  justify-content: flex-end;
+}
+
+/* RTL: پیام کاربر سمت راست */
+.msg-row--me {
+  justify-content: flex-start;
+}
+
+.msg {
+  position: relative;
+
+  width: fit-content;
+  max-width: 87%;
+  padding: 9px 12px 7px;
+
+  border:
+    1px solid var(--bd);
+
+  border-radius: 18px;
+
+  box-shadow: var(--shd-1);
+}
+
+.msg--me {
+  color: #fff;
+
+  border-color:
+    rgba(59, 130, 246, .4);
+
+  border-bottom-right-radius: 6px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(29, 78, 216, .92),
+      rgba(59, 130, 246, .74)
+    );
+}
+
+.msg--ai {
+  border-bottom-left-radius: 6px;
+
+  background:
+    rgba(16, 24, 39, .94);
+}
+
+.msg--failed {
+  border-color:
+    rgba(239, 68, 68, .5);
+
+  opacity: .72;
+}
+
+/* ورود پیام — فید + اسلاید + فنر خیلی کوتاه،
+   مبدأ از گوشه‌ی همان سمت حباب تا حس رشد
+   طبیعی از صاحب پیام داشته باشد */
+.msg-in {
+  animation:
+    msgIn .34s
+    var(--ease-spring)
+    both;
+}
+
+.msg-row--me .msg-in {
+  transform-origin: 100% 100%;
+}
+
+.msg-row:not(.msg-row--me) .msg-in {
+  transform-origin: 0 100%;
+}
+
+@keyframes msgIn {
+  from {
+    opacity: 0;
+
+    transform:
+      translateY(11px)
+      scale(.94);
+  }
+
+  to {
+    opacity: 1;
+
+    transform:
+      translateY(0)
+      scale(1);
+  }
+}
+
+.msg__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 4px;
+
+  color:
+    rgba(255, 255, 255, .64);
+
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.msg__fail {
+  color: #FDA4AF;
+}
+
+.msg__text {
+  color: inherit;
+  font-size: 12.5px;
+  line-height: 2;
+  overflow-wrap: anywhere;
+  text-align: start;
+  white-space: pre-wrap;
+}
+
+.msg__time {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 3px;
+
+  color:
+    rgba(255, 255, 255, .42);
+
+  font-size: 8px;
+  font-weight: 600;
+
+  direction: ltr;
+}
+
+.msg--ai .msg__time {
+  color: var(--txm);
+}
+
+/* ─────────────────────────────────────
+   ۴) رندر غنی — کد، تیتر، نقل‌قول، لیست، لینک
+───────────────────────────────────── */
+
+.msg-code {
+  overflow: hidden;
+  margin: 7px 0 3px;
+
+  border:
+    1px solid
+    rgba(148, 163, 184, .18);
+
+  border-radius: 12px;
+
+  background:
+    rgba(3, 7, 15, .72);
+
+  direction: ltr;
+}
+
+.msg-code__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 9px;
+
+  color: var(--txm);
+  font-size: 9px;
+  font-weight: 700;
+
+  border-bottom:
+    1px solid
+    rgba(148, 163, 184, .12);
+
+  background:
+    rgba(148, 163, 184, .06);
+}
+
+.msg-code__copy {
+  padding: 2px 8px;
+
+  color: var(--acc2);
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 800;
+
+  border:
+    1px solid
+    rgba(34, 211, 238, .25);
+
+  border-radius: 7px;
+
+  background:
+    rgba(34, 211, 238, .07);
+
+  cursor: pointer;
+
+  transition:
+    transform .18s
+      var(--ease-spring),
+    filter .18s;
+}
+
+.msg-code__copy:active {
+  transform: scale(.92);
+}
+
+.msg-code pre {
+  overflow-x: auto;
+  margin: 0;
+  padding: 10px 11px;
+
+  color: #D8E6FF;
+  font-family:
+    'Courier New',
+    monospace;
+
+  font-size: 11px;
+  line-height: 1.75;
+  white-space: pre;
+}
+
+.msg-h {
+  margin: 3px 0 2px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.msg-quote {
+  margin: 5px 0 3px;
+  padding: 5px 10px;
+
+  color: var(--tx2);
+
+  border-right:
+    3px solid var(--acc);
+
+  border-radius: 8px;
+
+  background:
+    rgba(59, 130, 246, .08);
+}
+
+.msg-list {
+  margin: 3px 0;
+  padding-inline-start: 19px;
+}
+
+.msg-list li {
+  margin: 1px 0;
+}
+
+.msg-ic {
+  padding: 1px 5px;
+
+  font-family:
+    'Courier New',
+    monospace;
+
+  font-size: 10.5px;
+
+  border:
+    1px solid var(--bd);
+
+  border-radius: 6px;
+
+  background:
+    rgba(148, 163, 184, .1);
+
+  direction: ltr;
+}
+
+.msg-link {
+  color: var(--acc2);
+  font-weight: 700;
+  text-decoration: none;
+
+  border-bottom:
+    1px dashed
+    rgba(34, 211, 238, .5);
+}
+
+.msg--me .msg-link {
+  color: #EAF6FF;
+
+  border-bottom-color:
+    rgba(255, 255, 255, .55);
+}
+
+.msg--me .msg-quote {
+  color:
+    rgba(255, 255, 255, .9);
+
+  border-right-color:
+    rgba(255, 255, 255, .6);
+
+  background:
+    rgba(255, 255, 255, .1);
+}
+
+/* ── ضمیمه‌ی پیام (عکس/PDF/صدا) ── */
+
+.msg-attach {
+  display: flex;
+  align-items: center;
+  min-width: 176px;
+  gap: 8px;
+  margin-bottom: 7px;
+  padding: 7px 9px;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, .14);
+
+  border-radius: 11px;
+
+  background:
+    rgba(4, 9, 18, .22);
+}
+
+.msg-attach__icon {
+  font-size: 21px;
+}
+
+.msg-attach__info {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+
+  color:
+    rgba(255, 255, 255, .72);
+
+  font-size: 9px;
+}
+
+.msg-attach__info b {
+  overflow: hidden;
+  max-width: 190px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── اکشن‌های پاسخ (مثال/خلاصه/کپی/گزارش) ── */
+
+.msg__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+  padding-top: 7px;
+
+  border-top:
+    1px solid var(--bd);
+}
+
+.msg-act {
+  padding: 4px 8px;
+
+  color: #70A7FF;
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 700;
+
+  border:
+    1px solid
+    rgba(59, 130, 246, .2);
+
+  border-radius: 8px;
+
+  background:
+    rgba(59, 130, 246, .08);
+
+  cursor: pointer;
+
+  transition:
+    transform .18s
+      var(--ease-spring),
+    filter .18s,
+    border-color .18s;
+}
+
+.msg-act:active:not(:disabled) {
+  transform: scale(.93);
+}
+
+.msg-act:disabled {
+  opacity: .45;
+  cursor: default;
+}
+
+.msg-act--danger {
+  margin-inline-start: auto;
+
+  color: #FCA5A5;
+
+  border-color:
+    rgba(239, 68, 68, .18);
+
+  background:
+    rgba(239, 68, 68, .07);
+}
+
+/* ─────────────────────────────────────
+   ۵) نشانگر تایپینگ — سه نقطه‌ی تنفسی
+   (الهام از رقابا، نه کپی)
+───────────────────────────────────── */
+
+.typing {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 4px 2px;
+}
+
+.typing__dots {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 1px;
+}
+
+.typing__dot {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+
+  background: var(--acc2);
+
+  animation:
+    typingDot 1.15s
+    ease-in-out
+    infinite;
+}
+
+.typing__dot:nth-child(2) {
+  animation-delay: .16s;
+}
+
+.typing__dot:nth-child(3) {
+  animation-delay: .32s;
+}
+
+@keyframes typingDot {
+  0%, 60%, 100% {
+    opacity: .35;
+
+    transform:
+      translateY(0)
+      scale(.85);
+  }
+
+  30% {
+    opacity: 1;
+
+    transform:
+      translateY(-4px)
+      scale(1);
+  }
+}
+
+.typing__label {
+  color: var(--tx2);
+  font-size: 9.5px;
+}
+
+/* ─────────────────────────────────────
+   ۶) حالت خالی — خوش‌آمد + پیشنهادهای شروع
+───────────────────────────────────── */
+
+.chat-empty {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  padding: 20px 4px 10px;
+  text-align: center;
+}
+
+.chat-orb {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 13px;
+  place-items: center;
+
+  color: #fff;
+  font-size: 30px;
+
+  border:
+    1px solid
+    rgba(34, 211, 238, .4);
+
+  border-radius: 23px;
+
+  background: var(--grad-brand);
+
+  box-shadow:
+    0 12px 38px
+    rgba(59, 130, 246, .34);
+
+  animation:
+    orbFloat 3.4s
+    ease-in-out
+    infinite;
+}
+
+@keyframes orbFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.chat-empty__title {
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.chat-empty__text {
+  max-width: 380px;
+  margin-top: 7px;
+
+  color: var(--tx2);
+  font-size: 11.5px;
+  line-height: 2;
+}
+
+.sugg-grid {
+  display: grid;
+  width: 100%;
+  margin-top: 17px;
+  gap: 8px;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+}
+
+.sugg {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px;
+
+  color: var(--tx);
+  font-family: inherit;
+  text-align: right;
+
+  border:
+    1px solid var(--bd);
+
+  border-radius: 14px;
+
+  background:
+    rgba(16, 24, 39, .72);
+
+  cursor: pointer;
+
+  transition:
+    transform .22s
+      var(--ease-spring),
+    border-color .22s,
+    background .22s;
+}
+
+.sugg:active:not(:disabled) {
+  transform: scale(.96);
+}
+
+.sugg:disabled {
+  opacity: .5;
+  cursor: default;
+}
+
+.sugg__icon {
+  display: grid;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+
+  font-size: 16px;
+
+  border:
+    1px solid var(--bd);
+
+  border-radius: 10px;
+
+  background: var(--elev);
+}
+
+.sugg__txt {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sugg__title {
+  font-size: 10.5px;
+  font-weight: 800;
+}
+
+.sugg__desc {
+  color: var(--txm);
+  font-size: 9px;
+  line-height: 1.7;
+}
+
+/* ─────────────────────────────────────
+   ۷) کامپوزر شناور — قلب تجربه‌ی چت
+───────────────────────────────────── */
+
+.cmp {
+  position: sticky;
+
+  bottom:
+    calc(
+      var(--nav-h) +
+      8px +
+      env(safe-area-inset-bottom)
+    );
+
+  z-index: 12;
+
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 3px;
+  padding: 8px 9px 9px;
+
+  border:
+    1px solid
+    rgba(148, 163, 184, .2);
+
+  border-radius: 22px;
+
+  box-shadow:
+    0 18px 46px
+    rgba(0, 0, 0, .46);
+
+  transition:
+    border-color .22s,
+    box-shadow .22s;
+}
+
+/* فوکوس: هاله‌ی برند — حس «گوش‌دادن» */
+.cmp:focus-within {
+  border-color:
+    rgba(59, 130, 246, .48);
+
+  box-shadow:
+    0 18px 46px
+    rgba(0, 0, 0, .46),
+    0 0 0 3px
+    rgba(59, 130, 246, .14);
+}
+
+.cmp__row {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.cmp__ta {
+  flex: 1;
+  min-width: 0;
+  min-height: 40px;
+  max-height: 120px;
+  padding: 9px 8px;
+
+  color: var(--tx);
+  font-family: inherit;
+  font-size: 12.5px;
+  line-height: 1.85;
+
+  border: 0;
+  background: transparent;
+  outline: none;
+  resize: none;
+}
+
+.cmp__ta::placeholder {
+  color: var(--txm);
+}
+
+.cmp__tool {
+  display: grid;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+
+  color: var(--tx2);
+  font-size: 17px;
+
+  border:
+    1px solid var(--bd);
+
+  border-radius: 50%;
+
+  background:
+    rgba(24, 34, 53, .75);
+
+  cursor: pointer;
+
+  transition:
+    transform .2s
+      var(--ease-spring),
+    color .2s,
+    border-color .2s;
+}
+
+.cmp__tool:active:not(:disabled) {
+  transform: scale(.88);
+}
+
+.cmp__tool:disabled {
+  opacity: .42;
+  cursor: default;
+}
+
+/* دکمه‌ی ارسال — دایره‌ی برند با مورف آیکون
+   به اسپینر؛ ابعاد ثابت تا هیچ پرشی نباشد */
+.cmp__btn {
+  display: grid;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+
+  color: #fff;
+  font-size: 17px;
+
+  border: 0;
+  border-radius: 50%;
+
+  background: var(--grad-brand);
+
+  box-shadow: var(--shd-glow);
+
+  cursor: pointer;
+
+  transition:
+    transform .2s
+      var(--ease-spring),
+    opacity .2s,
+    box-shadow .2s;
+}
+
+.cmp__btn:active:not(:disabled) {
+  transform: scale(.88);
+}
+
+.cmp__btn:disabled {
+  opacity: .38;
+
+  box-shadow: none;
+  cursor: default;
+}
+
+/* شمارنده‌ی کاراکتر — چیپ شناور تا تغییر
+   لی‌اوت ایجاد نکند؛ فقط نزدیک سقف ظاهر
+   می‌شود */
+.cmp__count {
+  position: absolute;
+  top: -8px;
+  left: 16px;
+  z-index: 1;
+
+  padding: 1px 7px;
+
+  color: var(--txm);
+  font-size: 8px;
+  font-weight: 700;
+
+  border:
+    1px solid var(--bd);
+
+  border-radius: 999px;
+
+  background: var(--elev);
+
+  direction: ltr;
+
+  animation:
+    popIn .25s
+    var(--ease-spring);
+}
+
+.cmp__count--near {
+  color: #FCD34D;
+
+  border-color:
+    rgba(245, 158, 11, .35);
+}
+
+/* چیپ فایل انتخابی داخل کامپوزر */
+.cmp-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px;
+
+  border:
+    1px solid
+    rgba(59, 130, 246, .25);
+
+  border-radius: 14px;
+
+  background:
+    rgba(59, 130, 246, .08);
+
+  animation:
+    popIn .3s
+    var(--ease-spring);
+}
+
+.cmp-file__img {
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
+
+  border-radius: 9px;
+  object-fit: cover;
+}
+
+.cmp-file__icon {
+  display: grid;
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+
+  font-size: 23px;
+
+  border-radius: 9px;
+
+  background:
+    rgba(0, 0, 0, .2);
+}
+
+.cmp-file__info {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cmp-file__name {
+  overflow: hidden;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cmp-file__meta {
+  color: var(--tx2);
+  font-size: 8.5px;
+}
+
+.cmp-file__audio {
+  width: 100%;
+  height: 27px;
+  margin-top: 3px;
+}
+
+.cmp-file__x {
+  display: grid;
+  flex: 0 0 27px;
+  width: 27px;
+  height: 27px;
+  place-items: center;
+
+  color: #FDA4AF;
+  font-family: inherit;
+  font-size: 18px;
+
+  border:
+    1px solid
+    rgba(239, 68, 68, .2);
+
+  border-radius: 8px;
+
+  background:
+    rgba(239, 68, 68, .08);
+
+  cursor: pointer;
+}
+
+/* نوار ضبط صدا */
+.cmp-rec {
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  gap: 10px;
+  padding: 7px 9px;
+
+  border:
+    1px solid
+    rgba(239, 68, 68, .25);
+
+  border-radius: 14px;
+
+  background:
+    rgba(239, 68, 68, .07);
+
+  animation:
+    popIn .3s
+    var(--ease-spring);
+}
+
+.cmp-rec__dot {
+  width: 10px;
+  height: 10px;
+
+  border-radius: 50%;
+
+  background: #FB7185;
+
+  box-shadow:
+    0 0 0 5px
+    rgba(239, 68, 68, .13);
+
+  animation:
+    orbPulse 1.3s
+    ease-out
+    infinite;
+}
+
+.cmp-rec__txt {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+
+  color: var(--tx2);
+  font-size: 10px;
+}
+
+.cmp-rec__txt b {
+  color: var(--tx);
+  font-size: 11px;
+}
+
+/* بار پیشرفت آپلود در کف کامپوزر */
+.cmp__pbar {
+  height: 4px;
+}
+
+.cmp__hint {
+  color: var(--txm);
+  font-size: 8.2px;
+  line-height: 1.7;
+  text-align: center;
+}
+
+/* دکمه‌ی شناور «رفتن به آخرین پیام» — وقتی
+   کاربر بالاتر از ته گفت‌وگو است */
+.jump-chip {
+  position: absolute;
+  top: -42px;
+  left: 50%;
+  z-index: 1;
+
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+
+  color: #fff;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 800;
+
+  border:
+    1px solid
+    rgba(59, 130, 246, .45);
+
+  border-radius: 999px;
+
+  background:
+    rgba(23, 37, 84, .92);
+
+  box-shadow: var(--shd-2);
+
+  cursor: pointer;
+
+  transform:
+    translateX(-50%);
+
+  backdrop-filter: blur(10px);
+
+  -webkit-backdrop-filter:
+    blur(10px);
+
+  animation:
+    popIn .3s
+    var(--ease-spring);
+}
+
+/* ─────────────────────────────────────
+   ۸) شیت تاریخچه‌ی گفت‌وگوها
+───────────────────────────────────── */
+
+.conv-new {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 44px;
+  gap: 7px;
+  margin-bottom: 9px;
+
+  color: #fff;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 800;
+
+  border: 0;
+  border-radius: var(--r-md);
+
+  background: var(--grad-brand);
+
+  box-shadow: var(--shd-glow);
+
+  cursor: pointer;
+
+  transition:
+    transform .2s
+      var(--ease-spring),
+    filter .2s;
+}
+
+.conv-new:active:not(:disabled) {
+  transform: scale(.97);
+}
+
+.conv-new:disabled {
+  opacity: .55;
+}
+
+.conv-search {
+  margin-bottom: 7px;
+}
+
+.conv-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.conv {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px;
+
+  border:
+    1px solid transparent;
+
+  border-radius: var(--r-md);
+
+  transition:
+    background .18s,
+    border-color .18s;
+}
+
+.conv--active {
+  border-color:
+    rgba(59, 130, 246, .38);
+
+  background:
+    rgba(59, 130, 246, .1);
+}
+
+.conv--archived {
+  opacity: .62;
+}
+
+.conv__icon {
+  display: grid;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+
+  font-size: 18px;
+
+  border:
+    1px solid var(--bd);
+
+  border-radius: 11px;
+
+  background: var(--elev);
+}
+
+.conv__main {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  min-width: 0;
+  gap: 8px;
+  padding: 2px 0;
+
+  color: var(--tx);
+  font-family: inherit;
+  text-align: right;
+
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.conv__body {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.conv__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.conv__title span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conv__pin {
+  flex: 0 0 auto;
+  font-size: 9px;
+}
+
+.conv__preview {
+  overflow: hidden;
+  color: var(--txm);
+  font-size: 9.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conv__meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  color: var(--txm);
+  font-size: 8.5px;
+}
+
+.conv__count {
+  padding: 1px 6px;
+
+  border:
+    1px solid var(--bd);
+
+  border-radius: 999px;
+
+  background:
+    rgba(148, 163, 184, .08);
+}
+
+.conv__acts {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 3px;
+}
+
+.conv__act {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+
+  color: var(--tx2);
+  font-family: inherit;
+  font-size: 13px;
+
+  border:
+    1px solid var(--bd);
+
+  border-radius: 9px;
+
+  background:
+    rgba(24, 34, 53, .7);
+
+  cursor: pointer;
+
+  transition:
+    transform .18s
+      var(--ease-spring),
+    color .18s,
+    border-color .18s;
+}
+
+.conv__act:active:not(:disabled) {
+  transform: scale(.88);
+}
+
+.conv__act--on {
+  color: var(--acc2);
+
+  border-color:
+    rgba(34, 211, 238, .35);
+}
+
+.conv__act--danger {
+  color: #FCA5A5;
+}
+
+.conv-rename {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  gap: 5px;
+}
+
+.conv-rename__inp {
+  flex: 1;
+  min-width: 0;
+  min-height: 34px;
+}
+
+.conv-empty {
+  padding: 24px 8px;
+
+  color: var(--txm);
+  font-size: 11px;
+  text-align: center;
+}
+
+.conv-arch-toggle {
+  display: block;
+  margin: 9px auto 0;
+  padding: 6px 13px;
+
+  color: var(--txm);
+  font-family: inherit;
+  font-size: 10px;
+
+  border:
+    1px solid var(--bd);
+
+  border-radius: 999px;
+
+  background: none;
+  cursor: pointer;
+}
+
+/* ─────────────────────────────────────
+   ۹) hover دسکتاپ — مکمل موج ۲.۸۰
+───────────────────────────────────── */
+
+@media (
+  hover: hover
+) and (
+  pointer: fine
+) {
+  .sugg:hover:not(:disabled) {
+    border-color:
+      rgba(59, 130, 246, .38);
+
+    background:
+      rgba(23, 37, 84, .5);
+
+    transform: translateY(-2px);
+  }
+
+  .msg-act:hover:not(:disabled) {
+    filter: brightness(1.18);
+
+    border-color:
+      rgba(59, 130, 246, .45);
+  }
+
+  .conv:hover {
+    background:
+      rgba(24, 34, 53, .55);
+  }
+
+  .conv--active:hover {
+    background:
+      rgba(59, 130, 246, .14);
+  }
+
+  .cmp__tool:hover:not(:disabled) {
+    color: var(--tx);
+
+    border-color:
+      rgba(148, 163, 184, .3);
+  }
+
+  .conv__act:hover:not(:disabled) {
+    color: var(--tx);
+
+    border-color:
+      rgba(148, 163, 184, .3);
+  }
+
+  .conv-new:hover:not(:disabled) {
+    filter: brightness(1.1);
+  }
+}
+
+/* موبایل‌های خیلی باریک */
+@media (max-width: 350px) {
+  .msg {
+    max-width: 92%;
+  }
+
+  .sugg-grid {
+    gap: 6px;
+  }
+
+  .sugg {
+    padding: 8px;
+  }
 }
 
