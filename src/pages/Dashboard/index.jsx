@@ -326,28 +326,17 @@ function ErrorState({
 }) {
   return (
     <div className="empty card">
-      <div
-        style={{
-          fontSize: 42,
-        }}
-      >
+      <div className="empty__ic">
         🌐
       </div>
 
-      <div
-        style={{
-          marginTop: 8,
-        }}
-      >
+      <div>
         دریافت اطلاعات داشبورد انجام
         نشد.
       </div>
 
       <button
         className="btn btn-p"
-        style={{
-          marginTop: 14,
-        }}
         onClick={onRetry}
         disabled={loading}
       >
@@ -528,40 +517,8 @@ export default function Dashboard() {
         } • گروه ${
           user.group || '—'
         }`}
-        right={
-          <button
-            type="button"
-            onClick={() => {
-              haptic();
-              refetch();
-            }}
-            disabled={
-              isRefetching
-            }
-            aria-label="به‌روزرسانی"
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 12,
-
-              border:
-                '1px solid var(--bd)',
-
-              background:
-                'var(--elev)',
-
-              cursor:
-                'pointer',
-
-              opacity:
-                isRefetching
-                  ? .5
-                  : 1,
-            }}
-          >
-            ↻
-          </button>
-        }
+        onRefresh={refetch}
+        refreshing={isRefetching}
       />
 
       <main className="page fade-up">
@@ -592,14 +549,8 @@ export default function Dashboard() {
           >
             <section
               className={
-                'card card-glow'
+                'card card-glow hero-card'
               }
-              style={{
-                padding: 17,
-
-                background:
-                  'linear-gradient(145deg,rgba(29,78,216,.2),rgba(16,24,39,.95) 48%,rgba(34,211,238,.08))',
-              }}
             >
               <div
                 style={{
@@ -861,7 +812,11 @@ export default function Dashboard() {
                   <button
                     type="button"
                     key={key}
-                    className="tab-btn"
+                    className={`tab-btn ${
+                      tab === key
+                        ? 'tab-btn--on'
+                        : ''
+                    }`}
                     role="tab"
                     aria-selected={
                       tab === key
@@ -869,22 +824,6 @@ export default function Dashboard() {
                     onClick={() => {
                       haptic();
                       setTab(key);
-                    }}
-                    style={{
-                      color:
-                        tab === key
-                          ? '#fff'
-                          : 'var(--tx2)',
-
-                      background:
-                        tab === key
-                          ? 'var(--grad-brand)'
-                          : 'transparent',
-
-                      boxShadow:
-                        tab === key
-                          ? 'var(--shd-glow)'
-                          : 'none',
                     }}
                   >
                     {label}
@@ -935,11 +874,6 @@ export default function Dashboard() {
                               'badge b-red'
                             }
                             style={{
-                              border: 0,
-
-                              cursor:
-                                'pointer',
-
                               padding:
                                 '6px 11px',
                             }}
