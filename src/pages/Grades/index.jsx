@@ -560,42 +560,8 @@ export default function Grades() {
             : 'نمرات و ارزیابی‌ها'
         }
         back={false}
-        right={
-          <button
-            type="button"
-            aria-label="به‌روزرسانی"
-            disabled={
-              isRefetching
-            }
-            onClick={() => {
-              haptic();
-              refetch();
-            }}
-            style={{
-              width: 36,
-              height: 36,
-
-              borderRadius:
-                12,
-
-              border:
-                '1px solid var(--bd)',
-
-              background:
-                'var(--elev)',
-
-              cursor:
-                'pointer',
-
-              opacity:
-                isRefetching
-                  ? .5
-                  : 1,
-            }}
-          >
-            ↻
-          </button>
-        }
+        onRefresh={refetch}
+        refreshing={isRefetching}
       />
 
       <main className="page fade-up">
@@ -612,28 +578,16 @@ export default function Grades() {
           </div>
         ) : isError ? (
           <div className="empty card">
-            <div
-              style={{
-                fontSize: 42,
-              }}
-            >
+            <div className="empty__ic">
               🌐
             </div>
 
-            <div
-              style={{
-                marginTop: 8,
-              }}
-            >
+            <div>
               دریافت نمرات انجام نشد.
             </div>
 
             <button
               className="btn btn-p"
-              style={{
-                marginTop:
-                  13,
-              }}
               onClick={() =>
                 refetch()
               }
@@ -651,20 +605,12 @@ export default function Grades() {
         ) : grades.length ===
           0 ? (
           <div className="empty card">
-            <div
-              style={{
-                fontSize:
-                  44,
-              }}
-            >
+            <div className="empty__ic">
               📊
             </div>
 
             <div
               style={{
-                marginTop:
-                  9,
-
                 color:
                   'var(--tx2)',
 
@@ -679,9 +625,6 @@ export default function Grades() {
               style={{
                 fontSize:
                   10.5,
-
-                marginTop:
-                  4,
               }}
             >
               بعد از ثبت توسط مدیر محتوا،
@@ -701,15 +644,8 @@ export default function Grades() {
           >
             <section
               className={
-                'card card-glow'
+                'card card-glow hero-card'
               }
-              style={{
-                padding:
-                  19,
-
-                background:
-                  'linear-gradient(145deg,rgba(29,78,216,.2),rgba(16,24,39,.95) 50%,rgba(34,211,238,.09))',
-              }}
             >
               <div
                 style={{
