@@ -3,6 +3,7 @@ import {
   useRef,
   useState,
 } from 'react';
+
 import {
   useMutation,
   useQuery,
@@ -11,9 +12,9 @@ import {
 
 import Header from '../../components/layout/Header';
 import {
-  SkeletonCard,
   Spinner,
 } from '../../components/shared/Loading';
+import ChatHistorySheet from '../../components/ai/ChatHistorySheet';
 import api from '../../lib/api';
 import {
   haptic,
@@ -21,14 +22,80 @@ import {
 } from '../../lib/telegram';
 import { useUIStore } from '../../stores/uiStore';
 
+
 const FALLBACK_MAX_MEDIA_BYTES = 15 * 1024 * 1024;
 const FALLBACK_MAX_INPUT_CHARS = 2000;
 
+// گفت‌وگوی فعال بین نشست‌ها حفظ می‌شود تا کاربر
+// دقیقاً از همان‌جایی که رفته بود ادامه دهد
+const ACTIVE_CONV_KEY = 'humsyar_ai_conv';
+const LEGACY_ID = 'legacy';
+
+// فاصله‌ی مجاز از ته صفحه که هنوز «نزدیک انتها»
+// حساب شود — بر اساس آن اسکرول خودکار و چیپ
+// پرش تصمیم می‌گیرند
+const NEAR_BOTTOM_PX = 90;
+
+
+/* کارت‌های پیشنهادی حالت خالی — الهام از اپ‌های
+   درجه‌ی یک؛ هر کارت یا پرامپت آماده می‌فرستد یا
+   مستقیم فایل‌پیکر را باز می‌کند */
 const SUGGESTIONS = [
-  'مبحث پتانسیل عمل را ساده توضیح بده',
-  'از فیزیولوژی تنفس یک سؤال چهارگزینه‌ای بساز',
-  'برای مرور آناتومی قلب یک برنامه کوتاه بده',
+  {
+    icon: '📅',
+    title: 'برنامه‌ریزی درسی',
+    desc: 'برنامه‌ی هفتگی متناسب با درس‌ها',
+    prompt:
+      'یک برنامه‌ی مطالعه‌ی هفتگی برای دروس ' +
+      'اصلی پزشکی طراحی کن؛ با تکنیک‌های ' +
+      'مطالعه‌ی مؤثر و مرور فعال.',
+  },
+
+  {
+    icon: '🩺',
+    title: 'پرسش پزشکی',
+    desc: 'توضیح ساده‌ی مفاهیم سخت',
+    prompt:
+      'مبحث پتانسیل عمل را ساده، نکته‌ای و ' +
+      'مثال‌دار توضیح بده.',
+  },
+
+  {
+    icon: '📄',
+    title: 'خلاصه‌ی جزوه',
+    desc: 'چکیده‌سازی نکته‌محور',
+    prompt:
+      'چطور از یک فصل جزوه خلاصه‌ی نکته‌محور ' +
+      'بگیرم؟ قالب پیشنهادی بده و با یک مثال ' +
+      'نشان بده.',
+  },
+
+  {
+    icon: '📝',
+    title: 'آزمون تستی',
+    desc: 'سؤال چهارگزینه‌ای با پاسخ',
+    prompt:
+      'از فیزیولوژی تنفس یک سؤال چهارگزینه‌ای ' +
+      'در سطح امتحان بساز و پاسخ تشریحی بده.',
+  },
+
+  {
+    icon: '🏛️',
+    title: 'سؤالات دانشگاه',
+    desc: 'سبک امتحانات تشریحی',
+    prompt:
+      'سه سؤال تشریحی شبیه امتحان دانشگاه از ' +
+      'آناتومی قلب طرح کن و معیار نمره‌دهی بگو.',
+  },
+
+  {
+    icon: '🖼️',
+    title: 'تحلیل تصاویر',
+    desc: 'عکس سؤال یا دیاگرام بفرست',
+    action: 'pick-file',
+  },
 ];
+
 
 const ACCEPTED_FILES = [
   'image/jpeg',
@@ -47,6 +114,7 @@ const ACCEPTED_FILES = [
   'audio/x-wav',
 ].join(',');
 
+
 function getErrorMessage(error, fallback) {
   const detail = error?.response?.data?.detail;
 
@@ -64,6 +132,7 @@ function getErrorMessage(error, fallback) {
 
   return fallback;
 }
+
 
 function fileKind(file) {
   const type = String(file?.type || '').toLowerCase();
@@ -90,6 +159,7 @@ function fileKind(file) {
   return 'unknown';
 }
 
+
 function fileIcon(kind) {
   if (kind === 'image') return '🖼️';
   if (kind === 'pdf') return '📄';
@@ -97,12 +167,14 @@ function fileIcon(kind) {
   return '📎';
 }
 
+
 function fileLabel(kind) {
   if (kind === 'image') return 'تصویر سؤال';
   if (kind === 'pdf') return 'سند مرجع PDF';
   if (kind === 'audio') return 'پیام یا فایل صوتی';
   return 'فایل';
 }
+
 
 function formatBytes(bytes) {
   const value = Number(bytes || 0);
@@ -120,6 +192,7 @@ function formatBytes(bytes) {
   })} مگابایت`;
 }
 
+
 function formatDuration(seconds) {
   const value = Math.max(0, Number(seconds || 0));
   const minutes = Math.floor(value / 60);
@@ -127,6 +200,7 @@ function formatDuration(seconds) {
 
   return `${String(minutes).padStart(2, '0')}:${String(rest).padStart(2, '0')}`;
 }
+
 
 function formatDate(value) {
   if (!value) {
@@ -147,12 +221,652 @@ function formatDate(value) {
   });
 }
 
+
+// ساعت پیام به سبک اپ‌های چت — فقط HH:MM فارسی
+function formatTime(value) {
+  if (!value) {
+    return '';
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  return date.toLocaleTimeString('fa-IR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+
 function messageId(prefix) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+
+// اسکرول به ته صفحه — نرم، مگر برای کاربرانی که
+// reduced-motion فعال کرده‌اند
+function scrollPageToBottom(smooth = true) {
+  let reduced = false;
+
+  try {
+    reduced = Boolean(
+      window.matchMedia?.(
+        '(prefers-reduced-motion: reduce)',
+      )?.matches,
+    );
+
+  } catch (_) {
+    reduced = false;
+  }
+
+  window.scrollTo({
+    top:
+      document.documentElement.scrollHeight,
+
+    behavior:
+      smooth && !reduced
+        ? 'smooth'
+        : 'auto',
+  });
+}
+
+
+// کپی امن در WebView — clipboard API مدرن و
+// فالبک execCommand برای کلاینت‌های قدیمی
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+
+  } catch (_) {
+    // ادامه به فالبک
+  }
+
+  try {
+    const area = document.createElement('textarea');
+
+    area.value = text;
+    area.style.position = 'fixed';
+    area.style.opacity = '0';
+    area.style.pointerEvents = 'none';
+
+    document.body.appendChild(area);
+
+    area.focus();
+    area.select();
+
+    const ok = document.execCommand('copy');
+
+    area.remove();
+
+    return Boolean(ok);
+
+  } catch (_) {
+    return false;
+  }
+}
+
+
+/* ─────────────────────────────────────────────
+   رندر غنی متن پاسخ — فقط React element خالص،
+   بدون dangerouslySetInnerHTML
+
+   پشتیبانی: بلوک کد ``` ، بولد ** ، کد این‌لاین ` ،
+   تیتر # ، نقل‌قول > ، لیست - و 1. و لینک‌ها
+───────────────────────────────────────────── */
+
+const CODE_BLOCK_RE =
+  /```(\w*)\n?([\s\S]*?)```/g;
+
+const INLINE_RE = new RegExp(
+  '(\\*\\*[^*\\n]+\\*\\*)' +
+  '|(`[^`\\n]+`)' +
+  '|\\[([^\\]\\n]+)\\]\\((https?:\\/\\/[^)\\s]+)\\)' +
+  '|(https?:\\/\\/[^\\s)<]+)',
+  'g',
+);
+
+
+// توکن‌های این‌لاین: بولد، کد، لینک markdown و لینک خام
+function InlineText({ text }) {
+  const parts = [];
+
+  let last = 0;
+  let key = 0;
+
+  const regex = new RegExp(INLINE_RE);
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > last) {
+      parts.push(text.slice(last, match.index));
+    }
+
+    const [
+      token,
+      bold,
+      code,
+      linkLabel,
+      linkUrl,
+      bareUrl,
+    ] = match;
+
+    if (bold) {
+      parts.push(
+        <strong key={key++}>
+          {bold.slice(2, -2)}
+        </strong>,
+      );
+
+    } else if (code) {
+      parts.push(
+        <code key={key++} className="msg-ic">
+          {code.slice(1, -1)}
+        </code>,
+      );
+
+    } else if (linkUrl) {
+      parts.push(
+        <a
+          key={key++}
+          className="msg-link"
+          href={linkUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {linkLabel}
+        </a>,
+      );
+
+    } else if (bareUrl) {
+      parts.push(
+        <a
+          key={key++}
+          className="msg-link"
+          href={bareUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {
+            bareUrl.length > 42
+              ? `${bareUrl.slice(0, 42)}…`
+              : bareUrl
+          }
+        </a>,
+      );
+
+    } else {
+      parts.push(token);
+    }
+
+    last = regex.lastIndex;
+  }
+
+  if (last < text.length) {
+    parts.push(text.slice(last));
+  }
+
+  return <>{parts}</>;
+}
+
+
+// تجمیع خطوط به پاراگراف/لیست/تیتر/نقل‌قول
+function renderTextLines(text) {
+  const lines = String(text).split('\n');
+
+  const isUl = (line) =>
+    /^\s*[-•*]\s+/.test(line);
+
+  const isOl = (line) =>
+    /^\s*\d{1,2}[.)]\s+/.test(line);
+
+  const isQuote = (line) =>
+    /^\s*>\s?/.test(line);
+
+  const isHeading = (line) =>
+    /^\s*#{1,3}\s+/.test(line);
+
+  const isSpecial = (line) =>
+    isUl(line) ||
+    isOl(line) ||
+    isQuote(line) ||
+    isHeading(line);
+
+  const blocks = [];
+
+  let i = 0;
+  let key = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    if (!line.trim()) {
+      i += 1;
+      continue;
+    }
+
+    if (isUl(line)) {
+      const items = [];
+
+      while (
+        i < lines.length &&
+        isUl(lines[i])
+      ) {
+        items.push(
+          lines[i].replace(
+            /^\s*[-•*]\s+/,
+            '',
+          ),
+        );
+
+        i += 1;
+      }
+
+      blocks.push(
+        <ul className="msg-list" key={key++}>
+          {items.map((item, j) => (
+            <li key={j}>
+              <InlineText text={item} />
+            </li>
+          ))}
+        </ul>,
+      );
+
+      continue;
+    }
+
+    if (isOl(line)) {
+      const items = [];
+
+      while (
+        i < lines.length &&
+        isOl(lines[i])
+      ) {
+        items.push(
+          lines[i].replace(
+            /^\s*\d{1,2}[.)]\s+/,
+            '',
+          ),
+        );
+
+        i += 1;
+      }
+
+      blocks.push(
+        <ol className="msg-list" key={key++}>
+          {items.map((item, j) => (
+            <li key={j}>
+              <InlineText text={item} />
+            </li>
+          ))}
+        </ol>,
+      );
+
+      continue;
+    }
+
+    if (isQuote(line)) {
+      const quoted = [];
+
+      while (
+        i < lines.length &&
+        isQuote(lines[i])
+      ) {
+        quoted.push(
+          lines[i].replace(/^\s*>\s?/, ''),
+        );
+
+        i += 1;
+      }
+
+      blocks.push(
+        <div className="msg-quote" key={key++}>
+          {quoted.map((item, j) => (
+            <div key={j} dir="auto">
+              <InlineText text={item} />
+            </div>
+          ))}
+        </div>,
+      );
+
+      continue;
+    }
+
+    if (isHeading(line)) {
+      blocks.push(
+        <div className="msg-h" key={key++} dir="auto">
+          <InlineText
+            text={line.replace(
+              /^\s*#{1,3}\s+/,
+              '',
+            )}
+          />
+        </div>,
+      );
+
+      i += 1;
+
+      continue;
+    }
+
+    // خط ساده — خطوط ساده‌ی پشت‌سرهم در یک
+    // پاراگراف با حفظ خط‌جدید ادغام می‌شوند
+    const plain = [];
+
+    while (
+      i < lines.length &&
+      lines[i].trim() &&
+      !isSpecial(lines[i])
+    ) {
+      plain.push(lines[i]);
+      i += 1;
+    }
+
+    blocks.push(
+      <p
+        key={key++}
+        dir="auto"
+        style={{
+          margin: '0 0 4px',
+          whiteSpace: 'pre-wrap',
+        }}
+      >
+        {plain.map((item, j) => (
+          <span key={j}>
+            {j > 0 ? '\n' : ''}
+            <InlineText text={item} />
+          </span>
+        ))}
+      </p>,
+    );
+  }
+
+  return blocks;
+}
+
+
+function CodeBlock({ lang, code }) {
+  const [copied, setCopied] = useState(false);
+
+
+  const copy = async () => {
+    const ok = await copyText(code);
+
+    if (ok) {
+      haptic('light');
+
+      setCopied(true);
+
+      window.setTimeout(
+        () => setCopied(false),
+        1500,
+      );
+    }
+  };
+
+
+  return (
+    <div className="msg-code">
+      <div className="msg-code__bar">
+        <span>{lang || 'code'}</span>
+
+        <button
+          type="button"
+          className="msg-code__copy"
+          onClick={copy}
+        >
+          {
+            copied
+              ? '✓ کپی شد'
+              : 'کپی'
+          }
+        </button>
+      </div>
+
+      <pre>
+        <code>{code}</code>
+      </pre>
+    </div>
+  );
+}
+
+
+function RichText({ text }) {
+  const blocks = [];
+
+  let last = 0;
+  let key = 0;
+
+  const source = String(text || '');
+
+  const regex = new RegExp(CODE_BLOCK_RE);
+  let match;
+
+  while ((match = regex.exec(source)) !== null) {
+    if (match.index > last) {
+      blocks.push(
+        <div key={key++}>
+          {renderTextLines(
+            source.slice(last, match.index),
+          )}
+        </div>,
+      );
+    }
+
+    blocks.push(
+      <CodeBlock
+        key={key++}
+        lang={match[1]}
+        code={String(match[2]).replace(/\n$/, '')}
+      />,
+    );
+
+    last = regex.lastIndex;
+  }
+
+  if (last < source.length) {
+    blocks.push(
+      <div key={key++}>
+        {renderTextLines(source.slice(last))}
+      </div>,
+    );
+  }
+
+  return <>{blocks}</>;
+}
+
+
+/* نشانگر تایپینگ — سه نقطه‌ی تنفسی + برچسب
+   وضعیت (آپلود/فکر) */
+function TypingBubble({ label }) {
+  return (
+    <div className="msg-row">
+      <div className="msg msg--ai msg-in">
+        <div className="typing">
+          <span className="typing__dots">
+            <span className="typing__dot" />
+            <span className="typing__dot" />
+            <span className="typing__dot" />
+          </span>
+
+          <span className="typing__label">
+            {label}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+/* یک ردیف پیام کامل — حباب، ضمیمه، متن غنی،
+   زمان و اکشن‌های پاسخ */
+function MessageRow({
+  item,
+  index,
+  reported,
+  actionsDisabled,
+  onFollowUp,
+  onReport,
+  onCopy,
+}) {
+  const isUser = item.role === 'user';
+
+  const time = formatTime(item.at);
+
+  return (
+    <article
+      className={
+        'msg-row' +
+        (isUser ? ' msg-row--me' : '')
+      }
+    >
+      <div
+        className={
+          'msg ' +
+          (item.fresh ? 'msg-in ' : '') +
+          (isUser ? 'msg--me' : 'msg--ai') +
+          (item.failed ? ' msg--failed' : '')
+        }
+      >
+        <div className="msg__head">
+          <span>
+            {
+              isUser
+                ? 'شما'
+                : '✦ هوشیار'
+            }
+          </span>
+
+          {
+            item.failed
+            && (
+              <span className="msg__fail">
+                ارسال ناموفق
+              </span>
+            )
+          }
+        </div>
+
+        {
+          item.attachment
+          && (
+            <div className="msg-attach">
+              <span className="msg-attach__icon">
+                {fileIcon(item.attachment.kind)}
+              </span>
+
+              <span className="msg-attach__info">
+                <b>
+                  {
+                    item.attachment.name
+                    || fileLabel(item.attachment.kind)
+                  }
+                </b>
+
+                {
+                  item.attachment.size
+                    ? formatBytes(item.attachment.size)
+                    : ''
+                }
+              </span>
+            </div>
+          )
+        }
+
+        <div className="msg__text">
+          {
+            isUser
+              ? (
+                <span dir="auto">{item.text}</span>
+              )
+              : (
+                <RichText text={item.text} />
+              )
+          }
+        </div>
+
+        {
+          time
+          && (
+            <div className="msg__time">
+              {time}
+            </div>
+          )
+        }
+
+        {
+          !isUser
+          && item.text
+          && (
+            <div className="msg__actions">
+              <button
+                type="button"
+                className="msg-act"
+                onClick={() => onFollowUp('example')}
+                disabled={actionsDisabled}
+              >
+                مثال
+              </button>
+
+              <button
+                type="button"
+                className="msg-act"
+                onClick={() => onFollowUp('summary')}
+                disabled={actionsDisabled}
+              >
+                خلاصه
+              </button>
+
+              <button
+                type="button"
+                className="msg-act"
+                onClick={() => onFollowUp('similar')}
+                disabled={actionsDisabled}
+              >
+                سؤال مشابه
+              </button>
+
+              <button
+                type="button"
+                className="msg-act"
+                onClick={() => onCopy(item.text)}
+              >
+                کپی
+              </button>
+
+              <button
+                type="button"
+                className="msg-act msg-act--danger"
+                onClick={() => onReport(item, index)}
+                disabled={
+                  reported
+                  || actionsDisabled
+                }
+              >
+                {
+                  reported
+                    ? 'گزارش شد ✓'
+                    : 'گزارش'
+                }
+              </button>
+            </div>
+          )
+        }
+      </div>
+    </article>
+  );
+}
+
+
 export default function AiChat() {
-  const [messages, setMessages] = useState([]);
+  // live = پیام‌های گفت‌وگوی فعال — از کوئری
+  // بذر می‌شود و بعد به‌صورت خوش‌بینانه رشد
+  // می‌کند تا هیچ پرشی دیده نشود
+  const [live, setLive] = useState([]);
   const [input, setInput] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -161,15 +875,75 @@ export default function AiChat() {
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [previewUrl, setPreviewUrl] = useState('');
 
-  const endRef = useRef(null);
+
+  const [activeConv, setActiveConv] = useState(
+    () => {
+      try {
+        return (
+          window.localStorage
+            .getItem(ACTIVE_CONV_KEY)
+          || LEGACY_ID
+        );
+
+      } catch (_) {
+        return LEGACY_ID;
+      }
+    },
+  );
+
+  const [showHistory, setShowHistory] =
+    useState(false);
+
+  const [showArchived, setShowArchived] =
+    useState(false);
+
+  const [showJump, setShowJump] = useState(false);
+
+  // seedTick با هر بار بذردهی live زیاد می‌شود
+  // تا افکت بازیابی اسکرول بعد از پِیِنت اجرا شود
+  const [seedTick, setSeedTick] = useState(0);
+
+
   const fileInputRef = useRef(null);
   const recorderRef = useRef(null);
   const recordingStreamRef = useRef(null);
   const recordingChunksRef = useRef([]);
   const recordingTimerRef = useRef(null);
 
+  // حافظه‌ی موقعیت اسکرول هر گفت‌وگو — تعویض
+  // رشته بدون از‌دست‌دادن جای خواندن
+  const scrollMapRef = useRef({});
+  const activeConvRef = useRef(activeConv);
+  const nearBottomRef = useRef(true);
+  const lastSeededRef = useRef(null);
+  const skipAutoScrollRef = useRef(false);
+
+  // id رشته‌ای که تازه ساخته‌ایم اما فهرست هنوز
+  // ری‌فچ نشده — مانع می‌شود اعتبارسنجی، رشته‌ی
+  // تازه را «ناموجود» بشمارد و به مشترک برگرداند
+  const pendingNewConvRef = useRef(null);
+
+  const taRef = useRef(null);
+
+
   const toast = useUIStore((state) => state.toast);
   const queryClient = useQueryClient();
+
+
+  useEffect(() => {
+    activeConvRef.current = activeConv;
+
+    try {
+      window.localStorage.setItem(
+        ACTIVE_CONV_KEY,
+        activeConv,
+      );
+
+    } catch (_) {
+      // WebView محدود — فقط حافظه‌ی نشست
+    }
+  }, [activeConv]);
+
 
   const {
     data: status,
@@ -184,28 +958,221 @@ export default function AiChat() {
     refetchInterval: 60_000,
   });
 
+
+  // فهرست گفت‌وگوها — با فلگ بایگانی دوباره
+  // خوانده می‌شود
   const {
-    isLoading: historyLoading,
+    data: convData,
+    isSuccess: convsLoaded,
   } = useQuery({
-    queryKey: ['ai-history'],
+    queryKey: [
+      'ai-conversations',
+      showArchived,
+    ],
 
     queryFn: () => api
-      .get('/api/ai/history')
-      .then((response) => {
-        const history = Array.isArray(response.data?.messages)
-          ? response.data.messages
-          : [];
+      .get('/api/ai/conversations', {
+        params: {
+          include_archived: showArchived,
+        },
+      })
+      .then((response) => response.data),
 
-        setMessages(
-          history.map((item, index) => ({
-            ...item,
-            id: `history-${index}`,
-          })),
-        );
-
-        return history;
-      }),
+    staleTime: 15_000,
   });
+
+  const conversations =
+    convData?.conversations || [];
+
+
+  // پیام‌های رشته‌ی فعال — legacy از همان مسیر
+  // تاریخچه‌ی مشترک می‌آید؛ بقیه از رشته‌ی خودشان
+  const msgsQuery = useQuery({
+    queryKey: ['ai-conv-msgs', activeConv],
+
+    queryFn: () =>
+      activeConv === LEGACY_ID
+        ? api
+            .get('/api/ai/history')
+            .then((response) =>
+              Array.isArray(
+                response.data?.messages,
+              )
+                ? response.data.messages
+                : [],
+            )
+        : api
+            .get(
+              `/api/ai/conversations/` +
+              `${activeConv}/messages`,
+            )
+            .then((response) =>
+              Array.isArray(
+                response.data?.messages,
+              )
+                ? response.data.messages
+                : [],
+            ),
+
+    // تا مشخص نشود رشته واقعاً وجود دارد، درخواست
+    // نزن (مانع ۴۰۴ برای id بایگانی‌شده/حذف‌شده)
+    enabled:
+      activeConv === LEGACY_ID ||
+      conversations.some(
+        (item) => item.id === activeConv,
+      ),
+
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
+
+
+  // اگر رشته‌ی فعال دیگر در فهرست نبود (حذف یا
+  // بایگانی در جای دیگر) به رشته‌ی مشترک برگرد
+  useEffect(() => {
+    if (
+      activeConv === LEGACY_ID ||
+      !convsLoaded
+    ) {
+      return;
+    }
+
+    const found = conversations.some(
+      (item) => item.id === activeConv,
+    );
+
+    if (found) {
+      // رشته‌ی تازه وارد فهرست شد — حفاظ موقت برداشته می‌شود
+      if (pendingNewConvRef.current === activeConv) {
+        pendingNewConvRef.current = null;
+      }
+
+      return;
+    }
+
+    // رشته‌ی تازه‌ساخته هنوز در ری‌فچ فهرست نیامده —
+    // صبر کن، برنگرد
+    if (pendingNewConvRef.current === activeConv) {
+      return;
+    }
+
+    setActiveConv(LEGACY_ID);
+  }, [
+    activeConv,
+    convsLoaded,
+    conversations,
+  ]);
+
+
+  // بذردهی live از کوئری — فقط یک‌بار برای هر
+  // رشته؛ رفرش‌های بعدیِ همان رشته نباید پیام‌های
+  // خوش‌بینانه‌ی در حال پرواز را بپوشانند
+  useEffect(() => {
+    if (!msgsQuery.data) {
+      return;
+    }
+
+    if (lastSeededRef.current === activeConv) {
+      return;
+    }
+
+    lastSeededRef.current = activeConv;
+
+    skipAutoScrollRef.current = true;
+
+    // انیمیشن ورود فقط برای تازه‌ترین دور پیام‌ها —
+    // پخش دوباره‌ی انیمیشن روی کل تاریخچه (تا ۱۲۰
+    // حباب) در برگشت به رشته باعث جَنک می‌شود
+    const length = msgsQuery.data.length;
+
+    setLive(
+      msgsQuery.data.map(
+        (item, index) => ({
+          ...item,
+          id: `${activeConv}-${index}`,
+          fresh: index >= length - 2,
+        }),
+      ),
+    );
+
+    setSeedTick((tick) => tick + 1);
+  }, [msgsQuery.data, activeConv]);
+
+
+  // بازیابی موقعیت اسکرول رشته‌ی جدید — بعد از
+  // دو فریم، تا ارتفاع محتوا پایدار شده باشد
+  useEffect(() => {
+    if (seedTick === 0) {
+      return;
+    }
+
+    const frames = window.requestAnimationFrame(
+      () => {
+        window.requestAnimationFrame(() => {
+          const saved =
+            scrollMapRef.current[activeConv];
+
+          if (typeof saved === 'number') {
+            window.scrollTo(0, saved);
+
+          } else {
+            window.scrollTo(
+              0,
+              document.documentElement
+                .scrollHeight,
+            );
+          }
+
+          nearBottomRef.current = (
+            document.documentElement.scrollHeight -
+            (window.scrollY + window.innerHeight)
+          ) < NEAR_BOTTOM_PX;
+        });
+      },
+    );
+
+    return () =>
+      window.cancelAnimationFrame(frames);
+  }, [seedTick, activeConv]);
+
+
+  // شنونده‌ی اسکرول — ذخیره‌ی موقعیت رشته‌ی
+  // فعال + تشخیص نزدیکی به انتها
+  useEffect(() => {
+    const onScroll = () => {
+      scrollMapRef.current[
+        activeConvRef.current
+      ] = window.scrollY;
+
+      const near = (
+        document.documentElement.scrollHeight -
+        (window.scrollY + window.innerHeight)
+      ) < NEAR_BOTTOM_PX;
+
+      if (near !== nearBottomRef.current) {
+        nearBottomRef.current = near;
+
+        if (near) {
+          setShowJump(false);
+        }
+      }
+    };
+
+    window.addEventListener(
+      'scroll',
+      onScroll,
+      { passive: true },
+    );
+
+    onScroll();
+
+    return () =>
+      window.removeEventListener(
+        'scroll',
+        onScroll,
+      );
+  }, []);
+
 
   const maxMediaBytes = (
     Number(status?.max_media_bytes)
@@ -227,6 +1194,7 @@ export default function AiChat() {
 
   const selectedKind = fileKind(selectedFile);
 
+
   useEffect(() => {
     if (!selectedFile) {
       setPreviewUrl('');
@@ -239,12 +1207,6 @@ export default function AiChat() {
     return () => URL.revokeObjectURL(url);
   }, [selectedFile]);
 
-  useEffect(() => {
-    endRef.current?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'end',
-    });
-  }, [messages, uploadProgress]);
 
   useEffect(() => () => {
     if (recordingTimerRef.current) {
@@ -263,12 +1225,19 @@ export default function AiChat() {
       .forEach((track) => track.stop());
   }, []);
 
+
   const askMutation = useMutation({
-    mutationFn: ({ message, file }) => {
+    mutationFn: ({ message, file, conv }) => {
       if (!file) {
+        const payload = { message };
+
+        if (conv !== LEGACY_ID) {
+          payload.conversation_id = conv;
+        }
+
         return api.post(
           '/api/ai/ask',
-          { message },
+          payload,
           { timeout: 120_000 },
         );
       }
@@ -285,6 +1254,10 @@ export default function AiChat() {
         file,
         file.name,
       );
+
+      if (conv !== LEGACY_ID) {
+        form.append('conversation_id', conv);
+      }
 
       setUploadProgress(1);
 
@@ -318,41 +1291,81 @@ export default function AiChat() {
       );
     },
 
-    onSuccess: async (response, variables) => {
+    onSuccess: (response, variables) => {
       hapticNotif('success');
 
-      setMessages((current) => [
-        ...current.map((item) => (
-          item.id === variables.clientId
-            ? {
-                ...item,
-                failed: false,
-              }
-            : item
-        )),
+      const answer = String(
+        response.data?.answer || '',
+      );
 
-        {
-          id: messageId('assistant'),
-          role: 'assistant',
-          text: String(response.data?.answer || ''),
-        },
-      ]);
+      const nowIso = new Date().toISOString();
 
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ['ai-status'],
-        }),
+      // پاسخ فقط به live همان رشته‌ای اضافه می‌شود
+      // که هنوز باز است — در غیر این صورت کش رشته‌ی
+      // مبدأ هم‌گام می‌شود و رشته‌ی فعال آلوده نمی‌شود
+      if (activeConvRef.current === variables.conv) {
+        setLive((current) => [
+          ...current.map((item) => (
+            item.id === variables.clientId
+              ? {
+                  ...item,
+                  failed: false,
+                }
+              : item
+          )),
 
-        queryClient.invalidateQueries({
-          queryKey: ['ai-history'],
-        }),
-      ]);
+          {
+            id: messageId('assistant'),
+            role: 'assistant',
+            text: answer,
+            at: nowIso,
+            fresh: true,
+          },
+        ]);
+      }
+
+      // کش همان رشته را هم‌گام نگه می‌داریم تا
+      // برگشت بعدی به این رشته لحظه‌ای و بدون
+      // لودینگ باشد
+      queryClient.setQueryData(
+        ['ai-conv-msgs', variables.conv],
+
+        (old) => (
+          Array.isArray(old)
+            ? [
+                ...old,
+
+                {
+                  role: 'user',
+                  text: variables.echo,
+                  at: nowIso,
+                },
+
+                {
+                  role: 'assistant',
+                  text: answer,
+                  at: nowIso,
+                },
+              ]
+            : old
+        ),
+      );
+
+      // عنوان خودکار/پیش‌نمایش/شماره‌ی پیام رشته
+      // در فهرست تازه می‌شود
+      queryClient.invalidateQueries({
+        queryKey: ['ai-conversations'],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ['ai-status'],
+      });
     },
 
-    onError: async (error, variables) => {
+    onError: (error, variables) => {
       hapticNotif('error');
 
-      setMessages((current) => current.map((item) => (
+      setLive((current) => current.map((item) => (
         item.id === variables.clientId
           ? {
               ...item,
@@ -370,7 +1383,7 @@ export default function AiChat() {
         4200,
       );
 
-      await queryClient.invalidateQueries({
+      queryClient.invalidateQueries({
         queryKey: ['ai-status'],
       });
     },
@@ -383,50 +1396,28 @@ export default function AiChat() {
     },
   });
 
-  const clearMutation = useMutation({
-    mutationFn: () => api.delete(
-      '/api/ai/history',
-      {
-        params: {
-          clear_reference: true,
-        },
-      },
-    ),
 
-    onSuccess: async () => {
-      setMessages([]);
-      setSelectedFile(null);
-      setInput('');
-      setReported(new Set());
+  // اسکرول خودکار نرم — فقط وقتی پیام جدید آمده
+  // (live بزرگ‌تر شده یا حباب تایپینگ ظاهر شده)
+  // و کاربر نزدیک انتهاست؛ وگرنه چیپ پرش نشان
+  // داده می‌شود تا جای خواندنش خراب نشود
+  useEffect(() => {
+    if (skipAutoScrollRef.current) {
+      skipAutoScrollRef.current = false;
+      return;
+    }
 
-      hapticNotif('success');
+    if (nearBottomRef.current) {
+      scrollPageToBottom();
 
-      toast(
-        'گفت‌وگوی جدید شروع شد و سند مرجع قبلی پاک شد',
-        'info',
-      );
+    } else {
+      setShowJump(true);
+    }
 
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ['ai-history'],
-        }),
+    // فقط رشد لیست و تغییر وضعیت ارسال مهم است
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [live.length, askMutation.isPending]);
 
-        queryClient.invalidateQueries({
-          queryKey: ['ai-status'],
-        }),
-      ]);
-    },
-
-    onError: (error) => {
-      toast(
-        getErrorMessage(
-          error,
-          'شروع گفت‌وگوی جدید انجام نشد',
-        ),
-        'error',
-      );
-    },
-  });
 
   const clearReferenceMutation = useMutation({
     mutationFn: () => api.delete('/api/ai/reference'),
@@ -454,6 +1445,7 @@ export default function AiChat() {
       );
     },
   });
+
 
   const reportMutation = useMutation({
     mutationFn: ({ question, answer }) => api.post(
@@ -488,6 +1480,152 @@ export default function AiChat() {
     },
   });
 
+
+  // ساخت گفت‌وگوی جدید — کش را همان‌جا با آرایه‌ی
+  // خالی بذر می‌کنیم تا بدون حتی یک فلش لودینگ،
+  // رشته‌ی تازه باز شود
+  const createConvMutation = useMutation({
+    mutationFn: () =>
+      api.post('/api/ai/conversations', {}),
+
+    onSuccess: (response) => {
+      const id = String(response.data?.id || '');
+
+      if (!id) {
+        return;
+      }
+
+      // محافظ موقت تا ری‌فچ فهرست
+      pendingNewConvRef.current = id;
+
+      queryClient.setQueryData(
+        ['ai-conv-msgs', id],
+        [],
+      );
+
+      scrollMapRef.current[id] = undefined;
+
+      setActiveConv(id);
+
+      setShowHistory(false);
+
+      hapticNotif('success');
+
+      queryClient.invalidateQueries({
+        queryKey: ['ai-conversations'],
+      });
+    },
+
+    onError: (error) => {
+      toast(
+        getErrorMessage(
+          error,
+          'ساخت گفت‌وگوی جدید انجام نشد',
+        ),
+        'error',
+      );
+    },
+  });
+
+
+  // پچ مشترک تغییرنام / پین / بایگانی
+  const patchConvMutation = useMutation({
+    mutationFn: ({ id, patch }) =>
+      api.patch(
+        `/api/ai/conversations/${id}`,
+        patch,
+      ),
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['ai-conversations'],
+      });
+    },
+
+    onError: (error) => {
+      toast(
+        getErrorMessage(
+          error,
+          'ذخیره‌ی تغییر گفت‌وگو انجام نشد',
+        ),
+        'error',
+      );
+    },
+  });
+
+
+  const deleteConvMutation = useMutation({
+    mutationFn: (item) =>
+      api.delete(
+        `/api/ai/conversations/${item.id}`,
+      ),
+
+    onSuccess: (_, item) => {
+      hapticNotif('success');
+
+      queryClient.removeQueries({
+        queryKey: ['ai-conv-msgs', item.id],
+      });
+
+      delete scrollMapRef.current[item.id];
+
+      if (pendingNewConvRef.current === item.id) {
+        pendingNewConvRef.current = null;
+      }
+
+      if (item.legacy) {
+        // رشته‌ی مشترک محلی هم خالی می‌شود
+        setLive([]);
+        lastSeededRef.current = LEGACY_ID;
+
+        queryClient.invalidateQueries({
+          queryKey: ['ai-status'],
+        });
+
+        toast(
+          'حافظه‌ی مشترک با ربات پاک شد',
+          'info',
+        );
+
+      } else {
+        toast(
+          'گفت‌وگو حذف شد',
+          'info',
+        );
+      }
+
+      // اگر رشته‌ی فعال حذف شد، به مشترک برگرد
+      if (
+        item.id === activeConv &&
+        item.id !== LEGACY_ID
+      ) {
+        setActiveConv(LEGACY_ID);
+      }
+
+      queryClient.invalidateQueries({
+        queryKey: ['ai-conversations'],
+      });
+    },
+
+    onError: (error) => {
+      toast(
+        getErrorMessage(
+          error,
+          'حذف گفت‌وگو انجام نشد',
+        ),
+        'error',
+      );
+    },
+  });
+
+
+  const sheetBusy = (
+    createConvMutation.isPending
+    || patchConvMutation.isPending
+    || deleteConvMutation.isPending
+  );
+
+
   const remaining = status?.unlimited
     ? 'نامحدود'
     : `${status?.remaining ?? 0} از ${status?.daily_limit ?? 0}`;
@@ -502,6 +1640,7 @@ export default function AiChat() {
       || Boolean(selectedFile)
     )
   );
+
 
   const chooseFile = (file) => {
     if (!file) {
@@ -568,6 +1707,7 @@ export default function AiChat() {
     haptic('light');
   };
 
+
   const handleFileInput = (event) => {
     chooseFile(
       event.target.files?.[0],
@@ -576,11 +1716,13 @@ export default function AiChat() {
     event.target.value = '';
   };
 
+
   const removeSelectedFile = () => {
     setSelectedFile(null);
     setUploadProgress(0);
     haptic('light');
   };
+
 
   const send = (
     customMessage,
@@ -607,21 +1749,22 @@ export default function AiChat() {
 
     haptic('medium');
 
-    setMessages((current) => [
+    const echoText = (
+      message
+      || (
+        file
+          ? `[${fileLabel(kind)} فرستاده شد]`
+          : ''
+      )
+    );
+
+    setLive((current) => [
       ...current,
 
       {
         id,
         role: 'user',
-
-        text: (
-          message
-          || (
-            file
-              ? `[${fileLabel(kind)} فرستاده شد]`
-              : ''
-          )
-        ),
+        text: echoText,
 
         attachment: file
           ? {
@@ -631,22 +1774,55 @@ export default function AiChat() {
             }
           : null,
 
+        at: new Date().toISOString(),
+        fresh: true,
         failed: false,
       },
     ]);
 
     setInput('');
 
+    // ارتفاع تکست‌اریا به خط اول برگردد
+    if (taRef.current) {
+      taRef.current.style.height = 'auto';
+    }
+
     if (file) {
       setSelectedFile(null);
     }
+
+    // فرستنده همیشه پیام خودش را می‌بیند — حتی اگر
+    // در حال خواندن تاریخچه‌ی بالاتر بوده باشد
+    window.requestAnimationFrame(() => {
+      scrollPageToBottom();
+    });
 
     askMutation.mutate({
       clientId: id,
       message,
       file,
+      echo: echoText,
+      conv: activeConv,
     });
   };
+
+
+  const runSuggestion = (item) => {
+    // کارت «تحلیل تصاویر» مستقیم فایل‌پیکر
+    // را باز می‌کند تا مسیر کاربر کوتاه شود
+    if (item.action === 'pick-file') {
+      haptic('light');
+
+      fileInputRef.current?.click();
+
+      return;
+    }
+
+    send(item.prompt, {
+      ignoreFile: true,
+    });
+  };
+
 
   const followUp = (type) => {
     const prompts = {
@@ -668,12 +1844,36 @@ export default function AiChat() {
     );
   };
 
+
+  const copyAnswer = async (text) => {
+    const ok = await copyText(
+      String(text || ''),
+    );
+
+    if (ok) {
+      hapticNotif('success');
+
+      toast(
+        'پاسخ کپی شد',
+        'success',
+        1600,
+      );
+
+    } else {
+      toast(
+        'کپی انجام نشد',
+        'warning',
+      );
+    }
+  };
+
+
   const reportAnswer = (
     answer,
     index,
   ) => {
     const previousUser = [
-      ...messages.slice(0, index),
+      ...live.slice(0, index),
     ]
       .reverse()
       .find(
@@ -700,6 +1900,28 @@ export default function AiChat() {
     });
   };
 
+
+  const openConversation = (id) => {
+    if (id !== activeConv) {
+      haptic('light');
+
+      setActiveConv(id);
+    }
+
+    setShowHistory(false);
+  };
+
+
+  const typingLabel = (
+    uploadProgress > 0
+    && uploadProgress < 100
+      ? `در حال بارگذاری فایل... ${uploadProgress.toLocaleString('fa-IR')}٪`
+      : uploadProgress === 100
+        ? 'فایل رسید؛ هوشیار در حال بررسی است...'
+        : 'هوشیار در حال نوشتن است...'
+  );
+
+
   const stopRecording = () => {
     const recorder = recorderRef.current;
 
@@ -710,6 +1932,7 @@ export default function AiChat() {
       recorder.stop();
     }
   };
+
 
   const startRecording = async () => {
     if (
@@ -896,29 +2119,60 @@ export default function AiChat() {
     }
   };
 
-  const headerAction = (
-    <button
-      type="button"
-      className="btn btn-dark"
-      style={styles.headerButton}
-      onClick={
-        () => clearMutation.mutate()
-      }
-      disabled={
-        clearMutation.isPending
-        || askMutation.isPending
-      }
-      aria-label="شروع گفت‌وگوی جدید"
-    >
-      {
-        clearMutation.isPending
-          ? <Spinner size={15} />
-          : '＋'
-      }
 
-      جدید
-    </button>
+  const headerAction = (
+    <div
+      style={{
+        display: 'flex',
+        gap: 6,
+      }}
+    >
+      <button
+        type="button"
+        className="btn btn-dark"
+        style={{
+          minHeight: 32,
+          padding: '5px 9px',
+          fontSize: 11,
+        }}
+        onClick={() => {
+          haptic('light');
+
+          setShowHistory(true);
+        }}
+        aria-label="تاریخچه‌ی گفت‌وگوها"
+      >
+        ☰ گفت‌وگوها
+      </button>
+
+      <button
+        type="button"
+        className="btn btn-p"
+        style={{
+          minHeight: 32,
+          padding: '5px 9px',
+          fontSize: 11,
+        }}
+        onClick={() =>
+          createConvMutation.mutate()
+        }
+        disabled={
+          createConvMutation.isPending
+          || askMutation.isPending
+        }
+        aria-label="گفت‌وگوی جدید"
+      >
+        {
+          createConvMutation.isPending
+            ? <Spinner size={15} />
+            : '＋'
+        }
+
+        جدید
+      </button>
+    </div>
   );
+
 
   return (
     <>
@@ -930,154 +2184,83 @@ export default function AiChat() {
 
       <main
         className="page"
-        style={styles.page}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 10,
+          paddingInline: 12,
+        }}
       >
-        <section
-          className="card card-glow"
-          style={styles.statusCard}
-        >
-          <div style={styles.statusTop}>
-            <div style={styles.aiAvatar}>
-              ✦
-            </div>
+        <section className="ai-strip">
+          <span className="ai-orb">
+            ✦
+          </span>
 
-            <div style={styles.statusText}>
-              <strong style={styles.statusTitle}>
-                هوشیار آماده کمک است
-              </strong>
+          <span className="ai-strip__txt">
+            <span className="ai-strip__title">
+              هوشیار
+            </span>
 
-              <span style={styles.statusSubtitle}>
-                متن، عکس، PDF و صدای سؤال را بفرست
-              </span>
-            </div>
-
-            <span
-              className={
-                `badge ${
-                  status?.enabled
-                  && !status?.banned
-                    ? 'b-grn'
-                    : 'b-red'
-                }`
-              }
-            >
-              <span className="badge-dot" />
-
+            <span className="ai-strip__sub">
               {
                 statusLoading
-                  ? 'بررسی'
-                  : status?.banned
-                    ? 'مسدود'
-                    : status?.enabled
-                      ? 'فعال'
-                      : 'خاموش'
+                  ? 'در حال بررسی وضعیت...'
+                  : `مدل ${status?.provider || '—'} · سهمیه امروز: ${remaining}`
               }
             </span>
-          </div>
-
-          <div style={styles.statusMeta}>
-            <span>
-              سهمیه امروز:{' '}
-              <b>{remaining}</b>
-            </span>
-
-            <span>
-              مدل:{' '}
-              <b>
-                {status?.provider || '—'}
-              </b>
-            </span>
-          </div>
+          </span>
 
           {
-            !status?.unlimited
+            activeReference
             && (
-              <div
-                className="pbar"
-                style={styles.quotaBar}
-              >
-                <div
-                  className="pbar-f"
-                  style={{
-                    width: `${
-                      Math.min(
-                        100,
-                        Math.max(
-                          0,
-                          (
-                            (
-                              status?.used_today
-                              || 0
-                            )
-                            / Math.max(
-                              1,
-                              status?.daily_limit
-                              || 1,
-                            )
-                          )
-                          * 100,
-                        ),
-                      )
-                    }%`,
-                  }}
-                />
-              </div>
-            )
-          }
-        </section>
-
-        {
-          activeReference
-          && (
-            <section
-              className="card"
-              style={styles.referenceCard}
-            >
-              <div style={styles.referenceIcon}>
-                PDF
-              </div>
-
-              <div style={styles.referenceText}>
-                <strong style={styles.referenceName}>
-                  {activeReference.name}
-                </strong>
-
-                <span style={styles.referenceHint}>
-                  سند مرجع فعال است؛ سؤال‌های بعدی با توجه به آن پاسخ داده می‌شوند.
-                </span>
-
-                <span style={styles.referenceExpiry}>
-                  انقضا:{' '}
-                  {
-                    formatDate(
-                      activeReference.expires_at,
-                    )
-                  }
-                </span>
-              </div>
-
               <button
                 type="button"
-                className="btn btn-d"
-                style={styles.iconButton}
-                onClick={
-                  () => clearReferenceMutation.mutate()
+                className="ref-chip"
+                onClick={() =>
+                  clearReferenceMutation.mutate()
                 }
                 disabled={
                   clearReferenceMutation.isPending
-                  || askMutation.isPending
                 }
-                aria-label="پاک‌کردن سند مرجع"
+                title={
+                  `پاک‌کردن سند مرجع — انقضا: ` +
+                  formatDate(activeReference.expires_at)
+                }
               >
-                {
-                  clearReferenceMutation.isPending
-                    ? <Spinner size={16} />
-                    : '×'
-                }
+                📄
+
+                <span>
+                  {activeReference.name}
+                </span>
+
+                ×
               </button>
-            </section>
-          )
-        }
+            )
+          }
+
+          <span
+            className={
+              `badge ${
+                status?.enabled
+                && !status?.banned
+                  ? 'b-grn'
+                  : 'b-red'
+              }`
+            }
+          >
+            <span className="badge-dot" />
+
+            {
+              statusLoading
+                ? 'بررسی'
+                : status?.banned
+                  ? 'مسدود'
+                  : status?.enabled
+                    ? 'فعال'
+                    : 'خاموش'
+            }
+          </span>
+        </section>
 
         {
           unavailable
@@ -1085,9 +2268,19 @@ export default function AiChat() {
           && (
             <div
               className="card"
-              style={styles.unavailableCard}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 10,
+
+                borderColor:
+                  'rgba(239,68,68,.22)',
+
+                background:
+                  'rgba(239,68,68,.08)',
+              }}
             >
-              <span style={styles.unavailableIcon}>
+              <span style={{ fontSize: 24 }}>
                 {
                   status?.banned
                     ? '⛔'
@@ -1104,7 +2297,14 @@ export default function AiChat() {
                   }
                 </strong>
 
-                <p style={styles.unavailableText}>
+                <p
+                  style={{
+                    marginTop: 4,
+                    color: 'var(--tx2)',
+                    fontSize: 11,
+                    lineHeight: 1.8,
+                  }}
+                >
                   {
                     status?.banned
                       ? 'برای پیگیری از بخش تیکت با پشتیبانی تماس بگیرید.'
@@ -1120,75 +2320,94 @@ export default function AiChat() {
         }
 
         <section
-          style={styles.chatArea}
+          className="chat-scroll"
           aria-live="polite"
         >
           {
-            (
-              statusLoading
-              || historyLoading
-            )
+            msgsQuery.isPending
             && (
-              <div style={styles.loadingList}>
-                <SkeletonCard lines={2} />
-                <SkeletonCard lines={3} />
+              <div
+                style={{
+                  display: 'grid',
+                  gap: 9,
+                }}
+              >
+                <div
+                  className="skeleton"
+                  style={{
+                    width: '58%',
+                    height: 52,
+                    borderRadius: 18,
+                  }}
+                />
+
+                <div
+                  className="skeleton"
+                  style={{
+                    width: '72%',
+                    height: 66,
+                    borderRadius: 18,
+                    marginInlineStart: 'auto',
+                  }}
+                />
+
+                <div
+                  className="skeleton"
+                  style={{
+                    width: '64%',
+                    height: 52,
+                    borderRadius: 18,
+                  }}
+                />
               </div>
             )
           }
 
           {
-            !statusLoading
-            && !historyLoading
-            && messages.length === 0
+            !msgsQuery.isPending
+            && live.length === 0
             && (
-              <div style={styles.welcome}>
-                <div style={styles.welcomeOrb}>
+              <div className="chat-empty">
+                <div className="chat-orb">
                   ✦
                 </div>
 
-                <h2 style={styles.welcomeTitle}>
+                <h2 className="chat-empty__title">
                   از هوشیار بپرس
                 </h2>
 
-                <p style={styles.welcomeText}>
-                  سؤال را تایپ کن، از برگه عکس بگیر، جزوه PDF را مرجع کن یا سؤال را با صدا بگو.
+                <p className="chat-empty__text">
+                  سؤال را تایپ کن، عکس بفرست، جزوه PDF را مرجع کن یا سؤالت را با صدا بگو.
                 </p>
 
-                <div style={styles.capabilityGrid}>
-                  <span style={styles.capabilityChip}>
-                    📝 متن
-                  </span>
-
-                  <span style={styles.capabilityChip}>
-                    🖼️ عکس
-                  </span>
-
-                  <span style={styles.capabilityChip}>
-                    📄 PDF
-                  </span>
-
-                  <span style={styles.capabilityChip}>
-                    🎙️ صدا
-                  </span>
-                </div>
-
-                <div style={styles.suggestions}>
+                <div className="sugg-grid">
                   {
-                    SUGGESTIONS.map((suggestion) => (
+                    SUGGESTIONS.map((item) => (
                       <button
-                        key={suggestion}
+                        key={item.title}
                         type="button"
-                        style={styles.suggestion}
-                        onClick={
-                          () => send(suggestion)
+                        className="sugg"
+                        onClick={() =>
+                          runSuggestion(item)
                         }
                         disabled={
                           unavailable
                           || askMutation.isPending
                         }
                       >
-                        <span>↗</span>
-                        {suggestion}
+                        <span className="sugg__icon">
+                          {item.icon}
+                        </span>
+
+                        <span className="sugg__txt">
+                          <span className="sugg__title">
+                            {item.title}
+                          </span>
+
+                          <span className="sugg__desc">
+                            {item.desc}
+                          </span>
+                        </span>
                       </button>
                     ))
                   }
@@ -1198,224 +2417,89 @@ export default function AiChat() {
           }
 
           {
-            messages.map((item, index) => {
-              const isUser = item.role === 'user';
-              const isReported = reported.has(item.id);
-
-              return (
-                <article
-                  key={
-                    item.id
-                    || `${item.role}-${index}`
-                  }
-                  style={{
-                    ...styles.messageRow,
-
-                    justifyContent: isUser
-                      ? 'flex-start'
-                      : 'flex-end',
-                  }}
-                >
-                  <div
-                    style={{
-                      ...styles.bubble,
-
-                      ...(
-                        isUser
-                          ? styles.userBubble
-                          : styles.assistantBubble
-                      ),
-
-                      ...(
-                        item.failed
-                          ? styles.failedBubble
-                          : {}
-                      ),
-                    }}
-                  >
-                    <div style={styles.bubbleHead}>
-                      <span>
-                        {
-                          isUser
-                            ? 'شما'
-                            : '✦ هوشیار'
-                        }
-                      </span>
-
-                      {
-                        item.failed
-                        && (
-                          <span style={styles.failedText}>
-                            ارسال ناموفق
-                          </span>
-                        )
-                      }
-                    </div>
-
-                    {
-                      item.attachment
-                      && (
-                        <div style={styles.messageAttachment}>
-                          <span style={styles.messageAttachmentIcon}>
-                            {
-                              fileIcon(
-                                item.attachment.kind,
-                              )
-                            }
-                          </span>
-
-                          <span style={styles.messageAttachmentText}>
-                            <b>
-                              {
-                                item.attachment.name
-                                || fileLabel(
-                                  item.attachment.kind,
-                                )
-                              }
-                            </b>
-
-                            {
-                              item.attachment.size
-                                ? formatBytes(
-                                    item.attachment.size,
-                                  )
-                                : ''
-                            }
-                          </span>
-                        </div>
-                      )
-                    }
-
-                    <div
-                      dir="auto"
-                      style={styles.messageText}
-                    >
-                      {item.text}
-                    </div>
-
-                    {
-                      !isUser
-                      && item.text
-                      && (
-                        <div style={styles.answerActions}>
-                          <button
-                            type="button"
-                            style={styles.miniAction}
-                            onClick={
-                              () => followUp('example')
-                            }
-                            disabled={
-                              askMutation.isPending
-                              || unavailable
-                            }
-                          >
-                            مثال
-                          </button>
-
-                          <button
-                            type="button"
-                            style={styles.miniAction}
-                            onClick={
-                              () => followUp('summary')
-                            }
-                            disabled={
-                              askMutation.isPending
-                              || unavailable
-                            }
-                          >
-                            خلاصه
-                          </button>
-
-                          <button
-                            type="button"
-                            style={styles.miniAction}
-                            onClick={
-                              () => followUp('similar')
-                            }
-                            disabled={
-                              askMutation.isPending
-                              || unavailable
-                            }
-                          >
-                            سؤال مشابه
-                          </button>
-
-                          <button
-                            type="button"
-                            style={{
-                              ...styles.miniAction,
-                              ...styles.reportAction,
-                            }}
-                            onClick={
-                              () => reportAnswer(
-                                item,
-                                index,
-                              )
-                            }
-                            disabled={
-                              isReported
-                              || reportMutation.isPending
-                            }
-                          >
-                            {
-                              isReported
-                                ? 'گزارش شد ✓'
-                                : 'گزارش'
-                            }
-                          </button>
-                        </div>
-                      )
-                    }
-                  </div>
-                </article>
-              );
-            })
+            live.map((item, index) => (
+              <MessageRow
+                key={
+                  item.id
+                  || `${item.role}-${index}`
+                }
+                item={item}
+                index={index}
+                reported={reported.has(item.id)}
+                actionsDisabled={
+                  askMutation.isPending
+                  || unavailable
+                }
+                onFollowUp={followUp}
+                onReport={reportAnswer}
+                onCopy={copyAnswer}
+              />
+            ))
           }
 
           {
             askMutation.isPending
             && (
-              <div
-                style={{
-                  ...styles.messageRow,
-                  justifyContent: 'flex-end',
+              <TypingBubble label={typingLabel} />
+            )
+          }
+        </section>
+
+        <section className="cmp glass">
+          {
+            showJump
+            && !isRecording
+            && (
+              <button
+                type="button"
+                className="jump-chip"
+                onClick={() => {
+                  haptic('light');
+
+                  setShowJump(false);
+
+                  scrollPageToBottom();
                 }}
               >
-                <div
-                  style={{
-                    ...styles.bubble,
-                    ...styles.assistantBubble,
-                    ...styles.thinkingBubble,
-                  }}
-                >
-                  <Spinner size={18} />
-
-                  <span>
-                    {
-                      uploadProgress > 0
-                      && uploadProgress < 100
-                        ? `در حال بارگذاری فایل... ${uploadProgress.toLocaleString('fa-IR')}٪`
-                        : uploadProgress === 100
-                          ? 'فایل رسید؛ هوشیار در حال بررسی است...'
-                          : 'هوشیار در حال فکر کردن است...'
-                    }
-                  </span>
-                </div>
-              </div>
+                ↓ آخرین پیام‌ها
+              </button>
             )
           }
 
-          <div ref={endRef} />
-        </section>
+          {
+            input.length
+              > maxInputChars * 0.75
+            && (
+              <span
+                className={
+                  'cmp__count' +
+                  (
+                    input.length
+                      > maxInputChars * 0.92
+                      ? ' cmp__count--near'
+                      : ''
+                  )
+                }
+              >
+                {
+                  input.length
+                    .toLocaleString('fa-IR')
+                }
 
-        <section
-          className="glass"
-          style={styles.composer}
-        >
+                /
+
+                {
+                  maxInputChars
+                    .toLocaleString('fa-IR')
+                }
+              </span>
+            )
+          }
+
           {
             selectedFile
             && (
-              <div style={styles.selectedFile}>
+              <div className="cmp-file">
                 {
                   selectedKind === 'image'
                   && previewUrl
@@ -1423,39 +2507,27 @@ export default function AiChat() {
                       <img
                         src={previewUrl}
                         alt="پیش‌نمایش فایل انتخابی"
-                        style={styles.imagePreview}
+                        className="cmp-file__img"
                       />
                     )
                     : (
-                      <div style={styles.filePreviewIcon}>
-                        {
-                          fileIcon(
-                            selectedKind,
-                          )
-                        }
+                      <div className="cmp-file__icon">
+                        {fileIcon(selectedKind)}
                       </div>
                     )
                 }
 
-                <div style={styles.selectedFileInfo}>
-                  <strong style={styles.selectedFileName}>
+                <div className="cmp-file__info">
+                  <strong className="cmp-file__name">
                     {selectedFile.name}
                   </strong>
 
-                  <span style={styles.selectedFileMeta}>
-                    {
-                      fileLabel(
-                        selectedKind,
-                      )
-                    }
+                  <span className="cmp-file__meta">
+                    {fileLabel(selectedKind)}
 
                     {' · '}
 
-                    {
-                      formatBytes(
-                        selectedFile.size,
-                      )
-                    }
+                    {formatBytes(selectedFile.size)}
 
                     {
                       selectedKind === 'pdf'
@@ -1472,7 +2544,7 @@ export default function AiChat() {
                         controls
                         preload="metadata"
                         src={previewUrl}
-                        style={styles.audioPreview}
+                        className="cmp-file__audio"
                       />
                     )
                   }
@@ -1480,7 +2552,7 @@ export default function AiChat() {
 
                 <button
                   type="button"
-                  style={styles.removeFile}
+                  className="cmp-file__x"
                   onClick={removeSelectedFile}
                   disabled={askMutation.isPending}
                   aria-label="حذف فایل انتخابی"
@@ -1494,20 +2566,14 @@ export default function AiChat() {
           {
             isRecording
               ? (
-                <div style={styles.recordingBar}>
-                  <span style={styles.recordingDot} />
+                <div className="cmp-rec">
+                  <span className="cmp-rec__dot" />
 
-                  <div style={styles.recordingText}>
-                    <strong>
-                      در حال ضبط صدا
-                    </strong>
+                  <div className="cmp-rec__txt">
+                    <b>در حال ضبط صدا</b>
 
                     <span>
-                      {
-                        formatDuration(
-                          recordingSeconds,
-                        )
-                      }
+                      {formatDuration(recordingSeconds)}
                     </span>
                   </div>
 
@@ -1515,16 +2581,61 @@ export default function AiChat() {
                     type="button"
                     className="btn btn-d"
                     onClick={stopRecording}
-                    style={styles.stopButton}
+                    style={{
+                      minHeight: 34,
+                      padding: '5px 10px',
+                      fontSize: 10,
+                    }}
                   >
                     ■ پایان ضبط
                   </button>
                 </div>
               )
               : (
-                <>
+                <div className="cmp__row">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept={ACCEPTED_FILES}
+                    onChange={handleFileInput}
+                    style={{ display: 'none' }}
+                    tabIndex={-1}
+                  />
+
+                  <button
+                    type="button"
+                    className="cmp__tool"
+                    onClick={() =>
+                      fileInputRef.current?.click()
+                    }
+                    disabled={
+                      unavailable
+                      || askMutation.isPending
+                    }
+                    aria-label="انتخاب عکس، PDF یا فایل صوتی"
+                    title="پیوست فایل"
+                  >
+                    📎
+                  </button>
+
+                  <button
+                    type="button"
+                    className="cmp__tool"
+                    onClick={startRecording}
+                    disabled={
+                      unavailable
+                      || askMutation.isPending
+                      || capabilities.audio === false
+                    }
+                    aria-label="ضبط پیام صوتی"
+                    title="ضبط صدا"
+                  >
+                    🎙️
+                  </button>
+
                   <textarea
-                    className="inp"
+                    ref={taRef}
+                    className="cmp__ta"
                     value={input}
                     onChange={
                       (event) => setInput(
@@ -1549,106 +2660,45 @@ export default function AiChat() {
                       (event) => {
                         event.currentTarget.style.height = 'auto';
 
-                        event.currentTarget.style.height = `${
-                          Math.min(
-                            event.currentTarget.scrollHeight,
-                            120,
-                          )
-                        }px`;
+                        event.currentTarget.style.height = `${Math.min(
+                          event.currentTarget.scrollHeight,
+                          120,
+                        )}px`;
                       }
                     }
                     rows={1}
                     maxLength={maxInputChars}
                     placeholder={
                       selectedFile
-                        ? 'توضیح یا سؤال درباره فایل (اختیاری)'
+                        ? 'توضیح یا سؤال درباره‌ی فایل (اختیاری)'
                         : 'سؤالت را از هوشیار بپرس...'
                     }
                     disabled={
                       unavailable
                       || askMutation.isPending
                     }
-                    style={styles.textarea}
                     aria-label="متن سؤال"
                   />
 
-                  <div style={styles.composerActions}>
-                    <div style={styles.mediaActions}>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept={ACCEPTED_FILES}
-                        onChange={handleFileInput}
-                        style={styles.hiddenInput}
-                        tabIndex={-1}
-                      />
-
-                      <button
-                        type="button"
-                        style={styles.mediaButton}
-                        onClick={
-                          () => fileInputRef.current?.click()
-                        }
-                        disabled={
-                          unavailable
-                          || askMutation.isPending
-                        }
-                        aria-label="انتخاب عکس، PDF یا فایل صوتی"
-                        title="انتخاب عکس، PDF یا فایل صوتی"
-                      >
-                        ＋
-                        <span>فایل</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        style={styles.mediaButton}
-                        onClick={startRecording}
-                        disabled={
-                          unavailable
-                          || askMutation.isPending
-                          || capabilities.audio === false
-                        }
-                        aria-label="ضبط پیام صوتی"
-                        title="ضبط پیام صوتی"
-                      >
-                        🎙️
-                        <span>ضبط</span>
-                      </button>
-                    </div>
-
-                    <span style={styles.characterCount}>
-                      {
-                        input.length.toLocaleString('fa-IR')
-                      }
-
-                      /
-
-                      {
-                        maxInputChars.toLocaleString('fa-IR')
-                      }
-                    </span>
-
-                    <button
-                      type="button"
-                      className="btn btn-p"
-                      onClick={() => send()}
-                      disabled={!canSend}
-                      style={styles.sendButton}
-                    >
-                      {
-                        askMutation.isPending
-                          ? (
-                            <Spinner
-                              size={18}
-                              color="#fff"
-                            />
-                          )
-                          : 'ارسال ↑'
-                      }
-                    </button>
-                  </div>
-                </>
+                  <button
+                    type="button"
+                    className="cmp__btn"
+                    onClick={() => send()}
+                    disabled={!canSend}
+                    aria-label="ارسال پیام"
+                  >
+                    {
+                      askMutation.isPending
+                        ? (
+                          <Spinner
+                            size={16}
+                            color="#fff"
+                          />
+                        )
+                        : '↑'
+                    }
+                  </button>
+                </div>
               )
           }
 
@@ -1657,8 +2707,7 @@ export default function AiChat() {
             && askMutation.isPending
             && (
               <div
-                className="pbar"
-                style={styles.uploadBar}
+                className="pbar cmp__pbar"
               >
                 <div
                   className="pbar-f"
@@ -1670,634 +2719,61 @@ export default function AiChat() {
             )
           }
 
-          <p style={styles.disclaimer}>
+          <p className="cmp__hint">
             هوشیار ابزار کمک‌آموزشی است؛ پاسخ‌های حساس پزشکی را با منبع درسی بررسی کن.
           </p>
         </section>
       </main>
+
+      {
+        showHistory
+        && (
+          <ChatHistorySheet
+            conversations={conversations}
+            activeId={activeConv}
+            loading={!convsLoaded}
+            showArchived={showArchived}
+            busy={sheetBusy}
+            onToggleArchived={() => {
+              haptic('light');
+
+              setShowArchived(
+                (current) => !current,
+              );
+            }}
+            onClose={() => setShowHistory(false)}
+            onSelect={openConversation}
+            onNew={() =>
+              createConvMutation.mutate()
+            }
+            onRename={(id, title) =>
+              patchConvMutation.mutate({
+                id,
+                patch: { title },
+              })
+            }
+            onTogglePin={(item) =>
+              patchConvMutation.mutate({
+                id: item.id,
+                patch: {
+                  pinned: !item.pinned,
+                },
+              })
+            }
+            onToggleArchive={(item) =>
+              patchConvMutation.mutate({
+                id: item.id,
+                patch: {
+                  archived: !item.archived,
+                },
+              })
+            }
+            onDelete={(item) =>
+              deleteConvMutation.mutate(item)
+            }
+          />
+        )
+      }
     </>
   );
 }
-
-const styles = {
-  page: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 12,
-    paddingInline: 12,
-  },
-
-  headerButton: {
-    minHeight: 32,
-    padding: '5px 9px',
-    fontSize: 11,
-  },
-
-  statusCard: {
-    padding: 14,
-
-    background:
-      'linear-gradient(145deg, rgba(29,78,216,.23), rgba(16,24,39,.96) 55%, rgba(34,211,238,.08))',
-  },
-
-  statusTop: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-  },
-
-  aiAvatar: {
-    display: 'grid',
-    placeItems: 'center',
-    flex: '0 0 42px',
-    width: 42,
-    height: 42,
-    color: '#fff',
-    fontSize: 22,
-    borderRadius: 14,
-    background: 'var(--grad-brand)',
-    boxShadow: 'var(--shd-glow)',
-  },
-
-  statusText: {
-    display: 'flex',
-    flex: 1,
-    minWidth: 0,
-    flexDirection: 'column',
-    gap: 2,
-  },
-
-  statusTitle: {
-    fontSize: 13.5,
-  },
-
-  statusSubtitle: {
-    color: 'var(--tx2)',
-    fontSize: 10.5,
-  },
-
-  statusMeta: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    gap: 10,
-    marginTop: 12,
-    color: 'var(--tx2)',
-    fontSize: 10.5,
-  },
-
-  quotaBar: {
-    height: 5,
-    marginTop: 8,
-  },
-
-  referenceCard: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-    padding: 11,
-
-    borderColor:
-      'rgba(245,158,11,.25)',
-
-    background:
-      'linear-gradient(135deg, rgba(245,158,11,.1), rgba(16,24,39,.94) 55%)',
-  },
-
-  referenceIcon: {
-    display: 'grid',
-    placeItems: 'center',
-    flex: '0 0 42px',
-    width: 42,
-    height: 42,
-    color: '#FCD34D',
-    fontSize: 10,
-    fontWeight: 900,
-
-    border:
-      '1px solid rgba(245,158,11,.3)',
-
-    borderRadius: 12,
-
-    background:
-      'rgba(245,158,11,.1)',
-  },
-
-  referenceText: {
-    display: 'flex',
-    flex: 1,
-    minWidth: 0,
-    flexDirection: 'column',
-    gap: 2,
-  },
-
-  referenceName: {
-    overflow: 'hidden',
-    fontSize: 12,
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  },
-
-  referenceHint: {
-    color: 'var(--tx2)',
-    fontSize: 9.5,
-    lineHeight: 1.7,
-  },
-
-  referenceExpiry: {
-    color: '#FCD34D',
-    fontSize: 9,
-  },
-
-  iconButton: {
-    flex: '0 0 32px',
-    width: 32,
-    minHeight: 32,
-    padding: 0,
-    fontSize: 20,
-  },
-
-  unavailableCard: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: 10,
-
-    borderColor:
-      'rgba(239,68,68,.22)',
-
-    background:
-      'rgba(239,68,68,.08)',
-  },
-
-  unavailableIcon: {
-    fontSize: 24,
-  },
-
-  unavailableText: {
-    marginTop: 4,
-    color: 'var(--tx2)',
-    fontSize: 11,
-    lineHeight: 1.8,
-  },
-
-  chatArea: {
-    display: 'flex',
-    flexDirection: 'column',
-    minHeight: '38vh',
-    gap: 10,
-    padding: '4px 1px',
-  },
-
-  loadingList: {
-    display: 'grid',
-    gap: 10,
-  },
-
-  welcome: {
-    display: 'flex',
-    alignItems: 'center',
-    flexDirection: 'column',
-    padding: '24px 6px 14px',
-    textAlign: 'center',
-  },
-
-  welcomeOrb: {
-    display: 'grid',
-    placeItems: 'center',
-    width: 62,
-    height: 62,
-    marginBottom: 12,
-    color: '#fff',
-    fontSize: 29,
-
-    border:
-      '1px solid rgba(34,211,238,.4)',
-
-    borderRadius: 22,
-    background: 'var(--grad-brand)',
-
-    boxShadow:
-      '0 12px 38px rgba(59,130,246,.34)',
-  },
-
-  welcomeTitle: {
-    fontSize: 19,
-  },
-
-  welcomeText: {
-    maxWidth: 390,
-    marginTop: 7,
-    color: 'var(--tx2)',
-    fontSize: 11.5,
-    lineHeight: 2,
-  },
-
-  capabilityGrid: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 6,
-    marginTop: 12,
-  },
-
-  capabilityChip: {
-    padding: '5px 9px',
-    color: 'var(--tx2)',
-    fontSize: 10,
-
-    border:
-      '1px solid var(--bd)',
-
-    borderRadius: 999,
-
-    background:
-      'rgba(24,34,53,.7)',
-  },
-
-  suggestions: {
-    display: 'grid',
-    width: '100%',
-    gap: 7,
-    marginTop: 18,
-  },
-
-  suggestion: {
-    display: 'flex',
-    alignItems: 'center',
-    width: '100%',
-    gap: 8,
-    padding: '10px 11px',
-    color: 'var(--tx2)',
-    fontFamily: 'inherit',
-    fontSize: 10.5,
-    textAlign: 'right',
-    cursor: 'pointer',
-
-    border:
-      '1px solid var(--bd)',
-
-    borderRadius: 12,
-
-    background:
-      'rgba(16,24,39,.72)',
-  },
-
-  messageRow: {
-    display: 'flex',
-    width: '100%',
-  },
-
-  bubble: {
-    width: 'fit-content',
-    maxWidth: '91%',
-    padding: '10px 11px',
-
-    border:
-      '1px solid var(--bd)',
-
-    borderRadius: 16,
-    boxShadow: 'var(--shd-1)',
-  },
-
-  userBubble: {
-    color: '#fff',
-    borderBottomRightRadius: 5,
-
-    borderColor:
-      'rgba(59,130,246,.38)',
-
-    background:
-      'linear-gradient(135deg, rgba(29,78,216,.9), rgba(59,130,246,.72))',
-  },
-
-  assistantBubble: {
-    borderBottomLeftRadius: 5,
-
-    background:
-      'rgba(16,24,39,.94)',
-  },
-
-  failedBubble: {
-    borderColor:
-      'rgba(239,68,68,.46)',
-
-    opacity: 0.74,
-  },
-
-  bubbleHead: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    marginBottom: 5,
-
-    color:
-      'rgba(255,255,255,.68)',
-
-    fontSize: 9,
-    fontWeight: 800,
-  },
-
-  failedText: {
-    color: '#FDA4AF',
-  },
-
-  messageText: {
-    color: 'inherit',
-    fontSize: 12,
-    lineHeight: 2,
-    overflowWrap: 'anywhere',
-    textAlign: 'start',
-    whiteSpace: 'pre-wrap',
-  },
-
-  messageAttachment: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    minWidth: 190,
-    marginBottom: 7,
-    padding: 8,
-
-    border:
-      '1px solid rgba(255,255,255,.13)',
-
-    borderRadius: 11,
-
-    background:
-      'rgba(4,9,18,.22)',
-  },
-
-  messageAttachmentIcon: {
-    fontSize: 22,
-  },
-
-  messageAttachmentText: {
-    display: 'flex',
-    minWidth: 0,
-    flexDirection: 'column',
-    gap: 1,
-
-    color:
-      'rgba(255,255,255,.72)',
-
-    fontSize: 9,
-  },
-
-  answerActions: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: 5,
-    marginTop: 9,
-    paddingTop: 8,
-
-    borderTop:
-      '1px solid var(--bd)',
-  },
-
-  miniAction: {
-    padding: '4px 7px',
-    color: '#70A7FF',
-    fontFamily: 'inherit',
-    fontSize: 9,
-    cursor: 'pointer',
-
-    border:
-      '1px solid rgba(59,130,246,.2)',
-
-    borderRadius: 8,
-
-    background:
-      'rgba(59,130,246,.08)',
-  },
-
-  reportAction: {
-    marginRight: 'auto',
-    color: '#FCA5A5',
-
-    borderColor:
-      'rgba(239,68,68,.18)',
-
-    background:
-      'rgba(239,68,68,.07)',
-  },
-
-  thinkingBubble: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    color: 'var(--tx2)',
-    fontSize: 10.5,
-  },
-
-  composer: {
-    position: 'sticky',
-
-    bottom:
-      'calc(var(--nav-h) + 8px + env(safe-area-inset-bottom))',
-
-    zIndex: 12,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 8,
-    marginTop: 2,
-    padding: 9,
-
-    border:
-      '1px solid rgba(148,163,184,.18)',
-
-    borderRadius: 18,
-
-    boxShadow:
-      '0 16px 42px rgba(0,0,0,.42)',
-  },
-
-  textarea: {
-    minHeight: 43,
-    maxHeight: 120,
-    resize: 'none',
-    padding: '10px 11px',
-    fontSize: 12,
-    lineHeight: 1.8,
-  },
-
-  composerActions: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 7,
-  },
-
-  mediaActions: {
-    display: 'flex',
-    gap: 5,
-  },
-
-  hiddenInput: {
-    display: 'none',
-  },
-
-  mediaButton: {
-    display: 'flex',
-    alignItems: 'center',
-    minHeight: 34,
-    gap: 3,
-    padding: '5px 8px',
-    color: 'var(--tx2)',
-    fontFamily: 'inherit',
-    fontSize: 9.5,
-    cursor: 'pointer',
-
-    border:
-      '1px solid var(--bd)',
-
-    borderRadius: 10,
-
-    background:
-      'rgba(24,34,53,.82)',
-  },
-
-  characterCount: {
-    marginRight: 'auto',
-    color: 'var(--txm)',
-    fontSize: 8.5,
-    direction: 'ltr',
-  },
-
-  sendButton: {
-    minHeight: 35,
-    padding: '6px 12px',
-    fontSize: 11,
-  },
-
-  selectedFile: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    padding: 7,
-
-    border:
-      '1px solid rgba(59,130,246,.25)',
-
-    borderRadius: 12,
-
-    background:
-      'rgba(59,130,246,.08)',
-  },
-
-  imagePreview: {
-    flex: '0 0 48px',
-    width: 48,
-    height: 48,
-    objectFit: 'cover',
-    borderRadius: 9,
-  },
-
-  filePreviewIcon: {
-    display: 'grid',
-    placeItems: 'center',
-    flex: '0 0 48px',
-    width: 48,
-    height: 48,
-    fontSize: 24,
-    borderRadius: 9,
-
-    background:
-      'rgba(0,0,0,.18)',
-  },
-
-  selectedFileInfo: {
-    display: 'flex',
-    flex: 1,
-    minWidth: 0,
-    flexDirection: 'column',
-    gap: 2,
-  },
-
-  selectedFileName: {
-    overflow: 'hidden',
-    fontSize: 10.5,
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  },
-
-  selectedFileMeta: {
-    color: 'var(--tx2)',
-    fontSize: 8.5,
-  },
-
-  audioPreview: {
-    width: '100%',
-    height: 28,
-    marginTop: 3,
-  },
-
-  removeFile: {
-    display: 'grid',
-    placeItems: 'center',
-    flex: '0 0 28px',
-    width: 28,
-    height: 28,
-    color: '#FDA4AF',
-    fontFamily: 'inherit',
-    fontSize: 19,
-    cursor: 'pointer',
-
-    border:
-      '1px solid rgba(239,68,68,.2)',
-
-    borderRadius: 9,
-
-    background:
-      'rgba(239,68,68,.08)',
-  },
-
-  recordingBar: {
-    display: 'flex',
-    alignItems: 'center',
-    minHeight: 54,
-    gap: 10,
-    padding: 8,
-
-    border:
-      '1px solid rgba(239,68,68,.25)',
-
-    borderRadius: 12,
-
-    background:
-      'rgba(239,68,68,.08)',
-  },
-
-  recordingDot: {
-    width: 10,
-    height: 10,
-    borderRadius: '50%',
-    background: '#FB7185',
-
-    boxShadow:
-      '0 0 0 6px rgba(239,68,68,.12)',
-  },
-
-  recordingText: {
-    display: 'flex',
-    flex: 1,
-    flexDirection: 'column',
-    color: 'var(--tx2)',
-    fontSize: 10,
-  },
-
-  stopButton: {
-    minHeight: 34,
-    padding: '5px 9px',
-    fontSize: 10,
-  },
-
-  uploadBar: {
-    height: 4,
-  },
-
-  disclaimer: {
-    color: 'var(--txm)',
-    fontSize: 8.2,
-    lineHeight: 1.6,
-    textAlign: 'center',
-  },
-};
