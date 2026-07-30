@@ -1798,6 +1798,7 @@ input:focus-visible
   height: 300px;
   border-radius: 50%;
   filter: blur(70px);
+  pointer-events: none;
   transform: translateX(50%);
   transition: background .5s
     var(--ease-out);
