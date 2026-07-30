@@ -1,3 +1,4 @@
+import { confirmAction } from '../../lib/confirm';
 import { useState } from 'react';
 
 import {
@@ -95,7 +96,7 @@ function QuestionDetails({
       <div
         className={
           'more-sheet__panel ' +
-          'glass fade-up'
+          'glass sheet-in'
         }
         role="dialog"
         aria-modal="true"
@@ -536,9 +537,9 @@ export function ContentQuestions() {
                 'approve',
             })
           }
-          onReject={() => {
+          onReject={async () => {
             const accepted =
-              window.confirm(
+              await confirmAction(
                 'این سؤال رد و حذف شود؟'
               );
 
@@ -892,9 +893,9 @@ export function ContentQuestions() {
                       disabled={
                         action.isPending
                       }
-                      onClick={() => {
+                      onClick={async () => {
                         const accepted =
-                          window.confirm(
+                          await confirmAction(
                             'سؤال رد شود؟'
                           );
 
@@ -1434,9 +1435,9 @@ export function ContentFaq() {
                           disabled={
                             mutation.isPending
                           }
-                          onClick={() => {
+                          onClick={async () => {
                             const accepted =
-                              window.confirm(
+                              await confirmAction(
                                 'این سؤال متداول حذف شود؟'
                               );
 
