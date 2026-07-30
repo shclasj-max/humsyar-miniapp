@@ -237,8 +237,9 @@ export default function AuthError({
         color:
           'var(--tx)',
 
-        background:
-          'var(--grad-page),linear-gradient(180deg,var(--bg-soft),var(--bg))',
+        /* شفاف — لایه‌ی fixed مشترک body؛
+           بدون پرش نور هنگام نمایش خطا */
+        background: 'transparent',
       }}
     >
       <div
