@@ -32,6 +32,16 @@ function Screen({
   glow,
   children,
 }) {
+  /* روی صفحات فول‌اسکرین احراز، دکمه
+     بک نیتیو تلگرام نباید گیر کند */
+  useEffect(() => {
+    try {
+      tg?.BackButton?.hide?.();
+    } catch (_) {
+      /* نسخه قدیمی */
+    }
+  }, []);
+
   return (
     <main
       dir="rtl"
