@@ -84,17 +84,11 @@ export default function QuestionHistory() {
       <main className="page fade-up">
         <section
           className={
-            'card card-glow'
+            'card card-glow hero-card'
           }
           style={{
-            padding:
-              17,
-
             marginBottom:
               14,
-
-            background:
-              'linear-gradient(145deg,rgba(29,78,216,.2),rgba(16,24,39,.95) 55%,rgba(34,211,238,.08))',
           }}
         >
           <div
@@ -216,14 +210,16 @@ export default function QuestionHistory() {
           </>
         ) : isError ? (
           <div className="empty card">
-            دریافت تاریخچه انجام نشد.
+            <div className="empty__ic">
+              🌐
+            </div>
+
+            <div>
+              دریافت تاریخچه انجام نشد.
+            </div>
 
             <button
               className="btn btn-p"
-              style={{
-                marginTop:
-                  12,
-              }}
               onClick={() =>
                 refetch()
               }
