@@ -75,8 +75,10 @@ export function LoadingScreen() {
         color:
           'var(--tx)',
 
-        background:
-          'var(--grad-page),linear-gradient(180deg,var(--bg-soft),var(--bg))',
+        /* شفاف — لایه‌ی fixed مشترک body؛
+           دقیقاً همان تصویرِ بدون seam بین
+           لودینگ و محتوای نهایی */
+        background: 'transparent',
       }}
     >
       <div
