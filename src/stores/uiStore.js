@@ -17,4 +17,10 @@ export const useUIStore = create((set) => ({
     set(s => ({ toasts: [...s.toasts, { id, msg, type }] }));
     setTimeout(() => set(s => ({ toasts: s.toasts.filter(t => t.id !== id) })), ms);
   },
+
+  /* ✅ Onboarding — ورود اول + اجرای دستی از پروفایل */
+  showOnboarding: false,
+  onboardingDone: false,
+  openOnboarding: () => set({ showOnboarding: true, onboardingDone: false }),
+  closeOnboarding: () => set({ showOnboarding: false, onboardingDone: false }),
 }));
