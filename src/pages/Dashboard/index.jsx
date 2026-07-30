@@ -23,6 +23,21 @@ const percent = (value) =>
     number(value)
   );
 
+/* ✅ سلام متناسب با ساعت روز —
+   میکروجزئیتی که محصول را زنده
+   و شخصی حس می‌کند */
+const dayGreeting = () => {
+  const hour = new Date().getHours();
+
+  if (hour >= 5 && hour < 12)
+    return 'صبح بخیر ☀️';
+  if (hour >= 12 && hour < 17)
+    return 'ظهر بخیر 👋';
+  if (hour >= 17 && hour < 20)
+    return 'عصر بخیر 🌆';
+  return 'شب بخیر 🌙';
+};
+
 function Ring({
   value = 0,
 }) {
@@ -581,7 +596,7 @@ export default function Dashboard() {
                       fontSize: 10.5,
                     }}
                   >
-                    سلام، خوش اومدی 👋
+                    {dayGreeting()}
                   </div>
 
                   <div
