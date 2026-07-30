@@ -75,7 +75,7 @@ function Picker({
       <div
         className={
           'more-sheet__panel ' +
-          'glass fade-up'
+          'glass sheet-in'
         }
         role="dialog"
         aria-modal="true"
@@ -711,14 +711,8 @@ export default function Profile() {
           >
             <section
               className={
-                'card card-glow'
+                'card card-glow hero-card'
               }
-              style={{
-                padding: 17,
-
-                background:
-                  'linear-gradient(145deg,rgba(29,78,216,.22),rgba(16,24,39,.95) 52%,rgba(34,211,238,.08))',
-              }}
             >
               <div
                 style={{
@@ -832,13 +826,6 @@ export default function Profile() {
                           'intake'
                         )
                       }
-                      style={{
-                        border:
-                          0,
-
-                        cursor:
-                          'pointer',
-                      }}
                     >
                       ورودی{' '}
 
@@ -858,13 +845,6 @@ export default function Profile() {
                           'group'
                         )
                       }
-                      style={{
-                        border:
-                          0,
-
-                        cursor:
-                          'pointer',
-                      }}
                     >
                       گروه{' '}
 
@@ -878,6 +858,7 @@ export default function Profile() {
 
                 <button
                   type="button"
+                  className="icon-btn"
                   aria-label="ویرایش نام"
                   onClick={() =>
                     startEdit(
@@ -885,25 +866,6 @@ export default function Profile() {
                       user.name
                     )
                   }
-                  style={{
-                    width: 37,
-                    height: 37,
-
-                    borderRadius:
-                      12,
-
-                    color:
-                      'var(--tx)',
-
-                    background:
-                      'var(--elev)',
-
-                    border:
-                      '1px solid var(--bd)',
-
-                    cursor:
-                      'pointer',
-                  }}
                 >
                   ✎
                 </button>
