@@ -27,7 +27,9 @@ export function hasSeenOnboarding() {
       localStorage.getItem(STORAGE_KEY)
     );
   } catch (_) {
-    return true; // خطای دسترسی → اذیت نکن
+    /* در بعضی WebView ها دسترسی به
+       localStorage خطا می‌دهد */
+    return true;
   }
 }
 
@@ -39,7 +41,8 @@ function markOnboardingSeen() {
       '1'
     );
   } catch (_) {
-    /* حافظه در دسترس نیست */
+    /* مهم نیست — فلگ حافظه‌ای نشست
+       جاری کار را انجام می‌دهد */
   }
 }
 
@@ -113,6 +116,11 @@ export default function Onboarding() {
       (state) => state.showOnboarding
     );
 
+  const onboardingDone =
+    useUIStore(
+      (state) => state.onboardingDone
+    );
+
   const closeOnboarding =
     useUIStore(
       (state) =>
@@ -120,8 +128,19 @@ export default function Onboarding() {
     );
 
 
+  /* ✅ سد سه‌لایه در برابر گیر کردن صفحه:
+     ۱) dismissed — state محلی همین رندر
+     ۲) onboardingDone — فلگ نشست در store
+     ۳) hasSeenOnboarding — localStorage
+     اگر هر کدام «تمام شده» باشد، اوورلی می‌رود. */
+  const [dismissed, setDismissed] =
+    useState(false);
+
+
   const shouldShow =
     Boolean(user) &&
+    !dismissed &&
+    !onboardingDone &&
     (showOnboarding ||
       !hasSeenOnboarding());
 
@@ -165,8 +184,12 @@ export default function Onboarding() {
   const slide = SLIDES[index];
 
 
+  /* بستن قطعی: اول state محلی (فوری،
+     حتی اگر store/storage خراب باشند)
+     بعد store و در نهایت localStorage */
   const finish = () => {
     haptic('medium');
+    setDismissed(true);
     markOnboardingSeen();
     closeOnboarding();
   };
