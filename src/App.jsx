@@ -27,6 +27,8 @@ import AuthError from './components/shared/AuthError';
 
 import Register from './components/shared/Register';
 
+import Onboarding from './components/shared/Onboarding';
+
 
 /* صفحات اصلی */
 
@@ -287,6 +289,10 @@ export default function App() {
       dir="rtl"
     >
       <Toast />
+
+      {/* معرفی اولین ورود — بعد از
+          تأیید حساب نمایش داده می‌شود */}
+      <Onboarding />
 
       <Routes>
         {/* صفحات اصلی */}
