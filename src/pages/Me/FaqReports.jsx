@@ -261,8 +261,10 @@ export function Faq() {
             marginBottom:
               14,
 
+            /* موج ۳.۱۰ — سینک با دستورِ
+               hero-card--purple */
             background:
-              'linear-gradient(145deg,rgba(139,92,246,.14),rgba(16,24,39,.95) 55%,rgba(59,130,246,.1))',
+              'linear-gradient(145deg,rgba(139,92,246,.15),rgba(16,24,39,.95) 55%,rgba(59,130,246,.09))',
           }}
         >
           <div
