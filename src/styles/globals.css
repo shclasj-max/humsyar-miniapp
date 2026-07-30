@@ -1268,3 +1268,338 @@ input:focus-visible
       .001ms !important;
   }
 }
+
+/* ═══════════════════════════════════════
+   ✅ NEW — اجزای مشترک v2.1
+   چیپ فیلتر، تایم‌لاین لاگ، نمودارها
+═══════════════════════════════════════ */
+
+/* ── چیپ‌های فیلتر (قابل اسکرول افقی) ── */
+.chip-row {
+  display: flex;
+  gap: 7px;
+  padding: 2px 2px 8px;
+  margin-bottom: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.chip-row::-webkit-scrollbar {
+  display: none;
+}
+
+.chip {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 32px;
+  padding: 6px 13px;
+  border: 1px solid var(--bd);
+  border-radius: 999px;
+  background: var(--surf);
+  color: var(--txm);
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background .18s var(--ease-out),
+    color .18s var(--ease-out),
+    border-color .18s var(--ease-out),
+    transform .12s var(--ease-out);
+}
+
+.chip:active {
+  transform: scale(.95);
+}
+
+.chip--active {
+  border-color: transparent;
+  background: var(--grad-brand);
+  color: #fff;
+  box-shadow: var(--shd-glow);
+}
+
+/* ── کارت آمار کلیدی (KPI) ── */
+.kpi {
+  position: relative;
+  overflow: hidden;
+  padding: 13px;
+}
+
+.kpi__icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  margin-bottom: 9px;
+  border-radius: 13px;
+  font-size: 19px;
+}
+
+.kpi__value {
+  display: block;
+  font-size: 21px;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+.kpi__label {
+  display: block;
+  margin-top: 3px;
+  color: var(--txm);
+  font-size: 9.3px;
+}
+
+.kpi__trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 7px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 8.8px;
+  font-weight: 800;
+}
+
+.kpi__trend--up {
+  background: rgba(16, 185, 129, .13);
+  color: var(--ok);
+}
+
+.kpi__trend--down {
+  background: rgba(239, 68, 68, .12);
+  color: var(--err);
+}
+
+.kpi__trend--flat {
+  background: var(--ovr);
+  color: var(--txm);
+}
+
+/* ── نمودار میله‌ای SVG ── */
+.chart {
+  padding: 14px 12px 8px;
+}
+
+.chart__title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding: 0 2px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.chart__title span:last-child {
+  color: var(--txm);
+  font-size: 9px;
+  font-weight: 400;
+}
+
+.chart__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.chart__bar {
+  transition:
+    opacity .15s var(--ease-out);
+}
+
+.chart__bar:hover {
+  opacity: .75;
+}
+
+.chart__lbl {
+  fill: var(--txm);
+  font-size: 7.5px;
+}
+
+.chart__val {
+  fill: var(--tx2);
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.chart__legend {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  padding: 8px 0 4px;
+  color: var(--txm);
+  font-size: 9px;
+}
+
+.chart__dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-left: 4px;
+  border-radius: 50%;
+  vertical-align: -1px;
+}
+
+/* ── نوار پیشرفت افقی رنگی ── */
+.hbar {
+  display: grid;
+  grid-template-columns: 92px 1fr 34px;
+  align-items: center;
+  gap: 8px;
+  padding: 5.5px 0;
+  font-size: 9.8px;
+}
+
+.hbar__track {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--ovr);
+}
+
+.hbar__fill {
+  height: 100%;
+  border-radius: 99px;
+  background: var(--grad-brand);
+  transition:
+    width .55s var(--ease-out);
+}
+
+.hbar__count {
+  color: var(--txm);
+  font-size: 9px;
+  text-align: left;
+}
+
+/* ── تایم‌لاین لاگ فعالیت ── */
+.audit-item {
+  position: relative;
+  display: flex;
+  gap: 11px;
+  padding: 12px 1px;
+}
+
+.audit-item + .audit-item {
+  border-top: 1px dashed var(--bd);
+}
+
+.audit-item__icon {
+  display: grid;
+  flex: 0 0 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--ovr);
+  font-size: 17px;
+}
+
+.audit-item__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.audit-item__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.audit-item__action {
+  font-size: 11.3px;
+  font-weight: 800;
+}
+
+.audit-item__meta {
+  margin-top: 4px;
+  color: var(--txm);
+  font-size: 9.3px;
+  line-height: 1.7;
+}
+
+.audit-item__details {
+  margin-top: 6px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: var(--ovr);
+  color: var(--tx2);
+  font-size: 9.5px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.audit-item__changes {
+  display: grid;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.audit-item__change {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border: 1px solid var(--bd);
+  border-radius: 9px;
+  font-size: 9px;
+}
+
+.audit-item__change b {
+  color: var(--acc2);
+}
+
+.audit-item__before {
+  color: var(--err);
+  text-decoration: line-through;
+  opacity: .8;
+}
+
+.audit-item__after {
+  color: var(--ok);
+  font-weight: 700;
+}
+
+.audit-item__time {
+  flex: 0 0 auto;
+  color: var(--txm);
+  font-size: 8.6px;
+  white-space: nowrap;
+}
+
+/* ── حباب زیرنویس صفحه (توضیح کوتاه) ── */
+.page-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-bottom: 13px;
+  padding: 11px 13px;
+  border: 1px solid var(--bd);
+  border-radius: var(--r-md);
+  background: var(--surf);
+  color: var(--txm);
+  font-size: 9.8px;
+  line-height: 1.9;
+}
+
+.page-hint span:first-child {
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* ── برچسب نقش کاربر ── */
+.role-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--ovr);
+  font-size: 8.6px;
+  font-weight: 700;
+}
+
