@@ -25,6 +25,8 @@ import {
 
 import AuthError from './components/shared/AuthError';
 
+import Register from './components/shared/Register';
+
 
 /* صفحات اصلی */
 
@@ -205,6 +207,20 @@ export default function App() {
   if (loading) {
     return (
       <LoadingScreen />
+    );
+  }
+
+
+  /* ثبت‌نام انجام نشده یا در انتظار
+     تأیید → ویزارد ثبت‌نام داخل
+     مینی‌اپ (سینک کامل با بات) */
+
+  if (
+    error === 'not_registered' ||
+    error === 'pending_approval'
+  ) {
+    return (
+      <Register />
     );
   }
 
