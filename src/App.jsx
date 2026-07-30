@@ -86,6 +86,8 @@ import AiAdmin from './pages/Admin/AiAdmin';
 import Analytics from './pages/Admin/Analytics';
 import AuditLog from './pages/Admin/AuditLog';
 
+import SystemSettings from './pages/Admin/SystemSettings';
+
 
 /* مدیریت کاربران */
 
@@ -492,6 +494,15 @@ export default function App() {
           element={
             <AdminRoute>
               <AuditLog />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/settings"
+          element={
+            <AdminRoute>
+              <SystemSettings />
             </AdminRoute>
           }
         />
