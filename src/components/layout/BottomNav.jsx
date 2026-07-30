@@ -4,9 +4,15 @@ import {
 } from 'react';
 
 import {
+  useQuery,
+} from '@tanstack/react-query';
+
+import {
   useLocation,
   useNavigate,
 } from 'react-router-dom';
+
+import api from '../../lib/api';
 
 import {
   haptic,
@@ -124,6 +130,7 @@ function matchesPath(
 
 function MoreSheet({
   onClose,
+  unread = 0,
 }) {
   const navigate =
     useNavigate();
@@ -238,6 +245,17 @@ function MoreSheet({
                 </span>
               )}
 
+              {item.path ===
+                '/me/tickets' &&
+                unread > 0 && (
+                  <span className="badge b-red">
+                    {unread > 9
+                      ? '+9'
+                      : unread}{' '}
+                    پاسخ جدید
+                  </span>
+                )}
+
               <span className="more-sheet__arrow">
                 ←
               </span>
@@ -266,6 +284,34 @@ export default function BottomNav() {
   useEffect(() => {
     setShowMore(false);
   }, [location.pathname]);
+
+
+  /* ✅ Badge پاسخ جدید پشتیبانی —
+     پولینگ سبک هر ۴۵ ثانیه؛ وقتی کاربر
+     گفت‌وگو را باز کند، سمت سرور seen
+     می‌شود و Badge خودکار پاک می‌شود */
+  const {
+    data: unreadData,
+  } = useQuery({
+    queryKey: ['ticket-unread'],
+
+    queryFn: () =>
+      api
+        .get('/api/tickets/unread-count')
+        .then(
+          (response) =>
+            response.data
+        ),
+
+    refetchInterval: 45_000,
+    staleTime: 20_000,
+    retry: false,
+  });
+
+  const unread = Math.max(
+    0,
+    Number(unreadData?.unread) || 0
+  );
 
 
   if (
@@ -321,6 +367,7 @@ export default function BottomNav() {
     <>
       {showMore && (
         <MoreSheet
+          unread={unread}
           onClose={() =>
             setShowMore(false)
           }
@@ -374,8 +421,26 @@ export default function BottomNav() {
                     : undefined
                 }
               >
-                <span className="bottom-nav__icon">
+                <span
+                  className="bottom-nav__icon"
+                  style={{
+                    position:
+                      'relative',
+                  }}
+                >
                   {tab.icon}
+
+                  {tab.path === '/me' &&
+                    unread > 0 && (
+                      <span
+                        className="nav-badge"
+                        aria-label={`${unread} پاسخ خوانده‌نشده`}
+                      >
+                        {unread > 99
+                          ? '+99'
+                          : unread}
+                      </span>
+                    )}
                 </span>
 
                 <span className="bottom-nav__label">
