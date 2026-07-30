@@ -62,4 +62,14 @@ export const useAuthStore = create((set) => ({
       return null;
     }
   },
+
+  /* تغییر وضعیت احراز هویت وسط نشست
+     (مثل تعلیق کاربر توسط مدیر در حین استفاده) —
+     api.js این رویدادها را روی window دیسپچ می‌کند */
+  forceError: (code) =>
+    set({
+      user: null,
+      loading: false,
+      error: code,
+    }),
 }));
