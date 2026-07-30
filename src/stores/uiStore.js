@@ -18,9 +18,12 @@ export const useUIStore = create((set) => ({
     setTimeout(() => set(s => ({ toasts: s.toasts.filter(t => t.id !== id) })), ms);
   },
 
-  /* ✅ Onboarding — ورود اول + اجرای دستی از پروفایل */
+  /* ✅ Onboarding — ورود اول + اجرای دستی از پروفایل.
+     onboardingDone فلگ حافظه‌ای نشست جاری است تا اگر
+     localStorage در WebView تلگرام سایلنت فیل کرد،
+     صفحه معرفی هرگز گیر نکند. */
   showOnboarding: false,
   onboardingDone: false,
   openOnboarding: () => set({ showOnboarding: true, onboardingDone: false }),
-  closeOnboarding: () => set({ showOnboarding: false, onboardingDone: false }),
+  closeOnboarding: () => set({ showOnboarding: false, onboardingDone: true }),
 }));
