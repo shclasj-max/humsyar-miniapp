@@ -23,6 +23,8 @@ import BottomNav from './components/layout/BottomNav';
 import SwipeBack from './components/layout/SwipeBack';
 import Toast from './components/shared/Toast';
 
+import ErrorBoundary from './components/shared/ErrorBoundary';
+
 import {
   LoadingScreen,
 } from './components/shared/Loading';
@@ -356,6 +358,12 @@ export default function App() {
     (state) => state.init
   );
 
+  /* key = pathname → با هر تغییر مسیر، دیوار
+     خطا رزت می‌شود؛ اگر یک صفحه کرش کند، رفتن
+     به جای دیگر دیوارِ تازه می‌آورد و کاربر در
+     صفحه‌ی خطا گیر نمی‌کند */
+  const location = useLocation();
+
 
   useEffect(() => {
     initTelegram();
@@ -458,6 +466,11 @@ export default function App() {
           می‌کند */}
       <SwipeBack />
 
+      {/* 🧯 دیوار آتش: کرش هر صفحه = صفحه‌ی
+          بازیابی، نه صفحه‌ی تاریک */}
+      <ErrorBoundary
+        key={location.pathname}
+      >
       <Routes>
         {/* صفحات اصلی */}
 
@@ -922,6 +935,7 @@ export default function App() {
           }
         />
       </Routes>
+      </ErrorBoundary>
 
       <BottomNav />
     </div>
