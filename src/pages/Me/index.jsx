@@ -196,6 +196,29 @@ export default function Me() {
       5 * 60 * 1000,
   });
 
+  /* 💙 حمایت مالی — همگام با ربات */
+  const {
+    data: donation,
+  } = useQuery({
+    queryKey: ['donation-config'],
+
+    queryFn: () =>
+      api
+        .get('/api/profile/donation')
+        .then(
+          (response) =>
+            response.data
+        ),
+
+    staleTime:
+      10 * 60 * 1000,
+    retry: false,
+  });
+
+  const showDonation = Boolean(
+    donation?.enabled && donation?.link
+  );
+
   const {
     data: subscription,
   } = useQuery({
@@ -875,8 +898,44 @@ export default function Me() {
                       .getState()
                       .openOnboarding();
                   }}
-                  last
+                  last={!showDonation}
                 />
+
+                {/* 💙 فقط وقتی مدیر فعال
+                    کرده — سینک با ربات */}
+                {showDonation && (
+                  <MenuRow
+                    icon="💙"
+                    title={
+                      'حمایت از هامزیار'
+                    }
+                    description={
+                      'کمک به ادامه‌دار ماندن و رشد هامزیار'
+                    }
+                    tone="red"
+                    onClick={() => {
+                      try {
+                        window.Telegram
+                          ?.WebApp
+                          ?.openLink?.(
+                            donation.link
+                          ) ||
+                          window.open(
+                            donation.link,
+                            '_blank',
+                            'noopener'
+                          );
+                      } catch (_) {
+                        window.open(
+                          donation.link,
+                          '_blank',
+                          'noopener'
+                        );
+                      }
+                    }}
+                    last
+                  />
+                )}
               </div>
             </section>
 
