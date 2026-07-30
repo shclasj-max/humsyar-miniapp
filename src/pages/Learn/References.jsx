@@ -519,9 +519,7 @@ export default function References() {
       <Header
         title={title}
         subtitle={subtitle}
-        back={
-          view !== 'subjects'
-        }
+        back
         onBack={
           view !== 'subjects'
             ? goBack
@@ -989,10 +987,12 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: 13,
-    padding: 16,
+    padding: 17,
 
+    /* موج ۳.۱۰ — سینک با دستورِ .hero-card
+       (دمِ بنفشِ شاخه‌ی رفرنس حفظ شده) */
     background:
-      'linear-gradient(145deg,rgba(29,78,216,.2),rgba(16,24,39,.96) 58%,rgba(139,92,246,.08))',
+      'linear-gradient(145deg,rgba(29,78,216,.22),rgba(16,24,39,.95) 52%,rgba(139,92,246,.08))',
   },
 
   heroIcon: {
