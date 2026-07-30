@@ -1,3 +1,4 @@
+import { confirmAction } from '../../lib/confirm';
 import { useState } from 'react';
 
 import {
@@ -221,8 +222,10 @@ export default function MyQuestions() {
               marginBottom:
                 12,
 
+              /* موج ۳.۱۰ — سینک با دستورِ
+                 hero-card--purple */
               background:
-                'linear-gradient(145deg,rgba(139,92,246,.14),rgba(16,24,39,.95))',
+                'linear-gradient(145deg,rgba(139,92,246,.15),rgba(16,24,39,.95) 55%,rgba(59,130,246,.09))',
             }}
           >
             <div
@@ -546,8 +549,10 @@ export default function MyQuestions() {
             marginBottom:
               14,
 
+            /* موج ۳.۱۰ — سینک با دستورِ
+               hero-card--purple */
             background:
-              'linear-gradient(145deg,rgba(139,92,246,.15),rgba(16,24,39,.95) 55%,rgba(59,130,246,.08))',
+              'linear-gradient(145deg,rgba(139,92,246,.15),rgba(16,24,39,.95) 55%,rgba(59,130,246,.09))',
           }}
         >
           <div
@@ -840,9 +845,9 @@ export default function MyQuestions() {
                           deleteMutation
                             .isPending
                         }
-                        onClick={() => {
+                        onClick={async () => {
                           const accepted =
-                            window.confirm(
+                            await confirmAction(
                               'این سؤال حذف شود؟'
                             );
 
