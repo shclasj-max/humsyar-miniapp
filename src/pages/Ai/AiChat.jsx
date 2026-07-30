@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -10,11 +11,17 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 
+import {
+  useNavigate,
+  useParams,
+} from 'react-router-dom';
+
 import Header from '../../components/layout/Header';
 import {
   Spinner,
 } from '../../components/shared/Loading';
 import ChatHistorySheet from '../../components/ai/ChatHistorySheet';
+import useConvActions from './useConvActions';
 import api from '../../lib/api';
 import {
   haptic,
@@ -26,9 +33,6 @@ import { useUIStore } from '../../stores/uiStore';
 const FALLBACK_MAX_MEDIA_BYTES = 15 * 1024 * 1024;
 const FALLBACK_MAX_INPUT_CHARS = 2000;
 
-// گفت‌وگوی فعال بین نشست‌ها حفظ می‌شود تا کاربر
-// دقیقاً از همان‌جایی که رفته بود ادامه دهد
-const ACTIVE_CONV_KEY = 'humsyar_ai_conv';
 const LEGACY_ID = 'legacy';
 
 // فاصله‌ی مجاز از ته صفحه که هنوز «نزدیک انتها»
@@ -36,10 +40,15 @@ const LEGACY_ID = 'legacy';
 // پرش تصمیم می‌گیرند
 const NEAR_BOTTOM_PX = 90;
 
+// حافظه‌ی موقعیت اسکرول هر گفت‌وگو در سطح ماژول
+// — با navigate بین رشته‌ها (ری‌ماونت کامپوننت)
+// هم جای خواندن محفوظ می‌ماند
+const scrollPositions = new Map();
 
-/* کارت‌های پیشنهادی حالت خالی — الهام از اپ‌های
-   درجه‌ی یک؛ هر کارت یا پرامپت آماده می‌فرستد یا
-   مستقیم فایل‌پیکر را باز می‌کند */
+
+/* کارت‌های پیشنهادی حالت خالی — هر کارت یا
+   پرامپت آماده می‌فرستد یا مستقیم فایل‌پیکر
+   را باز می‌کند */
 const SUGGESTIONS = [
   {
     icon: '📅',
@@ -246,34 +255,6 @@ function messageId(prefix) {
 }
 
 
-// اسکرول به ته صفحه — نرم، مگر برای کاربرانی که
-// reduced-motion فعال کرده‌اند
-function scrollPageToBottom(smooth = true) {
-  let reduced = false;
-
-  try {
-    reduced = Boolean(
-      window.matchMedia?.(
-        '(prefers-reduced-motion: reduce)',
-      )?.matches,
-    );
-
-  } catch (_) {
-    reduced = false;
-  }
-
-  window.scrollTo({
-    top:
-      document.documentElement.scrollHeight,
-
-    behavior:
-      smooth && !reduced
-        ? 'smooth'
-        : 'auto',
-  });
-}
-
-
 // کپی امن در WebView — clipboard API مدرن و
 // فالبک execCommand برای کلاینت‌های قدیمی
 async function copyText(text) {
@@ -303,6 +284,48 @@ async function copyText(text) {
     area.remove();
 
     return Boolean(ok);
+
+  } catch (_) {
+    return false;
+  }
+}
+
+
+// اسکرول به ته صفحه — نرم، مگر برای کاربرانی
+// که reduced-motion فعال کرده‌اند
+function scrollPageToBottom(smooth = true) {
+  let reduced = false;
+
+  try {
+    reduced = Boolean(
+      window.matchMedia?.(
+        '(prefers-reduced-motion: reduce)',
+      )?.matches,
+    );
+
+  } catch (_) {
+    reduced = false;
+  }
+
+  window.scrollTo({
+    top:
+      document.documentElement.scrollHeight,
+
+    behavior:
+      smooth && !reduced
+        ? 'smooth'
+        : 'auto',
+  });
+}
+
+
+function prefersReducedMotion() {
+  try {
+    return Boolean(
+      window.matchMedia?.(
+        '(prefers-reduced-motion: reduce)',
+      )?.matches,
+    );
 
   } catch (_) {
     return false;
@@ -679,8 +702,78 @@ function RichText({ text }) {
 }
 
 
-/* نشانگر تایپینگ — سه نقطه‌ی تنفسی + برچسب
-   وضعیت (آپلود/فکر) */
+/* نمایش تدریجی پاسخ (حس استریم نرم، مثل
+   اپ‌های درجه‌ی یک) — بک‌اند تک‌پاسخ است، پس
+   اینجا متن نهایی در حدود ۱٫۴ ثانیه و در ~۱۶
+   گام ظاهر می‌شود؛ با کرتِ چشمک‌زن در انتها
+   و بدون layout-thrash (هر گام فقط یک رندرِ
+   همان حباب) */
+function RevealText({ text, onDone, onTick }) {
+  const [shown, setShown] = useState(() =>
+    prefersReducedMotion()
+      ? String(text).length
+      : 0,
+  );
+
+  const total = String(text).length;
+
+  // onDone در ref تا وابستگی افکت هر رندر ریست
+  // نشود و تایمر پیشرفت خراب نگردد
+  const doneRef = useRef(onDone);
+  const tickRef = useRef(onTick);
+
+  useEffect(() => {
+    doneRef.current = onDone;
+    tickRef.current = onTick;
+  });
+
+
+  useEffect(() => {
+    if (shown >= total) {
+      doneRef.current();
+      return undefined;
+    }
+
+    const step = Math.max(
+      6,
+      Math.ceil(total / 16),
+    );
+
+    const timer = window.setTimeout(() => {
+      setShown((current) =>
+        Math.min(total, current + step),
+      );
+
+      tickRef.current();
+    }, 80);
+
+    return () => window.clearTimeout(timer);
+  }, [shown, total]);
+
+
+  const done = shown >= total;
+
+  return (
+    <>
+      <RichText
+        text={String(text).slice(0, shown)}
+      />
+
+      {
+        !done
+        && (
+          <span
+            className="msg-caret"
+            aria-hidden="true"
+          />
+        )
+      }
+    </>
+  );
+}
+
+
+/* نشانگر تایپینگ — سه نقطه‌ی تنفسی + برچسب وضعیت */
 function TypingBubble({ label }) {
   return (
     <div className="msg-row">
@@ -702,26 +795,43 @@ function TypingBubble({ label }) {
 }
 
 
-/* یک ردیف پیام کامل — حباب، ضمیمه، متن غنی،
-   زمان و اکشن‌های پاسخ */
+/* یک ردیف پیام کامل — حباب، ضمیمه، متن غنی
+   (یا نمایش تدریجی)، زمان و اکشن‌های پاسخ */
 function MessageRow({
   item,
   index,
+  tight,
+  revealedSet,
   reported,
   actionsDisabled,
   onFollowUp,
   onReport,
   onCopy,
+  onRevealDone,
+  onRevealTick,
 }) {
   const isUser = item.role === 'user';
 
   const time = formatTime(item.at);
 
+  const revealing = Boolean(
+    Boolean(item.reveal)
+    && !isUser
+    && !revealedSet.has(item.id),
+  );
+
+  // اکشن‌ها و ساعت فقط بعد از اتمام نمایش
+  const actionsReady =
+    !revealing
+    || revealedSet.has(item.id);
+
+
   return (
     <article
       className={
         'msg-row' +
-        (isUser ? ' msg-row--me' : '')
+        (isUser ? ' msg-row--me' : '') +
+        (tight ? ' msg-row--tight' : '')
       }
     >
       <div
@@ -783,14 +893,25 @@ function MessageRow({
               ? (
                 <span dir="auto">{item.text}</span>
               )
-              : (
-                <RichText text={item.text} />
-              )
+              : revealing
+                ? (
+                  <RevealText
+                    text={item.text}
+                    onTick={onRevealTick}
+                    onDone={() =>
+                      onRevealDone(item.id)
+                    }
+                  />
+                )
+                : (
+                  <RichText text={item.text} />
+                )
           }
         </div>
 
         {
           time
+          && actionsReady
           && (
             <div className="msg__time">
               {time}
@@ -801,6 +922,7 @@ function MessageRow({
         {
           !isUser
           && item.text
+          && actionsReady
           && (
             <div className="msg__actions">
               <button
@@ -863,9 +985,17 @@ function MessageRow({
 
 
 export default function AiChat() {
-  // live = پیام‌های گفت‌وگوی فعال — از کوئری
-  // بذر می‌شود و بعد به‌صورت خوش‌بینانه رشد
-  // می‌کند تا هیچ پرشی دیده نشود
+  const navigate = useNavigate();
+
+  const { convId } = useParams();
+
+  // رشته‌ی فعال از URL می‌آید — /ai/c/:convId
+  // (ورود به /ai فهرست تاریخچه است، نه این صفحه)
+  const activeConv = convId || LEGACY_ID;
+
+
+  // live = پیام‌های همین رشته — یک بار از کوئری
+  // بذر می‌شود و بعد خوش‌بینانه رشد می‌کند
   const [live, setLive] = useState([]);
   const [input, setInput] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
@@ -876,21 +1006,6 @@ export default function AiChat() {
   const [previewUrl, setPreviewUrl] = useState('');
 
 
-  const [activeConv, setActiveConv] = useState(
-    () => {
-      try {
-        return (
-          window.localStorage
-            .getItem(ACTIVE_CONV_KEY)
-          || LEGACY_ID
-        );
-
-      } catch (_) {
-        return LEGACY_ID;
-      }
-    },
-  );
-
   const [showHistory, setShowHistory] =
     useState(false);
 
@@ -899,8 +1014,14 @@ export default function AiChat() {
 
   const [showJump, setShowJump] = useState(false);
 
-  // seedTick با هر بار بذردهی live زیاد می‌شود
-  // تا افکت بازیابی اسکرول بعد از پِیِنت اجرا شود
+  // تیکِ تازه‌سازی بعد از اتمام نمایش تدریجی
+  // (تا اکشن‌ها/ساعت نمایان شوند)
+  const [, setRevealTick] = useState(0);
+
+  // تیکِ بذردهی live — افکت بازیابی اسکرول به
+  // همین وابسته است (گفت‌وگوی خالی هم باید
+  // بازیابی شود، live.length که صفر می‌ماند
+  // کافی نیست)
   const [seedTick, setSeedTick] = useState(0);
 
 
@@ -909,40 +1030,41 @@ export default function AiChat() {
   const recordingStreamRef = useRef(null);
   const recordingChunksRef = useRef([]);
   const recordingTimerRef = useRef(null);
+  const taRef = useRef(null);
 
-  // حافظه‌ی موقعیت اسکرول هر گفت‌وگو — تعویض
-  // رشته بدون از‌دست‌دادن جای خواندن
-  const scrollMapRef = useRef({});
-  const activeConvRef = useRef(activeConv);
   const nearBottomRef = useRef(true);
   const lastSeededRef = useRef(null);
   const skipAutoScrollRef = useRef(false);
 
-  // id رشته‌ای که تازه ساخته‌ایم اما فهرست هنوز
-  // ری‌فچ نشده — مانع می‌شود اعتبارسنجی، رشته‌ی
-  // تازه را «ناموجود» بشمارد و به مشترک برگرداند
-  const pendingNewConvRef = useRef(null);
-
-  const taRef = useRef(null);
+  // پیام‌هایی که نمایش تدریجی‌شان تمام شده
+  // (در همین نشستِ رشته معتبر است)
+  const revealedRef = useRef(new Set());
 
 
   const toast = useUIStore((state) => state.toast);
   const queryClient = useQueryClient();
 
 
-  useEffect(() => {
-    activeConvRef.current = activeConv;
+  const handleRevealDone = useCallback(
+    (id) => {
+      revealedRef.current.add(id);
 
-    try {
-      window.localStorage.setItem(
-        ACTIVE_CONV_KEY,
-        activeConv,
+      setRevealTick((tick) => tick + 1);
+    },
+    [],
+  );
+
+
+  const handleRevealTick = useCallback(() => {
+    // متن در حال رشد است — اگر کاربر نزدیک ته
+    // است، همراه متن پایین برو
+    if (nearBottomRef.current) {
+      window.scrollTo(
+        0,
+        document.documentElement.scrollHeight,
       );
-
-    } catch (_) {
-      // WebView محدود — فقط حافظه‌ی نشست
     }
-  }, [activeConv]);
+  }, []);
 
 
   const {
@@ -959,8 +1081,8 @@ export default function AiChat() {
   });
 
 
-  // فهرست گفت‌وگوها — با فلگ بایگانی دوباره
-  // خوانده می‌شود
+  // فهرست گفت‌وگوها — برای عنوان صفحه و شیت
+  // سوییچ سریع
   const {
     data: convData,
     isSuccess: convsLoaded,
@@ -985,8 +1107,9 @@ export default function AiChat() {
     convData?.conversations || [];
 
 
-  // پیام‌های رشته‌ی فعال — legacy از همان مسیر
-  // تاریخچه‌ی مشترک می‌آید؛ بقیه از رشته‌ی خودشان
+  // پیام‌های رشته‌ی فعال — enabled نیاز نیست:
+  // id نامعتبر با ۴۰۴ به فهرست هدایت می‌شود و
+  // رشته‌ی تازه‌ساخته با setQueryData بذر می‌شود
   const msgsQuery = useQuery({
     queryKey: ['ai-conv-msgs', activeConv],
 
@@ -1014,59 +1137,42 @@ export default function AiChat() {
                 : [],
             ),
 
-    // تا مشخص نشود رشته واقعاً وجود دارد، درخواست
-    // نزن (مانع ۴۰۴ برای id بایگانی‌شده/حذف‌شده)
-    enabled:
-      activeConv === LEGACY_ID ||
-      conversations.some(
-        (item) => item.id === activeConv,
-      ),
+    retry: (failureCount, error) =>
+      error?.response?.status !== 404
+      && failureCount < 1,
 
     staleTime: 30_000,
     refetchOnWindowFocus: false,
   });
 
 
-  // اگر رشته‌ی فعال دیگر در فهرست نبود (حذف یا
-  // بایگانی در جای دیگر) به رشته‌ی مشترک برگرد
+  // رشته‌ی ناشناخته (حذف‌شده در جای دیگر)
   useEffect(() => {
+    const status404 =
+      msgsQuery.error?.response?.status ===
+      404;
+
     if (
-      activeConv === LEGACY_ID ||
-      !convsLoaded
+      status404
+      && activeConv !== LEGACY_ID
     ) {
-      return;
+      toast(
+        'این گفت‌وگو دیگر در دسترس نیست',
+        'warning',
+      );
+
+      navigate('/ai', { replace: true });
     }
-
-    const found = conversations.some(
-      (item) => item.id === activeConv,
-    );
-
-    if (found) {
-      // رشته‌ی تازه وارد فهرست شد — حفاظ موقت برداشته می‌شود
-      if (pendingNewConvRef.current === activeConv) {
-        pendingNewConvRef.current = null;
-      }
-
-      return;
-    }
-
-    // رشته‌ی تازه‌ساخته هنوز در ری‌فچ فهرست نیامده —
-    // صبر کن، برنگرد
-    if (pendingNewConvRef.current === activeConv) {
-      return;
-    }
-
-    setActiveConv(LEGACY_ID);
   }, [
+    msgsQuery.error,
     activeConv,
-    convsLoaded,
-    conversations,
+    navigate,
+    toast,
   ]);
 
 
-  // بذردهی live از کوئری — فقط یک‌بار برای هر
-  // رشته؛ رفرش‌های بعدیِ همان رشته نباید پیام‌های
-  // خوش‌بینانه‌ی در حال پرواز را بپوشانند
+  // بذردهی live — فقط یک‌بار (این نمونه‌ی
+  // کامپوننت به هر convId ری‌ماونت می‌شود)
   useEffect(() => {
     if (!msgsQuery.data) {
       return;
@@ -1080,9 +1186,9 @@ export default function AiChat() {
 
     skipAutoScrollRef.current = true;
 
-    // انیمیشن ورود فقط برای تازه‌ترین دور پیام‌ها —
-    // پخش دوباره‌ی انیمیشن روی کل تاریخچه (تا ۱۲۰
-    // حباب) در برگشت به رشته باعث جَنک می‌شود
+    // انیمیشن ورود فقط برای تازه‌ترین دور —
+    // ورود به رشته‌ی شلوغ نباید ۱۲۰ حباب را
+    // هم‌زمان انیمیت کند (جَنک)
     const length = msgsQuery.data.length;
 
     setLive(
@@ -1099,8 +1205,8 @@ export default function AiChat() {
   }, [msgsQuery.data, activeConv]);
 
 
-  // بازیابی موقعیت اسکرول رشته‌ی جدید — بعد از
-  // دو فریم، تا ارتفاع محتوا پایدار شده باشد
+  // بازیابی موقعیت اسکرول همین رشته — دو فریم
+  // بعد از رندر تا ارتفاع محتوا پایدار شده باشد
   useEffect(() => {
     if (seedTick === 0) {
       return;
@@ -1110,7 +1216,7 @@ export default function AiChat() {
       () => {
         window.requestAnimationFrame(() => {
           const saved =
-            scrollMapRef.current[activeConv];
+            scrollPositions.get(activeConv);
 
           if (typeof saved === 'number') {
             window.scrollTo(0, saved);
@@ -1140,9 +1246,10 @@ export default function AiChat() {
   // فعال + تشخیص نزدیکی به انتها
   useEffect(() => {
     const onScroll = () => {
-      scrollMapRef.current[
-        activeConvRef.current
-      ] = window.scrollY;
+      scrollPositions.set(
+        activeConv,
+        window.scrollY,
+      );
 
       const near = (
         document.documentElement.scrollHeight -
@@ -1171,7 +1278,7 @@ export default function AiChat() {
         'scroll',
         onScroll,
       );
-  }, []);
+  }, [activeConv]);
 
 
   const maxMediaBytes = (
@@ -1300,33 +1407,28 @@ export default function AiChat() {
 
       const nowIso = new Date().toISOString();
 
-      // پاسخ فقط به live همان رشته‌ای اضافه می‌شود
-      // که هنوز باز است — در غیر این صورت کش رشته‌ی
-      // مبدأ هم‌گام می‌شود و رشته‌ی فعال آلوده نمی‌شود
-      if (activeConvRef.current === variables.conv) {
-        setLive((current) => [
-          ...current.map((item) => (
-            item.id === variables.clientId
-              ? {
-                  ...item,
-                  failed: false,
-                }
-              : item
-          )),
+      setLive((current) => [
+        ...current.map((item) => (
+          item.id === variables.clientId
+            ? {
+                ...item,
+                failed: false,
+              }
+            : item
+        )),
 
-          {
-            id: messageId('assistant'),
-            role: 'assistant',
-            text: answer,
-            at: nowIso,
-            fresh: true,
-          },
-        ]);
-      }
+        {
+          id: messageId('assistant'),
+          role: 'assistant',
+          text: answer,
+          at: nowIso,
+          fresh: true,
+          reveal: true,
+        },
+      ]);
 
-      // کش همان رشته را هم‌گام نگه می‌داریم تا
-      // برگشت بعدی به این رشته لحظه‌ای و بدون
-      // لودینگ باشد
+      // کش رشته هم‌گام می‌ماند تا دفعه‌ی بعد بدون
+      // درخواست باز شود
       queryClient.setQueryData(
         ['ai-conv-msgs', variables.conv],
 
@@ -1351,8 +1453,8 @@ export default function AiChat() {
         ),
       );
 
-      // عنوان خودکار/پیش‌نمایش/شماره‌ی پیام رشته
-      // در فهرست تازه می‌شود
+      // عنوان خودکار/پیش‌نمایش/شمار پیام در
+      // فهرست تازه می‌شود
       queryClient.invalidateQueries({
         queryKey: ['ai-conversations'],
       });
@@ -1397,10 +1499,8 @@ export default function AiChat() {
   });
 
 
-  // اسکرول خودکار نرم — فقط وقتی پیام جدید آمده
-  // (live بزرگ‌تر شده یا حباب تایپینگ ظاهر شده)
-  // و کاربر نزدیک انتهاست؛ وگرنه چیپ پرش نشان
-  // داده می‌شود تا جای خواندنش خراب نشود
+  // اسکرول خودکار نرم — با پیام جدید یا ظاهرشدن
+  // حباب تایپینگ، فقط وقتی کاربر نزدیک انتهاست
   useEffect(() => {
     if (skipAutoScrollRef.current) {
       skipAutoScrollRef.current = false;
@@ -1414,7 +1514,6 @@ export default function AiChat() {
       setShowJump(true);
     }
 
-    // فقط رشد لیست و تغییر وضعیت ارسال مهم است
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [live.length, askMutation.isPending]);
 
@@ -1481,9 +1580,8 @@ export default function AiChat() {
   });
 
 
-  // ساخت گفت‌وگوی جدید — کش را همان‌جا با آرایه‌ی
-  // خالی بذر می‌کنیم تا بدون حتی یک فلش لودینگ،
-  // رشته‌ی تازه باز شود
+  // ساخت گفت‌وگوی جدید از داخل چت — کش بذر
+  // می‌شود و مستقیم به رشته‌ی تازه می‌رویم
   const createConvMutation = useMutation({
     mutationFn: () =>
       api.post('/api/ai/conversations', {}),
@@ -1495,17 +1593,10 @@ export default function AiChat() {
         return;
       }
 
-      // محافظ موقت تا ری‌فچ فهرست
-      pendingNewConvRef.current = id;
-
       queryClient.setQueryData(
         ['ai-conv-msgs', id],
         [],
       );
-
-      scrollMapRef.current[id] = undefined;
-
-      setActiveConv(id);
 
       setShowHistory(false);
 
@@ -1514,6 +1605,8 @@ export default function AiChat() {
       queryClient.invalidateQueries({
         queryKey: ['ai-conversations'],
       });
+
+      navigate(`/ai/c/${id}`);
     },
 
     onError: (error) => {
@@ -1528,101 +1621,33 @@ export default function AiChat() {
   });
 
 
-  // پچ مشترک تغییرنام / پین / بایگانی
-  const patchConvMutation = useMutation({
-    mutationFn: ({ id, patch }) =>
-      api.patch(
-        `/api/ai/conversations/${id}`,
-        patch,
-      ),
+  // اکشن‌های مشترک — رفتار حذفِ رشته‌ی باز در
+  // چت متفاوت است: به فهرست برمی‌گردیم (یا در
+  // legacy جایمان می‌مانیم و live خالی می‌شود)
+  const {
+    runAction,
+    patchConvMutation,
+    busy: actionsBusy,
+  } = useConvActions({
+    navigate,
 
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['ai-conversations'],
-      });
-    },
-
-    onError: (error) => {
-      toast(
-        getErrorMessage(
-          error,
-          'ذخیره‌ی تغییر گفت‌وگو انجام نشد',
-        ),
-        'error',
-      );
-    },
-  });
-
-
-  const deleteConvMutation = useMutation({
-    mutationFn: (item) =>
-      api.delete(
-        `/api/ai/conversations/${item.id}`,
-      ),
-
-    onSuccess: (_, item) => {
-      hapticNotif('success');
-
-      queryClient.removeQueries({
-        queryKey: ['ai-conv-msgs', item.id],
-      });
-
-      delete scrollMapRef.current[item.id];
-
-      if (pendingNewConvRef.current === item.id) {
-        pendingNewConvRef.current = null;
-      }
-
+    onDeleted: (item) => {
       if (item.legacy) {
-        // رشته‌ی مشترک محلی هم خالی می‌شود
         setLive([]);
-        lastSeededRef.current = LEGACY_ID;
 
-        queryClient.invalidateQueries({
-          queryKey: ['ai-status'],
-        });
-
-        toast(
-          'حافظه‌ی مشترک با ربات پاک شد',
-          'info',
-        );
-
-      } else {
-        toast(
-          'گفت‌وگو حذف شد',
-          'info',
-        );
+        return;
       }
 
-      // اگر رشته‌ی فعال حذف شد، به مشترک برگرد
-      if (
-        item.id === activeConv &&
-        item.id !== LEGACY_ID
-      ) {
-        setActiveConv(LEGACY_ID);
+      if (item.id === activeConv) {
+        navigate('/ai', { replace: true });
       }
-
-      queryClient.invalidateQueries({
-        queryKey: ['ai-conversations'],
-      });
-    },
-
-    onError: (error) => {
-      toast(
-        getErrorMessage(
-          error,
-          'حذف گفت‌وگو انجام نشد',
-        ),
-        'error',
-      );
     },
   });
 
 
   const sheetBusy = (
     createConvMutation.isPending
-    || patchConvMutation.isPending
-    || deleteConvMutation.isPending
+    || actionsBusy
   );
 
 
@@ -1901,14 +1926,16 @@ export default function AiChat() {
   };
 
 
-  const openConversation = (id) => {
-    if (id !== activeConv) {
-      haptic('light');
+  const openConversation = (item) => {
+    if (item.id === activeConv) {
+      setShowHistory(false);
 
-      setActiveConv(id);
+      return;
     }
 
-    setShowHistory(false);
+    haptic('light');
+
+    navigate(`/ai/c/${item.id}`);
   };
 
 
@@ -2120,6 +2147,21 @@ export default function AiChat() {
   };
 
 
+  // عنوان زیرتیتر هدر — نام خودِ رشته‌ی فعال
+  const currentItem = conversations.find(
+    (item) => item.id === activeConv,
+  );
+
+  const headerSubtitle = (
+    currentItem?.title
+    || (
+      activeConv === LEGACY_ID
+        ? 'رشته‌ی مشترک با ربات'
+        : 'دستیار هوشمند هامزیار'
+    )
+  );
+
+
   const headerAction = (
     <div
       style={{
@@ -2140,9 +2182,9 @@ export default function AiChat() {
 
           setShowHistory(true);
         }}
-        aria-label="تاریخچه‌ی گفت‌وگوها"
+        aria-label="سوییچ سریع گفت‌وگو"
       >
-        ☰ گفت‌وگوها
+        ☰
       </button>
 
       <button
@@ -2178,8 +2220,9 @@ export default function AiChat() {
     <>
       <Header
         title="هوشیار"
-        subtitle="دستیار هوشمند هامزیار"
+        subtitle={headerSubtitle}
         right={headerAction}
+        backTo="/ai"
       />
 
       <main
@@ -2329,7 +2372,7 @@ export default function AiChat() {
               <div
                 style={{
                   display: 'grid',
-                  gap: 9,
+                  gap: 10,
                 }}
               >
                 <div
@@ -2417,24 +2460,36 @@ export default function AiChat() {
           }
 
           {
-            live.map((item, index) => (
-              <MessageRow
-                key={
-                  item.id
-                  || `${item.role}-${index}`
-                }
-                item={item}
-                index={index}
-                reported={reported.has(item.id)}
-                actionsDisabled={
-                  askMutation.isPending
-                  || unavailable
-                }
-                onFollowUp={followUp}
-                onReport={reportAnswer}
-                onCopy={copyAnswer}
-              />
-            ))
+            live.map((item, index) => {
+              const tight = (
+                index > 0
+                && live[index - 1]?.role
+                  === item.role
+              );
+
+              return (
+                <MessageRow
+                  key={
+                    item.id
+                    || `${item.role}-${index}`
+                  }
+                  item={item}
+                  index={index}
+                  tight={tight}
+                  revealedSet={revealedRef.current}
+                  reported={reported.has(item.id)}
+                  actionsDisabled={
+                    askMutation.isPending
+                    || unavailable
+                  }
+                  onFollowUp={followUp}
+                  onReport={reportAnswer}
+                  onCopy={copyAnswer}
+                  onRevealDone={handleRevealDone}
+                  onRevealTick={handleRevealTick}
+                />
+              );
+            })
           }
 
           {
@@ -2752,24 +2807,8 @@ export default function AiChat() {
                 patch: { title },
               })
             }
-            onTogglePin={(item) =>
-              patchConvMutation.mutate({
-                id: item.id,
-                patch: {
-                  pinned: !item.pinned,
-                },
-              })
-            }
-            onToggleArchive={(item) =>
-              patchConvMutation.mutate({
-                id: item.id,
-                patch: {
-                  archived: !item.archived,
-                },
-              })
-            }
-            onDelete={(item) =>
-              deleteConvMutation.mutate(item)
+            onAction={(item, actionId) =>
+              runAction(item, actionId)
             }
           />
         )
