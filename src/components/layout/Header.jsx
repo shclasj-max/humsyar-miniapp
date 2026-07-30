@@ -17,6 +17,10 @@ import {
   navigateBack,
 } from '../../lib/navBack';
 
+import {
+  useTelegramBack,
+} from '../../lib/backButton';
+
 
 /* ─────────────────────────────────────────────
    هدر استاندارد کل مینی‌اپ
@@ -75,53 +79,16 @@ export default function Header({
     }, [onRefresh]);
 
 
-  // سینک دکمه‌ی برگشت پلتفرم (Android hardware
-  // back / chevron بالای اپ) با وضعیت همین صفحه
-  useEffect(() => {
-    const backButton =
-      tg?.BackButton;
-
-    if (!backButton) {
-      return undefined;
-    }
-
-    try {
-      if (back) {
-        backButton.show();
-
-        backButton.onClick(
-          handleBack,
-        );
-      } else {
-        backButton.hide();
-      }
-
-    } catch (error) {
-      console.warn(
-        '[telegram back button]',
-        error,
-      );
-    }
-
-
-    return () => {
-      try {
-        backButton.offClick(
-          handleBack,
-        );
-
-        backButton.hide();
-
-      } catch (_) {
-        // بعضی نسخه‌های قدیمی تلگرام
-        // تمام متدها را ندارند.
-      }
-    };
-
-  }, [
+  /* 🧯 سینک متمرکز BackButton نیتیو — منطق
+     show/hide/onClick به lib/backButton سپرده
+     شده؛ هندلرِ تازه (با هر رندرِ تایمر آزمون)
+     فقط به‌صورت ref جایگزین می‌شود و دیگر هیچ
+     چرخه‌ی offClick/hide→onClick/show رخ نمی‌دهد
+     — پایان چشمک Back⇄Close */
+  useTelegramBack(
     back,
     handleBack,
-  ]);
+  );
 
 
   return (
