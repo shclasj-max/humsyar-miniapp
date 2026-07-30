@@ -7,6 +7,10 @@ import {
   haptic,
 } from '../../lib/telegram';
 
+import {
+  hideBackButton,
+} from '../../lib/backButton';
+
 
 const STATES = {
   telegram_required: {
@@ -180,7 +184,7 @@ export default function AuthError({
      نیتیو تلگرام نباید قابل دیدن باشد */
   useEffect(() => {
     try {
-      tg?.BackButton?.hide?.();
+      hideBackButton();
     } catch (_) {
       /* نسخه قدیمی */
     }
