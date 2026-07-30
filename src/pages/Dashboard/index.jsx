@@ -7,7 +7,21 @@ import {
   SkeletonCard,
   Spinner,
 } from '../../components/shared/Loading';
-import { haptic } from '../../lib/telegram';
+import { haptic, tg } from '../../lib/telegram';
+
+/* باز کردن لینک خارجی از داخل مینی‌اپ —
+   اولویت با openLink نیتیو تلگرام */
+export const openExternal = (url) => {
+  try {
+    if (tg?.openLink) {
+      tg.openLink(url);
+      return;
+    }
+  } catch (_) {
+    /* fallback به مرورگر */
+  }
+  window.open(url, '_blank', 'noopener');
+};
 
 const number = (value) => {
   const parsed = Number(value);
@@ -401,6 +415,30 @@ export default function Dashboard() {
       5 * 60 * 1000,
   });
 
+  /* 💙 تنظیمات زنده حمایت مالی —
+     سینک با دکمه «حمایت مالی» ربات */
+  const {
+    data: donation,
+  } = useQuery({
+    queryKey: ['donation-config'],
+
+    queryFn: () =>
+      api
+        .get('/api/profile/donation')
+        .then(
+          (response) =>
+            response.data
+        ),
+
+    staleTime:
+      10 * 60 * 1000,
+    retry: false,
+  });
+
+  const showDonation = Boolean(
+    donation?.enabled && donation?.link
+  );
+
   const {
     data: leaderboard = [],
 
@@ -654,6 +692,86 @@ export default function Dashboard() {
                 />
               </div>
             </section>
+
+            {/* 💙 حمایت مالی — فقط وقتی
+                مدیر فعالش کرده (سینک با ربات) */}
+            {showDonation && (
+              <button
+                type="button"
+                className="card card-tap fade-up"
+                onClick={() => {
+                  haptic('light');
+                  openExternal(
+                    donation.link
+                  );
+                }}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 11,
+                  padding: 13,
+                  textAlign: 'right',
+                  borderColor:
+                    'rgba(244,114,182,.28)',
+                  background:
+                    'linear-gradient(145deg,rgba(236,72,153,.12),rgba(16,24,39,.95) 55%,rgba(244,114,182,.07))',
+                }}
+              >
+                <span
+                  style={{
+                    display: 'grid',
+                    width: 42,
+                    height: 42,
+                    placeItems: 'center',
+                    borderRadius: 14,
+                    background:
+                      'rgba(236,72,153,.14)',
+                    fontSize: 20,
+                  }}
+                >
+                  💙
+                </span>
+
+                <span
+                  style={{ flex: 1 }}
+                >
+                  <b
+                    style={{
+                      display: 'block',
+                      color: '#F9A8D4',
+                      fontSize: 12.5,
+                    }}
+                  >
+                    حمایت از هامزیار
+                  </b>
+
+                  <span
+                    style={{
+                      display: 'block',
+                      color: 'var(--txm)',
+                      fontSize: 9.6,
+                      marginTop: 3,
+                      lineHeight: 1.7,
+                    }}
+                  >
+                    با حمایت کوچیکت به ادامه‌دار
+                    بودن و پیشرفت هامزیار کمک کن 🙏
+                  </span>
+                </span>
+
+                <span
+                  className="badge"
+                  style={{
+                    background:
+                      'rgba(236,72,153,.14)',
+                    color: '#F9A8D4',
+                  }}
+                >
+                  💙 حمایت
+                </span>
+              </button>
+            )}
 
             <section className="grid2">
               <Metric
