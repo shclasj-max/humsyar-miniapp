@@ -265,14 +265,10 @@ export default function Learn() {
       <main className="page fade-up">
         <section
           className={
-            'card card-glow'
+            'card card-glow hero-card'
           }
           style={{
-            padding: 18,
             marginBottom: 16,
-
-            background:
-              'linear-gradient(145deg,rgba(29,78,216,.24),rgba(16,24,39,.94) 55%,rgba(34,211,238,.1))',
           }}
         >
           <div
