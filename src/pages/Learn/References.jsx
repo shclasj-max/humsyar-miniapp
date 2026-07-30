@@ -18,6 +18,10 @@ import {
 
 import api from '../../lib/api';
 
+import SubscriptionLock, {
+  isSubscriptionLock,
+} from '../../components/shared/SubscriptionLock';
+
 import {
   haptic,
   hapticNotif,
@@ -240,6 +244,7 @@ export default function References() {
     data: subjects = [],
     isLoading: subjectsLoading,
     isError: subjectsError,
+    error: subjectsErr,
     refetch: refetchSubjects,
   } = useQuery({
     queryKey: [
@@ -266,6 +271,7 @@ export default function References() {
     data: booksData,
     isLoading: booksLoading,
     isError: booksError,
+    error: booksErr,
     refetch: refetchBooks,
   } = useQuery({
     queryKey: [
@@ -294,6 +300,7 @@ export default function References() {
     data: filesData,
     isLoading: filesLoading,
     isError: filesError,
+    error: filesErr,
     refetch: refetchFiles,
   } = useQuery({
     queryKey: [
@@ -446,6 +453,14 @@ export default function References() {
     });
   };
 
+  /* 🔒 گیت اشتراک — بک‌اند مرجع نهایی است
+     (همان قانون has_access ربات) */
+  const subLock =
+    isSubscriptionLock(subjectsErr) ||
+    isSubscriptionLock(booksErr) ||
+    isSubscriptionLock(filesErr);
+
+
   const goBack = () => {
     haptic('light');
 
@@ -531,7 +546,14 @@ export default function References() {
         className="page fade-up"
         style={styles.page}
       >
+        {subLock && (
+          <SubscriptionLock
+            feature="رفرنس‌های درسی"
+          />
+        )}
+
         {
+          !subLock &&
           view === 'subjects'
           && (
             <>
