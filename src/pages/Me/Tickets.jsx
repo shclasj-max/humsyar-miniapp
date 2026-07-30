@@ -303,16 +303,11 @@ export default function Tickets() {
         <main className="page fade-up">
           <section
             className={
-              'card card-glow'
+              'card card-glow hero-card'
             }
             style={{
-              padding: 17,
-
               marginBottom:
                 13,
-
-              background:
-                'linear-gradient(145deg,rgba(29,78,216,.2),rgba(16,24,39,.95))',
             }}
           >
             <div
@@ -386,15 +381,7 @@ export default function Tickets() {
               gap: 10,
             }}
           >
-            <label
-              style={{
-                color:
-                  'var(--txm)',
-
-                fontSize:
-                  10.5,
-              }}
-            >
+            <label className="fld-label">
               موضوع
             </label>
 
@@ -430,15 +417,7 @@ export default function Tickets() {
             </select>
 
 
-            <label
-              style={{
-                color:
-                  'var(--txm)',
-
-                fontSize:
-                  10.5,
-              }}
-            >
+            <label className="fld-label">
               شرح درخواست
             </label>
 
@@ -839,17 +818,11 @@ export default function Tickets() {
       <main className="page fade-up">
         <section
           className={
-            'card card-glow'
+            'card card-glow hero-card'
           }
           style={{
-            padding:
-              17,
-
             marginBottom:
               14,
-
-            background:
-              'linear-gradient(145deg,rgba(29,78,216,.2),rgba(16,24,39,.95) 55%,rgba(34,211,238,.08))',
           }}
         >
           <div
@@ -972,14 +945,16 @@ export default function Tickets() {
           </>
         ) : isError ? (
           <div className="empty card">
-            دریافت تیکت‌ها انجام نشد.
+            <div className="empty__ic">
+              🌐
+            </div>
+
+            <div>
+              دریافت تیکت‌ها انجام نشد.
+            </div>
 
             <button
               className="btn btn-p"
-              style={{
-                marginTop:
-                  12,
-              }}
               onClick={() =>
                 refetch()
               }
