@@ -10,5 +10,25 @@
 <body>
   <div id="root"></div>
   <script type="module" src="/src/main.jsx"></script>
-</body>
+  <script>
+    /* 🧯 نگهبان مونت: اگر ۹ ثانیه بعد از لود،
+       روت خالی بود یعنی JS اصلاً اجرا نشده
+       (خطای باندل/شبکه در ری‌دیپلوی) — به‌جای
+       صفحه‌ی تاریکِ بی‌سرنخ، پیام بازیابی بده */
+    setTimeout(function () {
+      var root = document.getElementById('root');
+      if (!root || root.firstChild) return;
+
+      root.setAttribute('dir', 'rtl');
+      root.innerHTML =
+        '<div style="min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px;font-family:Tahoma,sans-serif">' +
+        '<div style="max-width:360px;width:100%;padding:22px;text-align:center;background:linear-gradient(180deg,rgba(255,255,255,.035),transparent 44%),rgba(16,24,39,.94);border:1px solid rgba(148,163,184,.13);border-radius:18px;color:#F8FAFC">' +
+        '<div style="font-size:40px">🩺</div>' +
+        '<h1 style="margin:12px 0 8px;font-size:17px;font-weight:800">هامزیار بارگذاری نشد</h1>' +
+        '<p style="color:#B4C0D4;font-size:11px;line-height:1.9">مشکل موقتی در اتصال یا نسخه‌ی برنامه؛ معمولاً با یک بارگذاری مجدد حل می‌شود.</p>' +
+        '<button onclick="location.reload()" style="margin-top:14px;width:100%;min-height:42px;border:0;border-radius:13px;background:linear-gradient(135deg,#1D4ED8,#3B82F6 55%,#22D3EE);color:#fff;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer">↻ تلاش دوباره</button>' +
+        '</div></div>';
+    }, 9000);
+  </script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a23749ea2a42db8d',t:'MTc4NTQ0NTE4Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
