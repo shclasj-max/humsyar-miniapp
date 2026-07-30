@@ -204,6 +204,53 @@ export default function App() {
   }, [init]);
 
 
+  /* رویدادهای احراز هویت api.js — وقتی وسط نشست
+     دسترسی کاربر باطل شود (تعلیق، حذف، و…) به‌جای
+     صفحات نیمه‌شکسته، مستقیم به صفحه وضعیت می‌رویم */
+  const forceError = useAuthStore(
+    (state) => state.forceError
+  );
+
+
+  useEffect(() => {
+    const EVENT_TO_STATE = {
+      'auth:not_registered':
+        'not_registered',
+      'auth:pending':
+        'pending_approval',
+      'auth:suspended':
+        'suspended',
+      'auth:invalid':
+        'invalid_init_data',
+    };
+
+    const listeners = Object.entries(
+      EVENT_TO_STATE
+    ).map(([event, code]) => {
+      const handler = () =>
+        forceError(code);
+
+      window.addEventListener(
+        event,
+        handler
+      );
+
+      return [event, handler];
+    });
+
+
+    return () => {
+      listeners.forEach(
+        ([event, handler]) =>
+          window.removeEventListener(
+            event,
+            handler
+          )
+      );
+    };
+  }, [forceError]);
+
+
   if (loading) {
     return (
       <LoadingScreen />
