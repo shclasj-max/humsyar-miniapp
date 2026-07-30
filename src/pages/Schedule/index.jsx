@@ -71,19 +71,11 @@ function Empty({
 }) {
   return (
     <div className="empty card">
-      <div
-        style={{
-          fontSize: 42,
-        }}
-      >
+      <div className="empty__ic">
         {TYPES[type].icon}
       </div>
 
-      <div
-        style={{
-          marginTop: 8,
-        }}
-      >
+      <div>
         موردی در بخش{' '}
         {TYPES[type].label}{' '}
         ثبت نشده است.
@@ -182,55 +174,17 @@ export default function Schedule() {
           ) || 'شما'
         }`}
         back={false}
-        right={
-          <button
-            type="button"
-            aria-label="به‌روزرسانی"
-            disabled={
-              isRefetching
-            }
-            onClick={() => {
-              haptic();
-              refetch();
-            }}
-            style={{
-              width: 36,
-              height: 36,
-
-              borderRadius:
-                12,
-
-              border:
-                '1px solid var(--bd)',
-
-              background:
-                'var(--elev)',
-
-              cursor:
-                'pointer',
-
-              opacity:
-                isRefetching
-                  ? .5
-                  : 1,
-            }}
-          >
-            ↻
-          </button>
-        }
+        onRefresh={refetch}
+        refreshing={isRefetching}
       />
 
       <main className="page fade-up">
         <section
           className={
-            'card card-glow'
+            'card card-glow hero-card'
           }
           style={{
-            padding: 17,
             marginBottom: 14,
-
-            background:
-              'linear-gradient(145deg,rgba(29,78,216,.2),rgba(16,24,39,.95) 52%,rgba(34,211,238,.08))',
           }}
         >
           <div
@@ -406,26 +360,14 @@ export default function Schedule() {
                   tab === key
                 }
                 key={key}
-                className="tab-btn"
+                className={`tab-btn ${
+                  tab === key
+                    ? 'tab-btn--on'
+                    : ''
+                }`}
                 onClick={() => {
                   haptic();
                   setTab(key);
-                }}
-                style={{
-                  color:
-                    tab === key
-                      ? '#fff'
-                      : 'var(--tx2)',
-
-                  background:
-                    tab === key
-                      ? 'var(--grad-brand)'
-                      : 'transparent',
-
-                  boxShadow:
-                    tab === key
-                      ? 'var(--shd-glow)'
-                      : 'none',
                 }}
               >
                 {item.icon}{' '}
@@ -452,27 +394,16 @@ export default function Schedule() {
           </div>
         ) : isError ? (
           <div className="empty card">
-            <div
-              style={{
-                fontSize: 40,
-              }}
-            >
+            <div className="empty__ic">
               🌐
             </div>
 
-            <div
-              style={{
-                marginTop: 8,
-              }}
-            >
+            <div>
               دریافت برنامه انجام نشد.
             </div>
 
             <button
               className="btn btn-p"
-              style={{
-                marginTop: 13,
-              }}
               onClick={() =>
                 refetch()
               }
