@@ -107,6 +107,18 @@ export default class ErrorBoundary
       return this.props.children;
     }
 
+    /* fallback سفارشی برای کرومِ اپ (مثل BottomNav):
+       خطا در componentDidCatch داخل حلقه‌ی دیباگ ثبت
+       شده، ولی به‌جای صفحه‌ی بازیابیِ تمام‌صفحه همین
+       مقدار رندر می‌شود تا بقیه‌ی اپ زنده بماند —
+       کرش نوار ناوبری = فقط نوار می‌رود، نه کل اپ */
+    if (
+      this.props.fallback !==
+      undefined
+    ) {
+      return this.props.fallback;
+    }
+
     return (
       <main
         dir="rtl"
