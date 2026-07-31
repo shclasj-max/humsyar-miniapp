@@ -11,14 +11,19 @@ import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 
 import {
-  Spinner,
-} from '../../components/shared/Loading';
-
-import {
   SkPlanCard,
 } from '../../components/shared/skeletons';
 
+import SearchField from '../../components/shared/SearchField';
+
+import UserSearchSelect from '../../components/shared/UserSearchSelect';
+
 import {
+  useDebouncedValue,
+} from '../../lib/useDebounce';
+
+import {
+  haptic,
   hapticNotif,
 } from '../../lib/telegram';
 
@@ -157,6 +162,42 @@ export default function SubscriptionAdmin() {
     setNotes,
   ] = useState({});
 
+  /* 🔎 جست‌وجوی یکپارچه — همان عبارت،
+     هم رسیدها هم مشترکین؛ سمت سرور با
+     قرارداد سراسری (نام، یوزرنیم، شماره
+     دانشجویی، آیدی عددی) فیلتر می‌شود */
+  const [
+    paySearch,
+    setPaySearch,
+  ] = useState('');
+
+  const [
+    subSearch,
+    setSubSearch,
+  ] = useState('');
+
+  const payQuery =
+    useDebouncedValue(paySearch, 400)
+      .trim();
+
+  const subQuery =
+    useDebouncedValue(subSearch, 400)
+      .trim();
+
+  /* دانشجوی انتخاب‌شده برای اعطای دستی */
+  const [
+    grantUser,
+    setGrantUser,
+  ] = useState(null);
+
+  /* ردیفی که جریان لغودرون‌کارتیش باز
+     است (جایگزین window.prompt مرده در
+     WebView تلگرام) */
+  const [
+    revokeFor,
+    setRevokeFor,
+  ] = useState(null);
+
   const toast = useUIStore(
     (state) => state.toast
   );
@@ -189,10 +230,12 @@ export default function SubscriptionAdmin() {
 
   const {
     data: payments = [],
+    isFetching: paymentsFetching,
   } = useQuery({
     queryKey: [
       'subscription-admin-payments',
       paymentStatus,
+      payQuery,
     ],
 
     queryFn: () =>
@@ -204,6 +247,10 @@ export default function SubscriptionAdmin() {
             params: {
               status:
                 paymentStatus ||
+                undefined,
+
+              search:
+                payQuery ||
                 undefined,
 
               limit:
@@ -224,10 +271,12 @@ export default function SubscriptionAdmin() {
 
   const {
     data: subscribers = [],
+    isFetching: subscribersFetching,
   } = useQuery({
     queryKey: [
       'subscription-admin-subscribers',
       subscriberStatus,
+      subQuery,
     ],
 
     queryFn: () =>
@@ -239,6 +288,10 @@ export default function SubscriptionAdmin() {
             params: {
               status:
                 subscriberStatus,
+
+              search:
+                subQuery ||
+                undefined,
 
               limit:
                 100,
@@ -500,6 +553,23 @@ export default function SubscriptionAdmin() {
           max_uses: 0,
           expires_at: '',
         });
+      }
+
+      if (
+        variables.type === 'grant'
+      ) {
+        setGrant({
+          ...grant,
+          user_id: '',
+        });
+
+        setGrantUser(null);
+      }
+
+      if (
+        variables.type === 'revoke'
+      ) {
+        setRevokeFor(null);
       }
 
       setNotes({});
@@ -914,29 +984,35 @@ export default function SubscriptionAdmin() {
                 🎁 اعطای دستی
               </div>
 
-              <div className="grid2">
-                <input
-                  className="inp"
-                  inputMode="numeric"
-                  value={
-                    grant.user_id
-                  }
-                  onChange={(event) =>
-                    setGrant({
-                      ...grant,
+              <UserSearchSelect
+                selected={grantUser}
+                onPick={(user) => {
+                  setGrantUser(user);
 
-                      user_id:
-                        event.target
-                          .value
-                          .replace(
-                            /\D/g,
-                            ''
-                          ),
-                    })
-                  }
-                  placeholder="آیدی تلگرام"
-                />
+                  setGrant({
+                    ...grant,
 
+                    user_id:
+                      String(user.id),
+                  });
+                }}
+                onClear={() => {
+                  setGrantUser(null);
+
+                  setGrant({
+                    ...grant,
+                    user_id: '',
+                  });
+                }}
+              />
+
+              <div
+                className="grid2"
+                style={{
+                  marginTop:
+                    8,
+                }}
+              >
                 <input
                   className="inp"
                   type="number"
@@ -954,28 +1030,24 @@ export default function SubscriptionAdmin() {
                   }
                   placeholder="روز"
                 />
+
+                <input
+                  className="inp"
+                  value={
+                    grant.plan_name
+                  }
+                  onChange={(event) =>
+                    setGrant({
+                      ...grant,
+
+                      plan_name:
+                        event.target
+                          .value,
+                    })
+                  }
+                  placeholder="نام پلن"
+                />
               </div>
-
-              <input
-                className="inp"
-                value={
-                  grant.plan_name
-                }
-                onChange={(event) =>
-                  setGrant({
-                    ...grant,
-
-                    plan_name:
-                      event.target
-                        .value,
-                  })
-                }
-                placeholder="نام پلن"
-                style={{
-                  marginTop:
-                    8,
-                }}
-              />
 
               <button
                 className={
@@ -1298,10 +1370,28 @@ export default function SubscriptionAdmin() {
             </div>
 
 
+            <SearchField
+              value={paySearch}
+              onChange={(event) =>
+                setPaySearch(
+                  event.target.value
+                )
+              }
+              placeholder="جست‌وجو: نام، یوزرنیم، شماره، آیدی عددی یا پلن..."
+              ariaLabel="جست‌وجوی رسیدها"
+              loading={paymentsFetching}
+              style={{
+                marginBottom: 10,
+              }}
+            />
+
+
             {paymentRows.length ===
               0 ? (
               <Empty>
-                رسیدی در این وضعیت نیست.
+                {payQuery
+                  ? 'رسیدی با این عبارت پیدا نشد.'
+                  : 'رسیدی در این وضعیت نیست.'}
               </Empty>
             ) : (
               <section
@@ -1363,6 +1453,10 @@ export default function SubscriptionAdmin() {
                           >
                             {item.student_id ||
                               'بدون شماره'}
+
+                            {item.username
+                              ? ` • @${item.username}`
+                              : ''}
 
                             {' • '}
 
@@ -1583,10 +1677,28 @@ export default function SubscriptionAdmin() {
             </div>
 
 
+            <SearchField
+              value={subSearch}
+              onChange={(event) =>
+                setSubSearch(
+                  event.target.value
+                )
+              }
+              placeholder="جست‌وجو: نام، یوزرنیم، شماره یا آیدی عددی..."
+              ariaLabel="جست‌وجوی مشترکین"
+              loading={subscribersFetching}
+              style={{
+                marginBottom: 10,
+              }}
+            />
+
+
             {subscriberRows.length ===
               0 ? (
               <Empty>
-                مشترکی در این وضعیت نیست.
+                {subQuery
+                  ? 'مشترکی با این عبارت پیدا نشد.'
+                  : 'مشترکی در این وضعیت نیست.'}
               </Empty>
             ) : (
               <section
@@ -1651,6 +1763,10 @@ export default function SubscriptionAdmin() {
                                 9,
                             }}
                           >
+                            {item.username
+                              ? `@${item.username} • `
+                              : ''}
+
                             {item.plan_name}
 
                             {' • تا '}
@@ -1667,39 +1783,122 @@ export default function SubscriptionAdmin() {
 
                       {item.status ===
                         'active' && (
-                        <button
-                          className={
-                            'btn btn-d btn-full'
-                          }
-                          style={{
-                            marginTop:
-                              8,
-                          }}
-                          onClick={() => {
-                            const reason =
-                              window.prompt(
-                                'دلیل لغو اشتراک:'
+                        revokeFor ===
+                        item.user_id ? (
+                          <div
+                            className="pop-in"
+                            style={{
+                              display:
+                                'grid',
+
+                              gap:
+                                7,
+
+                              marginTop:
+                                8,
+                            }}
+                          >
+                            <textarea
+                              className="inp"
+                              rows={2}
+                              value={
+                                notes[
+                                  item.user_id
+                                ] || ''
+                              }
+                              onChange={(event) =>
+                                setNotes({
+                                  ...notes,
+
+                                  [item.user_id]:
+                                    event
+                                      .target
+                                      .value,
+                                })
+                              }
+                              placeholder={
+                                'دلیل لغو اشتراک (اختیاری)'
+                              }
+                              style={{
+                                marginTop: 0,
+                              }}
+                            />
+
+                            <div
+                              style={{
+                                display:
+                                  'flex',
+
+                                gap:
+                                  7,
+                              }}
+                            >
+                              <button
+                                className="btn btn-d"
+                                style={{
+                                  flex:
+                                    1,
+                                }}
+                                disabled={
+                                  mutation.isPending
+                                }
+                                onClick={() =>
+                                  mutation.mutate({
+                                    type:
+                                      'revoke',
+
+                                    id:
+                                      item.user_id,
+
+                                    payload: {
+                                      reason:
+                                        (
+                                          notes[
+                                            item.user_id
+                                          ] || ''
+                                        ).trim() ||
+                                        'لغو توسط مدیریت',
+                                    },
+                                  })
+                                }
+                              >
+                                تأیید لغو
+                              </button>
+
+                              <button
+                                className="btn btn-dark"
+                                onClick={() =>
+                                  setRevokeFor(
+                                    null
+                                  )
+                                }
+                              >
+                                انصراف
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            className={
+                              'btn btn-d btn-full'
+                            }
+                            style={{
+                              marginTop:
+                                8,
+                            }}
+                            onClick={() => {
+                              haptic(
+                                'light'
                               );
 
-                            if (
-                              reason?.trim()
-                            ) {
-                              mutation.mutate({
-                                type:
-                                  'revoke',
-
-                                id:
-                                  item.user_id,
-
-                                payload: {
-                                  reason,
-                                },
-                              });
-                            }
-                          }}
-                        >
-                          لغو اشتراک
-                        </button>
+                              setRevokeFor(
+                                item.user_id
+                              );
+                            }}
+                          >
+                            لغو اشتراک
+                          </button>
+                        )
                       )}
                     </article>
                   )
