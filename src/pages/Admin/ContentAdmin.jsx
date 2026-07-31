@@ -11,9 +11,13 @@ import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 
 import {
-  SkeletonCard,
   Spinner,
 } from '../../components/shared/Loading';
+
+import {
+  LibraryTilesSkeleton,
+  LibraryRowsSkeleton,
+} from '../../components/shared/skeletons';
 
 import {
   hapticNotif,
@@ -695,10 +699,7 @@ export function ContentQuestions() {
 
 
         {isLoading ? (
-          <>
-            <SkeletonCard />
-            <SkeletonCard />
-          </>
+          <LibraryTilesSkeleton />
         ) : isError ? (
           <Empty icon="🌐">
             دریافت سؤال‌ها انجام نشد.
@@ -1289,7 +1290,7 @@ export function ContentFaq() {
 
 
         {isLoading ? (
-          <SkeletonCard />
+          <LibraryRowsSkeleton />
         ) : isError ? (
           <Empty icon="🌐">
             دریافت FAQ انجام نشد.
