@@ -1,5 +1,8 @@
 import { confirmAction } from '../../lib/confirm';
-import { useState } from 'react';
+import {
+  useEffect,
+  useState,
+} from 'react';
 
 import {
   useNavigate,
@@ -108,6 +111,20 @@ export function AdminUsers() {
     status,
     setStatus,
   ] = useState('all');
+
+  /* 📄 رندر افزایشی (موج ۴.۶۰) — لیست تا ۵۰۰
+     کاربر می‌تواند باشد؛ رندر یکجای ۵۰۰ کارت
+     DOMِ سنگین + اسکرول لکنت‌دار می‌سازد. ۴۰
+     تای اول + «نمایش بیشتر» — با هر تغییر
+     فیلتر/جست‌وجو ریست می‌شود. */
+  const [
+    visible,
+    setVisible,
+  ] = useState(40);
+
+  useEffect(() => {
+    setVisible(40);
+  }, [search, group, intake, status]);
 
 
   const {
@@ -519,7 +536,10 @@ export function AdminUsers() {
                 8,
             }}
           >
-            {users.map(
+            {users.slice(
+              0,
+              visible
+            ).map(
               (
                 user,
                 index
@@ -676,6 +696,33 @@ export function AdminUsers() {
             )}
           </section>
         )}
+
+        {!isLoading &&
+          !isError &&
+          users.length >
+            visible && (
+            <button
+              type="button"
+              className={
+                'btn btn-dark btn-full'
+              }
+              style={{
+                marginTop:
+                  9,
+              }}
+              onClick={() =>
+                setVisible(
+                  (current) =>
+                    current + 40
+                )
+              }
+            >
+              نمایش بیشتر (
+              {users.length -
+                visible}{' '}
+              مورد دیگر)
+            </button>
+          )}
       </main>
     </>
   );
