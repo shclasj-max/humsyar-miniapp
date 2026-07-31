@@ -239,77 +239,11 @@ export function SkeletonLine({
 }
 
 
-export function SkeletonCard({
-  lines = 3,
-}) {
-  return (
-    <div
-      className="card"
-      aria-hidden="true"
-      style={{
-        display:
-          'flex',
-
-        alignItems:
-          'center',
-
-        gap:
-          11,
-
-        minHeight:
-          82,
-      }}
-    >
-      <div
-        className="skeleton"
-        style={{
-          width:
-            46,
-
-          height:
-            46,
-
-          flexShrink:
-            0,
-
-          borderRadius:
-            14,
-        }}
-      />
-
-      <div
-        style={{
-          display:
-            'grid',
-
-          flex:
-            1,
-
-          gap:
-            8,
-        }}
-      >
-        <SkeletonLine
-          width="48%"
-          height={13}
-        />
-
-        {lines > 1 && (
-          <SkeletonLine
-            height={10}
-          />
-        )}
-
-        {lines > 2 && (
-          <SkeletonLine
-            width="72%"
-            height={10}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
+/* SkeletonCardِ عمومی حذف شد (موج ۴.۴۰) —
+   تمام صفحات از کامپوزیت‌های اختصاصیِ
+   `skeletons.jsx` با همان پایه‌ی `.skeleton`
+   و بیلدرهای مشترک استفاده می‌کنند؛
+   SkeletonLine همچنان بلوک پایه است */
 
 /* اسکلت «کارنامه من» — موج ۴.۳۰
    قانون: کرومِ اسکلت (کلاس کارت، بوردر، گلو،
