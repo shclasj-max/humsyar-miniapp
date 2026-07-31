@@ -11,8 +11,11 @@ import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 
 import {
-  SkeletonCard,
 } from '../../components/shared/Loading';
+
+import {
+  AnalyticsSkeleton,
+} from '../../components/shared/skeletons';
 
 import {
   haptic,
@@ -400,10 +403,7 @@ export default function Analytics() {
         </div>
 
         {isLoading ? (
-          <>
-            <SkeletonCard />
-            <SkeletonCard />
-          </>
+          <AnalyticsSkeleton />
         ) : isError ? (
           <div className="empty card">
             دریافت آمار انجام نشد.
