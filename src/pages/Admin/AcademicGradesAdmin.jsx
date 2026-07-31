@@ -8,9 +8,12 @@ import {
 import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 import {
-  SkeletonCard,
   Spinner,
 } from '../../components/shared/Loading';
+
+import {
+  GradesAdminSkeleton,
+} from '../../components/shared/skeletons';
 import {
   haptic,
   hapticNotif,
@@ -774,7 +777,7 @@ export default function AcademicGradesAdmin() {
         </button>
 
         {isLoading ? (
-          <SkeletonCard />
+          <GradesAdminSkeleton />
         ) : isError ? (
           <div className="empty">
             دریافت نمرات انجام نشد.
