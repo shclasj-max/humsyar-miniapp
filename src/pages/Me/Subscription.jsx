@@ -1,3 +1,4 @@
+import { confirmAction } from '../../lib/confirm';
 import {
   useMemo,
   useState,
@@ -13,9 +14,12 @@ import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 
 import {
-  SkeletonCard,
   Spinner,
 } from '../../components/shared/Loading';
+
+import {
+  SubscriptionSkeleton,
+} from '../../components/shared/skeletons';
 
 import {
   haptic,
@@ -355,9 +359,7 @@ export default function Subscription() {
         <Header title="اشتراک ویژه" />
 
         <main className="page">
-          <SkeletonCard />
-          <SkeletonCard />
-          <SkeletonCard />
+          <SubscriptionSkeleton />
         </main>
       </>
     );
@@ -1229,9 +1231,9 @@ export default function Subscription() {
                     buyMutation
                       .isPending
                   }
-                  onClick={() => {
+                  onClick={async () => {
                     const acceptedBuy =
-                      window.confirm(
+                      await confirmAction(
                         free
                           ? 'اشتراک رایگان فعال شود؟'
                           : 'رسید برای بررسی ارسال شود؟'
