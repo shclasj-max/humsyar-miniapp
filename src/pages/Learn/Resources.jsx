@@ -689,7 +689,7 @@ export default function Resources() {
           && (
             <>
               <section
-                className="card card-glow"
+                className="card card-glow hero-card"
                 style={styles.hero}
               >
                 <div
@@ -1284,16 +1284,14 @@ const styles = {
     paddingInline: 13,
   },
 
+  /* موج ۴.۲۰ — پس‌زمینه و padding به کلاسِ
+     مشترک .hero-card سپرده شد (مقادیر قبل از
+     این دقیقاً همان بود؛ حالا منبع حقیقتِ
+     طراحی فقط globals.css است) */
   hero: {
     display: 'flex',
     alignItems: 'center',
     gap: 13,
-    padding: 17,
-
-    /* موج ۳.۱۰ — دقیقاً همان دستورِ
-       .hero-card مشترکِ کل مینی‌اپ */
-    background:
-      'linear-gradient(145deg,rgba(29,78,216,.22),rgba(16,24,39,.95) 52%,rgba(34,211,238,.08))',
   },
 
   heroIcon: {
