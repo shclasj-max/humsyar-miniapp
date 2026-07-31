@@ -1,3 +1,4 @@
+import { confirmAction } from '../../lib/confirm';
 import {
   useEffect,
   useState,
@@ -13,9 +14,12 @@ import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 
 import {
-  SkeletonCard,
   Spinner,
 } from '../../components/shared/Loading';
+
+import {
+  SkMenuCard,
+} from '../../components/shared/skeletons';
 
 import {
   hapticNotif,
@@ -337,7 +341,11 @@ export default function AiAdmin() {
         <Header title="مدیریت هوشیار" />
 
         <main className="page">
-          <SkeletonCard />
+          <SkMenuCard n={3} />
+
+          <div style={{ height: 12 }} />
+
+          <SkMenuCard n={2} />
         </main>
       </>
     );
@@ -998,9 +1006,9 @@ export default function AiAdmin() {
 
                     <button
                       className="btn btn-d"
-                      onClick={() => {
+                      onClick={async () => {
                         const accepted =
-                          window.confirm(
+                          await confirmAction(
                             'حافظه و پروفایل هوشیار پاک شود؟'
                           );
 
