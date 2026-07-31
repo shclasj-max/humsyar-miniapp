@@ -11,9 +11,12 @@ import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 
 import {
-  SkeletonCard,
   Spinner,
 } from '../../components/shared/Loading';
+
+import {
+  AuditLogSkeleton,
+} from '../../components/shared/skeletons';
 
 import {
   haptic,
@@ -536,10 +539,7 @@ export default function AuditLog() {
         </div>
 
         {isLoading ? (
-          <>
-            <SkeletonCard />
-            <SkeletonCard />
-          </>
+          <AuditLogSkeleton />
         ) : isError ? (
           <div className="empty card">
             دریافت لاگ انجام نشد.
