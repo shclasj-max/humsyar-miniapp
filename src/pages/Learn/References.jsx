@@ -18,6 +18,9 @@ import {
 
 import api from '../../lib/api';
 
+import ResourceAccessGate
+  from '../../components/shared/ResourceAccessGate';
+
 import SubscriptionLock, {
   isSubscriptionLock,
 } from '../../components/shared/SubscriptionLock';
@@ -201,7 +204,7 @@ function ReferenceFile({
 }
 
 
-export default function References() {
+function ReferencesPage() {
   const [
     view,
     setView,
@@ -1213,3 +1216,19 @@ const styles = {
     textAlign: 'center',
   },
 };
+
+
+/* ── دروازه‌ی اشتراک (موج ۴.۳۰) ──
+   خودِ صفحه فقط برای کاربرِ دارای دسترسی
+   Mount می‌شود — بدون حتی یک فریم لودینگ یا
+   ریکوئستِ محتوا برای کاربرِ بدون اشتراک.
+   جزئیات معماری در ResourceAccessGate */
+export default function References() {
+  return (
+    <ResourceAccessGate
+      feature="رفرنس‌های درسی"
+    >
+      <ReferencesPage />
+    </ResourceAccessGate>
+  );
+}
