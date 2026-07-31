@@ -11,7 +11,6 @@ import {
 } from '../../components/shared/skeletons';
 import { haptic } from '../../lib/telegram';
 import { useAuthStore } from '../../stores/authStore';
-import { useUIStore } from '../../stores/uiStore';
 
 const number = (value) => {
   const parsed = Number(value);
@@ -863,22 +862,6 @@ export default function Me() {
                       '/me/reports'
                     )
                   }
-                />
-
-                <MenuRow
-                  icon="🎯"
-                  title={
-                    'راهنمای شروع کار'
-                  }
-                  description={
-                    'معرفی دوباره قابلیت‌های هامزیار'
-                  }
-                  tone="blue"
-                  onClick={() => {
-                    useUIStore
-                      .getState()
-                      .openOnboarding();
-                  }}
                   last={!showDonation}
                 />
 
