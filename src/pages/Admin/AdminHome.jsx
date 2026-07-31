@@ -11,9 +11,12 @@ import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 
 import {
-  SkeletonCard,
   Spinner,
 } from '../../components/shared/Loading';
+
+import {
+  AdminHomeSkeleton,
+} from '../../components/shared/skeletons';
 
 import {
   haptic,
@@ -541,10 +544,7 @@ export default function AdminHome() {
 
 
         {isLoading ? (
-          <>
-            <SkeletonCard />
-            <SkeletonCard />
-          </>
+          <AdminHomeSkeleton />
         ) : isError ? (
           <div className="empty card">
             دریافت آمار انجام نشد.
