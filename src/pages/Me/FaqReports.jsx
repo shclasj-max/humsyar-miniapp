@@ -14,9 +14,13 @@ import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 
 import {
-  SkeletonCard,
   Spinner,
 } from '../../components/shared/Loading';
+
+import {
+  FaqListSkeleton,
+  SkRowList,
+} from '../../components/shared/skeletons';
 
 import {
   hapticNotif,
@@ -382,10 +386,7 @@ export function Faq() {
 
 
         {isLoading ? (
-          <>
-            <SkeletonCard />
-            <SkeletonCard />
-          </>
+          <FaqListSkeleton />
         ) : isError ? (
           <div className="empty card">
             دریافت راهنما انجام نشد.
@@ -1071,10 +1072,10 @@ export function Reports() {
             </button>
           </>
         ) : historyLoading ? (
-          <>
-            <SkeletonCard />
-            <SkeletonCard />
-          </>
+          <SkRowList
+            n={3}
+            icon={40}
+          />
         ) : historyError ? (
           <div className="empty card">
             دریافت گزارش‌ها انجام نشد.
