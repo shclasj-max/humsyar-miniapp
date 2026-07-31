@@ -311,71 +311,289 @@ export function SkeletonCard({
   );
 }
 
-/* اسکلتِ هم‌قامت با کارت hero (دایره‌ی ۹۰ + سه خط) —
-   برای جابه‌جاییِ بدون پرشِ ارتفاع بین اسکلت و محتوا
-   در صفحاتی مثل نمرات (ریشه‌ی Layout Shift) */
-export function SkeletonHero() {
+/* اسکلت «کارنامه من» — موج ۴.۳۰
+   قانون: کرومِ اسکلت (کلاس کارت، بوردر، گلو،
+   ابعاد) پیکسل‌به‌پیکسل با نسخه‌ی نهایی یکی
+   است؛ لحظه‌ی تعویض هیچ تغییری در بدنه دیده
+   نمی‌شود و فقط محتوای داخلی «کامل می‌شود» —
+   دیگر فیدِ شفافیت روی کارتِ بوردردار لازم
+   نیست و همان ریشه‌ی فلش سفید حذف می‌شود */
+export function GradesSkeleton() {
   return (
     <div
-      className="card"
       aria-hidden="true"
       style={{
-        display:
-          'flex',
-
-        alignItems:
-          'center',
-
-        gap:
-          15,
-
-        minHeight:
-          124,
+        display: 'grid',
+        gap: 12,
       }}
     >
+      {/* هیرو — دقیقاً همان کروم نسخه‌ی نهایی */}
+      <section
+        className="card card-glow hero-card"
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 15,
+          }}
+        >
+          {/* حلقه‌ی ۹۰px — شیم دایره + هسته */}
+          <div
+            style={{
+              position: 'relative',
+              display: 'grid',
+              flex: '0 0 90px',
+              height: 90,
+              placeItems: 'center',
+              borderRadius: '50%',
+            }}
+          >
+            <div
+              className="skeleton"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                borderRadius: '50%',
+              }}
+            />
+
+            <div
+              style={{
+                position:
+                  'relative',
+                display: 'grid',
+                width: 72,
+                height: 72,
+                placeItems:
+                  'center',
+                background:
+                  'var(--surf)',
+                borderRadius:
+                  '50%',
+              }}
+            >
+              <div
+                style={{
+                  display: 'grid',
+                  gap: 5,
+                  justifyItems:
+                    'center',
+                }}
+              >
+                <SkeletonLine
+                  width={36}
+                  height={15}
+                />
+                <SkeletonLine
+                  width={24}
+                  height={8}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div style={{ flex: 1 }}>
+            <SkeletonLine
+              width={84}
+              height={10}
+            />
+
+            <div
+              style={{ marginTop: 7 }}
+            >
+              <SkeletonLine
+                width={70}
+                height={15}
+              />
+            </div>
+
+            <div
+              style={{ marginTop: 7 }}
+            >
+              <SkeletonLine
+                width={150}
+                height={9}
+              />
+            </div>
+
+            <div
+              style={{ marginTop: 5 }}
+            >
+              <SkeletonLine
+                width={118}
+                height={9}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* دو کارت آمار کوچک (grid2) */}
+      <section className="grid2">
+        {[0, 1].map((key) => (
+          <div
+            key={key}
+            className="card"
+            style={{
+              textAlign: 'center',
+              padding: 12,
+            }}
+          >
+            <div
+              style={{
+                display: 'grid',
+                gap: 6,
+                justifyItems:
+                  'center',
+              }}
+            >
+              <SkeletonLine
+                width={34}
+                height={16}
+              />
+              <SkeletonLine
+                width={54}
+                height={9}
+              />
+            </div>
+          </div>
+        ))}
+      </section>
+
+      {/* تیتر بخش جزئیات */}
       <div
-        className="skeleton"
-        style={{
-          width:
-            90,
-
-          height:
-            90,
-
-          flexShrink:
-            0,
-
-          borderRadius:
-            '50%',
-        }}
-      />
-
-      <div
-        style={{
-          display:
-            'grid',
-
-          flex:
-            1,
-
-          gap:
-            9,
-        }}
+        className="sec-title"
+        style={{ marginTop: 4 }}
       >
         <SkeletonLine
-          width="58%"
-          height={13}
-        />
-
-        <SkeletonLine
-          height={10}
-        />
-
-        <SkeletonLine
-          width="74%"
-          height={10}
+          width={100}
+          height={11}
         />
       </div>
+
+      {/* سه ردیف نمره — همان ژئومتری GradeRow */}
+      <section
+        style={{
+          display: 'grid',
+          gap: 9,
+        }}
+      >
+        {[0, 1, 2].map((key) => (
+          <article
+            key={key}
+            className="card"
+            style={{ padding: 13 }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems:
+                  'center',
+                gap: 11,
+              }}
+            >
+              <div
+                className="skeleton"
+                style={{
+                  width: 54,
+                  height: 54,
+                  flexShrink: 0,
+                  borderRadius: 16,
+                }}
+              />
+
+              <div
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                }}
+              >
+                <SkeletonLine
+                  width="62%"
+                  height={12}
+                />
+
+                <div
+                  style={{
+                    marginTop: 5,
+                  }}
+                >
+                  <SkeletonLine
+                    width="44%"
+                    height={9}
+                  />
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 5,
+                  }}
+                >
+                  <SkeletonLine
+                    width="34%"
+                    height={8}
+                  />
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: 'grid',
+                  gap: 5,
+                  justifyItems:
+                    'center',
+                }}
+              >
+                <SkeletonLine
+                  width={20}
+                  height={18}
+                />
+                <SkeletonLine
+                  width={34}
+                  height={8}
+                />
+              </div>
+            </div>
+
+            <div
+              style={{
+                marginTop: 11,
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent:
+                    'space-between',
+                  marginBottom: 5,
+                }}
+              >
+                <SkeletonLine
+                  width={62}
+                  height={8}
+                />
+                <SkeletonLine
+                  width={26}
+                  height={8}
+                />
+              </div>
+
+              <div className="pbar">
+                <div
+                  className="skeleton"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    borderRadius:
+                      'inherit',
+                  }}
+                />
+              </div>
+            </div>
+          </article>
+        ))}
+      </section>
     </div>
   );
 }
