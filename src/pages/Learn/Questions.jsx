@@ -19,9 +19,13 @@ import Header from '../../components/layout/Header';
 import QuestionCard from '../../components/shared/QuestionCard';
 
 import {
-  SkeletonCard,
+
   Spinner,
 } from '../../components/shared/Loading';
+
+import {
+  SkTileGrid,
+} from '../../components/shared/skeletons';
 
 import {
   haptic,
@@ -1371,7 +1375,7 @@ export default function Questions() {
             </div>
 
             {lessonsLoading ? (
-              <SkeletonCard />
+              <SkTileGrid n={6} />
             ) : (
               <section className="grid2">
                 {lessons.map(
