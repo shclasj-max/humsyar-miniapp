@@ -4,9 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 import {
-  SkeletonCard,
   Spinner,
 } from '../../components/shared/Loading';
+
+import {
+  DashboardSkeleton,
+} from '../../components/shared/skeletons';
 import { haptic, tg } from '../../lib/telegram';
 
 /* باز کردن لینک خارجی از داخل مینی‌اپ —
@@ -523,16 +526,7 @@ export default function Dashboard() {
 
       <main className="page fade-up">
         {isLoading ? (
-          <div
-            style={{
-              display: 'grid',
-              gap: 10,
-            }}
-          >
-            <SkeletonCard />
-            <SkeletonCard />
-            <SkeletonCard />
-          </div>
+          <DashboardSkeleton />
         ) : isError ? (
           <ErrorState
             onRetry={refetch}
