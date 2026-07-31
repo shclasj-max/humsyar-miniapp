@@ -8,9 +8,12 @@ import {
 import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 import {
-  SkeletonCard,
   Spinner,
 } from '../../components/shared/Loading';
+
+import {
+  ScheduleAdminSkeleton,
+} from '../../components/shared/skeletons';
 import {
   haptic,
   hapticNotif,
@@ -559,7 +562,7 @@ export default function AcademicScheduleAdmin() {
         </button>
 
         {isLoading ? (
-          <SkeletonCard />
+          <ScheduleAdminSkeleton />
         ) : isError ? (
           <div className="empty">
             دریافت برنامه‌ها انجام نشد.
