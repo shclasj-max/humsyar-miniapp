@@ -19,9 +19,13 @@ import {
 import Header from '../../components/layout/Header';
 
 import {
-  SkeletonCard,
+
   Spinner,
 } from '../../components/shared/Loading';
+
+import {
+  SearchResultsSkeleton,
+} from '../../components/shared/skeletons';
 
 import {
   haptic,
@@ -517,10 +521,7 @@ export default function GlobalSearch() {
             {isFetching &&
             allResults.length ===
               0 ? (
-              <>
-                <SkeletonCard />
-                <SkeletonCard />
-              </>
+              <SearchResultsSkeleton />
             ) : (
               <section
                 style={{
