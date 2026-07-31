@@ -10,8 +10,11 @@ import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 
 import {
-  SkeletonCard,
 } from '../../components/shared/Loading';
+
+import {
+  ContentHomeSkeleton,
+} from '../../components/shared/skeletons';
 
 import {
   haptic,
@@ -317,10 +320,7 @@ export default function ContentHome() {
 
 
         {isLoading ? (
-          <>
-            <SkeletonCard />
-            <SkeletonCard />
-          </>
+          <ContentHomeSkeleton />
         ) : isError ? (
           <div className="empty card">
             دریافت آمار محتوا انجام نشد.
