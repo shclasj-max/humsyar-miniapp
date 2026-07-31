@@ -694,12 +694,16 @@ export default function AdminHome() {
             gap: 9,
           }}
         >
-          {SECTIONS.map((item) => (
+          {SECTIONS.map(
+            (
+              item,
+              index
+            ) => (
             <button
               type="button"
               key={item.route}
               className={
-                'card card-tap'
+                'card card-tap pop-in'
               }
               onClick={() =>
                 open(item.route)
@@ -711,6 +715,11 @@ export default function AdminHome() {
                 gap: 11,
                 padding: 13,
                 textAlign: 'right',
+
+                animationDelay:
+                  `${
+                    index * 28
+                  }ms`,
               }}
             >
               <span
