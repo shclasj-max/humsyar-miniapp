@@ -18,10 +18,7 @@ import {
 } from '../../lib/useDebounce';
 import Header from '../../components/layout/Header';
 
-import {
-
-  Spinner,
-} from '../../components/shared/Loading';
+import SearchField from '../../components/shared/SearchField';
 
 import {
   SearchResultsSkeleton,
@@ -325,15 +322,11 @@ export default function GlobalSearch() {
 
           <div
             style={{
-              position:
-                'relative',
-
               marginTop:
                 14,
             }}
           >
-            <input
-              className="inp"
+            <SearchField
               value={query}
               onChange={(event) => {
                 setQuery(
@@ -345,29 +338,9 @@ export default function GlobalSearch() {
               placeholder={
                 'مثلاً فیزیولوژی، قلب یا امتحان...'
               }
-              style={{
-                paddingLeft:
-                  42,
-              }}
+              loading={isFetching}
               autoFocus
             />
-
-            {isFetching && (
-              <span
-                style={{
-                  position:
-                    'absolute',
-
-                  left:
-                    12,
-
-                  top:
-                    12,
-                }}
-              >
-                <Spinner size={16} />
-              </span>
-            )}
           </div>
         </section>
 
