@@ -11,9 +11,12 @@ import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 
 import {
-  SkeletonCard,
   Spinner,
 } from '../../components/shared/Loading';
+
+import {
+  QuestionsListSkeleton,
+} from '../../components/shared/skeletons';
 
 import {
   hapticNotif,
@@ -657,10 +660,7 @@ export default function MyQuestions() {
 
 
         {isLoading ? (
-          <>
-            <SkeletonCard />
-            <SkeletonCard />
-          </>
+          <QuestionsListSkeleton />
         ) : isError ? (
           <div className="empty card">
             دریافت سؤال‌ها انجام نشد.
