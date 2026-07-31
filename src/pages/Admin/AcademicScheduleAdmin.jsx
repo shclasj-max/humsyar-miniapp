@@ -1,3 +1,4 @@
+import { confirmAction } from '../../lib/confirm';
 import { useState } from 'react';
 import {
   useMutation,
@@ -307,14 +308,14 @@ export default function AcademicScheduleAdmin() {
 
         <div className="page fade-up">
           <div
-            className="card"
+            className="card card-glow"
             style={{
               display: 'flex',
               flexDirection: 'column',
               gap: 10,
             }}
           >
-            <label>
+            <label className="fld-label">
               نوع برنامه
             </label>
 
@@ -344,7 +345,7 @@ export default function AcademicScheduleAdmin() {
               )}
             </select>
 
-            <label>
+            <label className="fld-label">
               نام درس *
             </label>
 
@@ -362,7 +363,7 @@ export default function AcademicScheduleAdmin() {
               placeholder="مثلاً فیزیولوژی"
             />
 
-            <label>
+            <label className="fld-label">
               نام استاد
             </label>
 
@@ -698,9 +699,9 @@ export default function AcademicScheduleAdmin() {
                 <button
                   className="btn btn-d"
                   style={{ flex: 1 }}
-                  onClick={() => {
+                  onClick={async () => {
                     if (
-                      window.confirm(
+                      await confirmAction(
                         'این برنامه حذف شود؟'
                       )
                     ) {
