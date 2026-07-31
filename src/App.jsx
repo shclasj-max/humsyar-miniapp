@@ -7,6 +7,8 @@ import {
 } from 'react-router-dom';
 
 import {
+  lazy,
+  Suspense,
   useEffect,
   useRef,
 } from 'react';
@@ -36,109 +38,347 @@ import Register from './components/shared/Register';
 import Onboarding from './components/shared/Onboarding';
 
 
-/* صفحات اصلی */
+/* صفحات اصلی — ۵ تب اصلی EAGER می‌مانند:
+   سوییچ تب‌های پرتردد بدون حتی یک فریم
+   انتظار چانک (هماهنگ با قانون Smooth
+   First). هر مسیر دیگر = چانک جدای خودش
+   (Code Splitting موج ۴.۶۰) */
 
 import Dashboard from './pages/Dashboard';
 import Learn from './pages/Learn';
 import Schedule from './pages/Schedule';
 import Grades from './pages/Grades';
+import Me from './pages/Me';
+
+
+/* ── خانواده‌ی اسکلت برای Fallback مسیرها ──
+   کروم لودینگِ هر صفحه = همان صفحه؛ یعنی
+   لود چانک هم با آینه‌ی Layout واقعی رخ
+   می‌دهد، نه صفحه‌ی خالی (Perceived
+   Performance) */
+import {
+  SkPlanCard,
+  SkRowList,
+  MeSkeleton,
+  NotificationsSkeleton,
+  ProfileSkeleton,
+  SubscriptionSkeleton,
+  QuestionBankSkeleton,
+  ExamLessonsSkeleton,
+  ExamHistorySkeleton,
+  QuestionsListSkeleton,
+  SearchResultsSkeleton,
+  TicketsSkeleton,
+  FaqListSkeleton,
+  AdminHomeSkeleton,
+  AnalyticsSkeleton,
+  AuditLogSkeleton,
+  SettingsSkeleton,
+  GradesAdminSkeleton,
+  ScheduleAdminSkeleton,
+  LibraryTilesSkeleton,
+  LibraryRowsSkeleton,
+  UsersListSkeleton,
+  UsersActionsSkeleton,
+  AdminOpsSkeleton,
+  ContentHomeSkeleton,
+} from './components/shared/skeletons';
 
 
 /* هوشیار و جست‌وجو */
 
-import AiHome from './pages/Ai/AiHome';
+/* ─────────────────────────────────────────────
+   Code Splitting مبتنی بر مسیر (موج ۴.۶۰)
+   چرا: تک‌چانک قبلی ~۶۱۷KB بود و ۳۴ صفحه —
+   از جمله ۲۱ صفحه‌ی مدیریتی که دانشجوی عادی
+   هرگز نمی‌بیند — همگی در اولین لود دانلود
+   و parse می‌شدند (هزینه‌ی FCP/TTI روی
+   گوشی‌های ضعیف). حالا هر مسیر چانک خودش را
+   دارد و Vite آن‌ها را On-Demand می‌آورد.
+   قراردادها:
+   ۱) کامپوننت Lazy ثابت در سطح ماژول ساخته
+      می‌شود ⇒ ریمونت/ری‌فچ چانک هرگز.
+   ۲) Fallback = اسکلت اختصاصی همان صفحه
+      (نه صفحه‌ی خالی، نه اسپینر عمومی) ⇒
+      صفر Flicker و ظاهر «همیشه آماده».
+   ۳) prefetch بیکار (پایین فایل) مسیرهای
+      محتمل را از قبل گرم می‌کند.
+───────────────────────────────────────────── */
 
-import GlobalSearch from './pages/Search/GlobalSearch';
+
+function lazyScreen(
+  importer,
+  Fallback,
+  exportName = 'default'
+) {
+  const Comp = lazy(() =>
+    importer().then((module) => ({
+      default: module[exportName],
+    }))
+  );
+
+  return function LazyScreen() {
+    return (
+      <Suspense
+        fallback={
+          <main className="page">
+            <Fallback />
+          </main>
+        }
+      >
+        <Comp />
+      </Suspense>
+    );
+  };
+}
+
+
+const AiHomeScreen = lazyScreen(
+  () => import('./pages/Ai/AiHome'),
+  () => <SkRowList n={4} />
+);
+
+const GlobalSearchScreen = lazyScreen(
+  () => import('./pages/Search/GlobalSearch'),
+  SearchResultsSkeleton
+);
 
 
 /* صفحات یادگیری */
 
-import Questions from './pages/Learn/Questions';
-import ExamCenter from './pages/Learn/ExamCenter';
+const QuestionsScreen = lazyScreen(
+  () => import('./pages/Learn/Questions'),
+  QuestionsListSkeleton
+);
 
-import QuestionHistory from './pages/Learn/QuestionHistory';
-import MyQuestions from './pages/Learn/MyQuestions';
+const ExamCenterScreen = lazyScreen(
+  () => import('./pages/Learn/ExamCenter'),
+  ExamLessonsSkeleton
+);
 
-import Resources from './pages/Learn/Resources';
-import References from './pages/Learn/References';
+const QuestionHistoryScreen = lazyScreen(
+  () =>
+    import('./pages/Learn/QuestionHistory'),
+  ExamHistorySkeleton
+);
+
+const MyQuestionsScreen = lazyScreen(
+  () => import('./pages/Learn/MyQuestions'),
+  QuestionBankSkeleton
+);
+
+const ResourcesScreen = lazyScreen(
+  () => import('./pages/Learn/Resources'),
+  LibraryTilesSkeleton
+);
+
+const ReferencesScreen = lazyScreen(
+  () => import('./pages/Learn/References'),
+  LibraryRowsSkeleton
+);
 
 
 /* حساب کاربری */
 
-import Me from './pages/Me';
-import Profile from './pages/Me/Profile';
+const ProfileScreen = lazyScreen(
+  () => import('./pages/Me/Profile'),
+  ProfileSkeleton
+);
 
-import {
-  Notifications,
-} from './pages/Me/Notifications';
+const NotificationsScreen = lazyScreen(
+  () => import('./pages/Me/Notifications'),
+  NotificationsSkeleton,
+  'Notifications'
+);
 
-import Subscription from './pages/Me/Subscription';
-import Tickets from './pages/Me/Tickets';
+const SubscriptionScreen = lazyScreen(
+  () => import('./pages/Me/Subscription'),
+  SubscriptionSkeleton
+);
 
-import {
-  Faq,
-  Reports,
-} from './pages/Me/FaqReports';
+const TicketsScreen = lazyScreen(
+  () => import('./pages/Me/Tickets'),
+  TicketsSkeleton
+);
+
+const FaqScreen = lazyScreen(
+  () => import('./pages/Me/FaqReports'),
+  FaqListSkeleton,
+  'Faq'
+);
+
+const ReportsScreen = lazyScreen(
+  () => import('./pages/Me/FaqReports'),
+  FaqListSkeleton,
+  'Reports'
+);
 
 
 /* خانه‌های مدیریت */
 
-import AdminHome from './pages/Admin/AdminHome';
-import ContentHome from './pages/Admin/ContentHome';
+const AdminHomeScreen = lazyScreen(
+  () => import('./pages/Admin/AdminHome'),
+  AdminHomeSkeleton
+);
 
-import SubscriptionAdmin from './pages/Admin/SubscriptionAdmin';
-import AiAdmin from './pages/Admin/AiAdmin';
+const ContentHomeScreen = lazyScreen(
+  () => import('./pages/Admin/ContentHome'),
+  ContentHomeSkeleton
+);
 
-import Analytics from './pages/Admin/Analytics';
-import AuditLog from './pages/Admin/AuditLog';
+const SubscriptionAdminScreen = lazyScreen(
+  () =>
+    import('./pages/Admin/SubscriptionAdmin'),
+  () => (
+    <>
+      <SkPlanCard />
+      <SkPlanCard />
+      <SkPlanCard />
+    </>
+  )
+);
 
-import SystemSettings from './pages/Admin/SystemSettings';
+const AiAdminScreen = lazyScreen(
+  () => import('./pages/Admin/AiAdmin'),
+  SettingsSkeleton
+);
+
+const AnalyticsScreen = lazyScreen(
+  () => import('./pages/Admin/Analytics'),
+  AnalyticsSkeleton
+);
+
+const AuditLogScreen = lazyScreen(
+  () => import('./pages/Admin/AuditLog'),
+  AuditLogSkeleton
+);
+
+const SystemSettingsScreen = lazyScreen(
+  () => import('./pages/Admin/SystemSettings'),
+  SettingsSkeleton
+);
 
 
 /* مدیریت کاربران */
 
-import {
-  AdminUsers,
-  AdminUserDetail,
-  AdminIntakes,
-  AdminContentAdmins,
-  AdminBlacklist,
-} from './pages/Admin/UserManagement';
+const AdminUsersScreen = lazyScreen(
+  () => import('./pages/Admin/UserManagement'),
+  UsersListSkeleton,
+  'AdminUsers'
+);
+
+const AdminUserDetailScreen = lazyScreen(
+  () => import('./pages/Admin/UserManagement'),
+  UsersListSkeleton,
+  'AdminUserDetail'
+);
+
+const AdminIntakesScreen = lazyScreen(
+  () => import('./pages/Admin/UserManagement'),
+  UsersActionsSkeleton,
+  'AdminIntakes'
+);
+
+const AdminContentAdminsScreen = lazyScreen(
+  () => import('./pages/Admin/UserManagement'),
+  UsersActionsSkeleton,
+  'AdminContentAdmins'
+);
+
+const AdminBlacklistScreen = lazyScreen(
+  () => import('./pages/Admin/UserManagement'),
+  UsersListSkeleton,
+  'AdminBlacklist'
+);
 
 
 /* عملیات مدیریتی */
 
-import {
-  AdminTickets,
-  BroadcastAdmin,
-  PollAdmin,
-  NotificationsAdmin,
-} from './pages/Admin/AdminOperations';
+const AdminTicketsScreen = lazyScreen(
+  () => import('./pages/Admin/AdminOperations'),
+  AdminOpsSkeleton,
+  'AdminTickets'
+);
+
+const BroadcastAdminScreen = lazyScreen(
+  () => import('./pages/Admin/AdminOperations'),
+  AdminOpsSkeleton,
+  'BroadcastAdmin'
+);
+
+const PollAdminScreen = lazyScreen(
+  () => import('./pages/Admin/AdminOperations'),
+  AdminOpsSkeleton,
+  'PollAdmin'
+);
+
+const NotificationsAdminScreen = lazyScreen(
+  () => import('./pages/Admin/AdminOperations'),
+  AdminOpsSkeleton,
+  'NotificationsAdmin'
+);
 
 
 /* مدیریت سؤال و FAQ */
 
-import {
-  ContentQuestions,
-  ContentFaq,
-} from './pages/Admin/ContentAdmin';
+const ContentQuestionsScreen = lazyScreen(
+  () => import('./pages/Admin/ContentAdmin'),
+  QuestionsListSkeleton,
+  'ContentQuestions'
+);
+
+const ContentFaqScreen = lazyScreen(
+  () => import('./pages/Admin/ContentAdmin'),
+  FaqListSkeleton,
+  'ContentFaq'
+);
 
 
 /* مدیریت کتابخانه */
 
-import {
-  BasicScienceAdmin,
-  ReferencesAdmin,
-  QbankAdmin,
-  ContentReportsAdmin,
-} from './pages/Admin/ContentLibrary';
+const BasicScienceAdminScreen = lazyScreen(
+  () => import('./pages/Admin/ContentLibrary'),
+  LibraryRowsSkeleton,
+  'BasicScienceAdmin'
+);
+
+const ReferencesAdminScreen = lazyScreen(
+  () => import('./pages/Admin/ContentLibrary'),
+  LibraryRowsSkeleton,
+  'ReferencesAdmin'
+);
+
+const QbankAdminScreen = lazyScreen(
+  () => import('./pages/Admin/ContentLibrary'),
+  LibraryRowsSkeleton,
+  'QbankAdmin'
+);
+
+const ContentReportsAdminScreen = lazyScreen(
+  () => import('./pages/Admin/ContentLibrary'),
+  AdminOpsSkeleton,
+  'ContentReportsAdmin'
+);
 
 
 /* مدیریت برنامه و نمرات */
 
-import AcademicScheduleAdmin from './pages/Admin/AcademicScheduleAdmin';
+const AcademicScheduleAdminScreen = lazyScreen(
+  () =>
+    import(
+      './pages/Admin/AcademicScheduleAdmin'
+    ),
+  ScheduleAdminSkeleton
+);
 
-import AcademicGradesAdmin from './pages/Admin/AcademicGradesAdmin';
+const AcademicGradesAdminScreen = lazyScreen(
+  () =>
+    import(
+      './pages/Admin/AcademicGradesAdmin'
+    ),
+  GradesAdminSkeleton
+);
+
 
 
 /* ─────────────────────────────────────────────
@@ -371,6 +611,55 @@ export default function App() {
   }, [init]);
 
 
+  /* 🔥 Prefetch بیکار (موج ۴.۶۰) — وقتی اپ بالا
+     آمد و کاربر شناخته شد، در زمان بیکارِ
+     مرورگر چانک مسیرهای محتمل‌بعدی دانلود می‌شود
+     تا اولین ناوبری هم «آنی» باشد. هزینه: چند
+     ده KB در پس‌زمینه — اثر روی FCP: صفر. */
+  const user = useAuthStore(
+    (state) => state.user
+  );
+
+  useEffect(() => {
+    if (!user) return undefined;
+
+    const warm = () => {
+      /* هوشیار — پرترددترین مقصد فرعی همه */
+      import('./pages/Ai/AiHome');
+
+      if (
+        ['admin', 'content_admin'].includes(
+          user.role
+        )
+      ) {
+        import('./pages/Admin/AdminHome');
+        import('./pages/Admin/ContentHome');
+      }
+    };
+
+    if (
+      typeof window.requestIdleCallback ===
+      'function'
+    ) {
+      const idleId =
+        window.requestIdleCallback(warm, {
+          timeout: 4500,
+        });
+
+      return () =>
+        window.cancelIdleCallback(idleId);
+    }
+
+    const timerId = window.setTimeout(
+      warm,
+      1800
+    );
+
+    return () =>
+      window.clearTimeout(timerId);
+  }, [user]);
+
+
   /* رویدادهای احراز هویت api.js — وقتی وسط نشست
      دسترسی کاربر باطل شود (تعلیق، حذف، و…) به‌جای
      صفحات نیمه‌شکسته، مستقیم به صفحه وضعیت می‌رویم */
@@ -508,21 +797,21 @@ export default function App() {
         <Route
           path="/ai"
           element={
-            <AiHome />
+            <AiHomeScreen />
           }
         />
 
         <Route
           path="/ai/c/:convId"
           element={
-            <AiHome />
+            <AiHomeScreen />
           }
         />
 
         <Route
           path="/search"
           element={
-            <GlobalSearch />
+            <GlobalSearchScreen />
           }
         />
 
@@ -532,42 +821,42 @@ export default function App() {
         <Route
           path="/learn/questions"
           element={
-            <Questions />
+            <QuestionsScreen />
           }
         />
 
         <Route
           path="/learn/exams"
           element={
-            <ExamCenter />
+            <ExamCenterScreen />
           }
         />
 
         <Route
           path="/learn/question-history"
           element={
-            <QuestionHistory />
+            <QuestionHistoryScreen />
           }
         />
 
         <Route
           path="/learn/my-questions"
           element={
-            <MyQuestions />
+            <MyQuestionsScreen />
           }
         />
 
         <Route
           path="/learn/resources"
           element={
-            <Resources />
+            <ResourcesScreen />
           }
         />
 
         <Route
           path="/learn/references"
           element={
-            <References />
+            <ReferencesScreen />
           }
         />
 
@@ -584,42 +873,42 @@ export default function App() {
         <Route
           path="/me/profile"
           element={
-            <Profile />
+            <ProfileScreen />
           }
         />
 
         <Route
           path="/me/notifications"
           element={
-            <Notifications />
+            <NotificationsScreen />
           }
         />
 
         <Route
           path="/me/subscription"
           element={
-            <Subscription />
+            <SubscriptionScreen />
           }
         />
 
         <Route
           path="/me/tickets"
           element={
-            <Tickets />
+            <TicketsScreen />
           }
         />
 
         <Route
           path="/me/faq"
           element={
-            <Faq />
+            <FaqScreen />
           }
         />
 
         <Route
           path="/me/reports"
           element={
-            <Reports />
+            <ReportsScreen />
           }
         />
 
@@ -630,7 +919,7 @@ export default function App() {
           path="/admin"
           element={
             <AdminRoute>
-              <AdminHome />
+              <AdminHomeScreen />
             </AdminRoute>
           }
         />
@@ -642,7 +931,7 @@ export default function App() {
           path="/admin/subscription"
           element={
             <AdminRoute>
-              <SubscriptionAdmin />
+              <SubscriptionAdminScreen />
             </AdminRoute>
           }
         />
@@ -654,7 +943,7 @@ export default function App() {
           path="/admin/ai"
           element={
             <AdminRoute>
-              <AiAdmin />
+              <AiAdminScreen />
             </AdminRoute>
           }
         />
@@ -666,7 +955,7 @@ export default function App() {
           path="/admin/analytics"
           element={
             <AdminRoute>
-              <Analytics />
+              <AnalyticsScreen />
             </AdminRoute>
           }
         />
@@ -675,7 +964,7 @@ export default function App() {
           path="/admin/audit"
           element={
             <AdminRoute>
-              <AuditLog />
+              <AuditLogScreen />
             </AdminRoute>
           }
         />
@@ -684,7 +973,7 @@ export default function App() {
           path="/admin/settings"
           element={
             <AdminRoute>
-              <SystemSettings />
+              <SystemSettingsScreen />
             </AdminRoute>
           }
         />
@@ -696,7 +985,7 @@ export default function App() {
           path="/admin/users"
           element={
             <AdminRoute>
-              <AdminUsers />
+              <AdminUsersScreen />
             </AdminRoute>
           }
         />
@@ -705,7 +994,7 @@ export default function App() {
           path="/admin/users/:uid"
           element={
             <AdminRoute>
-              <AdminUserDetail />
+              <AdminUserDetailScreen />
             </AdminRoute>
           }
         />
@@ -714,7 +1003,7 @@ export default function App() {
           path="/admin/intakes"
           element={
             <AdminRoute>
-              <AdminIntakes />
+              <AdminIntakesScreen />
             </AdminRoute>
           }
         />
@@ -723,7 +1012,7 @@ export default function App() {
           path="/admin/content-admins"
           element={
             <AdminRoute>
-              <AdminContentAdmins />
+              <AdminContentAdminsScreen />
             </AdminRoute>
           }
         />
@@ -732,7 +1021,7 @@ export default function App() {
           path="/admin/blacklist"
           element={
             <AdminRoute>
-              <AdminBlacklist />
+              <AdminBlacklistScreen />
             </AdminRoute>
           }
         />
@@ -744,7 +1033,7 @@ export default function App() {
           path="/admin/tickets"
           element={
             <AdminRoute>
-              <AdminTickets />
+              <AdminTicketsScreen />
             </AdminRoute>
           }
         />
@@ -753,7 +1042,7 @@ export default function App() {
           path="/admin/broadcast"
           element={
             <AdminRoute>
-              <BroadcastAdmin />
+              <BroadcastAdminScreen />
             </AdminRoute>
           }
         />
@@ -762,7 +1051,7 @@ export default function App() {
           path="/admin/poll"
           element={
             <AdminRoute>
-              <PollAdmin />
+              <PollAdminScreen />
             </AdminRoute>
           }
         />
@@ -771,7 +1060,7 @@ export default function App() {
           path="/admin/notifications"
           element={
             <AdminRoute>
-              <NotificationsAdmin />
+              <NotificationsAdminScreen />
             </AdminRoute>
           }
         />
@@ -783,7 +1072,7 @@ export default function App() {
           path="/admin/content"
           element={
             <ContentAdminRoute>
-              <ContentHome />
+              <ContentHomeScreen />
             </ContentAdminRoute>
           }
         />
@@ -795,7 +1084,7 @@ export default function App() {
           path="/admin/content/questions"
           element={
             <ContentAdminRoute>
-              <ContentQuestions />
+              <ContentQuestionsScreen />
             </ContentAdminRoute>
           }
         />
@@ -804,7 +1093,7 @@ export default function App() {
           path="/admin/content/faq"
           element={
             <ContentAdminRoute>
-              <ContentFaq />
+              <ContentFaqScreen />
             </ContentAdminRoute>
           }
         />
@@ -816,7 +1105,7 @@ export default function App() {
           path="/admin/content/schedule"
           element={
             <ContentAdminRoute>
-              <AcademicScheduleAdmin />
+              <AcademicScheduleAdminScreen />
             </ContentAdminRoute>
           }
         />
@@ -825,7 +1114,7 @@ export default function App() {
           path="/admin/content/grades"
           element={
             <ContentAdminRoute>
-              <AcademicGradesAdmin />
+              <AcademicGradesAdminScreen />
             </ContentAdminRoute>
           }
         />
@@ -837,7 +1126,7 @@ export default function App() {
           path="/admin/content/basic-science"
           element={
             <ContentAdminRoute>
-              <BasicScienceAdmin />
+              <BasicScienceAdminScreen />
             </ContentAdminRoute>
           }
         />
@@ -846,7 +1135,7 @@ export default function App() {
           path="/admin/content/references"
           element={
             <ContentAdminRoute>
-              <ReferencesAdmin />
+              <ReferencesAdminScreen />
             </ContentAdminRoute>
           }
         />
@@ -855,7 +1144,7 @@ export default function App() {
           path="/admin/content/qbank"
           element={
             <ContentAdminRoute>
-              <QbankAdmin />
+              <QbankAdminScreen />
             </ContentAdminRoute>
           }
         />
@@ -864,7 +1153,7 @@ export default function App() {
           path="/admin/content/reports"
           element={
             <ContentAdminRoute>
-              <ContentReportsAdmin />
+              <ContentReportsAdminScreen />
             </ContentAdminRoute>
           }
         />
