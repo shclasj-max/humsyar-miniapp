@@ -10,6 +10,8 @@ import {
 import ConvActionSheet from './ConvActionSheet';
 import ConvRows from './ConvRows';
 
+import SearchField from '../shared/SearchField';
+
 
 /* ─────────────────────────────────────────────
    شیت سوییچ سریع گفت‌وگوها — داخل صفحه‌ی چت
@@ -141,19 +143,18 @@ export default function ChatHistorySheet({
           ＋ گفت‌وگوی جدید
         </button>
 
-        <div className="conv-searchbox">
-          <span className="conv-searchbox__icon">
-            🔍
-          </span>
-
-          <input
-            className="inp"
+        <div
+          style={{ marginBottom: 9 }}
+        >
+          <SearchField
             value={query}
             onChange={(event) =>
-              setQuery(event.target.value)
+              setQuery(
+                event.target.value
+              )
             }
             placeholder="جست‌وجو در گفت‌وگوها..."
-            aria-label="جست‌وجو در گفت‌وگوها"
+            ariaLabel="جست‌وجو در گفت‌وگوها"
           />
         </div>
 
