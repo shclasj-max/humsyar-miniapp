@@ -1,3 +1,4 @@
+import { confirmAction } from '../../lib/confirm';
 import { useState } from 'react';
 import {
   useMutation,
@@ -348,7 +349,7 @@ export default function AcademicGradesAdmin() {
 
         <div className="page fade-up">
           <div
-            className="card"
+            className="card card-glow"
             style={{
               marginBottom: 12,
             }}
@@ -1003,9 +1004,9 @@ export default function AcademicGradesAdmin() {
                       deleteMutation
                         .isPending
                     }
-                    onClick={() => {
+                    onClick={async () => {
                       const confirmed =
-                        window.confirm(
+                        await confirmAction(
                           'این نمره حذف شود؟'
                         );
 
