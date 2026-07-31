@@ -15,9 +15,13 @@ import Header from '../../components/layout/Header';
 import QuestionCard from '../../components/shared/QuestionCard';
 
 import {
-  SkeletonCard,
+
   Spinner,
 } from '../../components/shared/Loading';
+
+import {
+  ExamHistorySkeleton,
+} from '../../components/shared/skeletons';
 
 import {
   haptic,
@@ -916,10 +920,7 @@ export default function ExamCenter() {
           </button>
 
           {historyLoading ? (
-            <>
-              <SkeletonCard />
-              <SkeletonCard />
-            </>
+            <ExamHistorySkeleton />
           ) : historyError ? (
             <div className="empty card">
               دریافت تاریخچه انجام نشد.
@@ -1220,7 +1221,14 @@ export default function ExamCenter() {
           </label>
 
           {lessonsLoading ? (
-            <SkeletonCard />
+            <div
+              className="skeleton"
+              style={{
+                width: '100%',
+                height: 42,
+                borderRadius: 12,
+              }}
+            />
           ) : (
             <select
               className="inp"
