@@ -3,9 +3,12 @@ import { useQuery } from '@tanstack/react-query';
 import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 import {
-  SkeletonCard,
   Spinner,
 } from '../../components/shared/Loading';
+
+import {
+  ScheduleSkeleton,
+} from '../../components/shared/skeletons';
 import { haptic } from '../../lib/telegram';
 import { useAuthStore } from '../../stores/authStore';
 
@@ -382,16 +385,7 @@ export default function Schedule() {
         </div>
 
         {isLoading ? (
-          <div
-            style={{
-              display: 'grid',
-              gap: 9,
-            }}
-          >
-            <SkeletonCard />
-            <SkeletonCard />
-            <SkeletonCard />
-          </div>
+          <ScheduleSkeleton />
         ) : isError ? (
           <div className="empty card">
             <div className="empty__ic">
