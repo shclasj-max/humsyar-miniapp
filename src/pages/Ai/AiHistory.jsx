@@ -18,6 +18,7 @@ import {
 } from '../../components/shared/Loading';
 import ConvRows from '../../components/ai/ConvRows';
 import ConvActionSheet from '../../components/ai/ConvActionSheet';
+import SearchField from '../../components/shared/SearchField';
 import useConvActions from './useConvActions';
 import api from '../../lib/api';
 import {
@@ -277,21 +278,15 @@ export default function AiHistory() {
           شروع گفت‌وگوی جدید
         </button>
 
-        <div className="conv-searchbox">
-          <span className="conv-searchbox__icon">
-            🔍
-          </span>
-
-          <input
-            className="inp"
-            value={query}
-            onChange={(event) =>
-              setQuery(event.target.value)
-            }
-            placeholder="جست‌وجو در گفت‌وگوها..."
-            aria-label="جست‌وجو در گفت‌وگوها"
-          />
-        </div>
+        <SearchField
+          value={query}
+          onChange={(event) =>
+            setQuery(event.target.value)
+          }
+          placeholder="جست‌وجو در گفت‌وگوها..."
+          ariaLabel="جست‌وجو در گفت‌وگوها"
+          style={{ marginBottom: 9 }}
+        />
 
         <div className="conv-list">
           {
