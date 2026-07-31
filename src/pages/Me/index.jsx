@@ -3,9 +3,12 @@ import { useQuery } from '@tanstack/react-query';
 import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 import {
-  SkeletonCard,
   Spinner,
 } from '../../components/shared/Loading';
+
+import {
+  MeSkeleton,
+} from '../../components/shared/skeletons';
 import { haptic } from '../../lib/telegram';
 import { useAuthStore } from '../../stores/authStore';
 import { useUIStore } from '../../stores/uiStore';
@@ -286,16 +289,7 @@ export default function Me() {
 
       <main className="page fade-up">
         {isLoading ? (
-          <div
-            className="swap-in"
-            style={{
-              display: 'grid',
-              gap: 13,
-            }}
-          >
-            <SkeletonCard />
-            <SkeletonCard />
-          </div>
+          <MeSkeleton />
         ) : isError ? (
           <div className="empty card">
             <div className="empty__ic">
@@ -325,7 +319,6 @@ export default function Me() {
           </div>
         ) : (
           <div
-            className="swap-in"
             style={{
               display: 'grid',
               gap: 13,
