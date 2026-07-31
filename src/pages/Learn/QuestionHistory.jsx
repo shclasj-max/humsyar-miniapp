@@ -3,9 +3,13 @@ import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 
 import {
-  SkeletonCard,
+
   Spinner,
 } from '../../components/shared/Loading';
+
+import {
+  SkRowList,
+} from '../../components/shared/skeletons';
 
 
 const LETTERS = [
@@ -204,10 +208,10 @@ export default function QuestionHistory() {
 
 
         {isLoading ? (
-          <>
-            <SkeletonCard />
-            <SkeletonCard />
-          </>
+          <SkRowList
+            n={3}
+            icon={42}
+          />
         ) : isError ? (
           <div className="empty card">
             <div className="empty__ic">
