@@ -1,3 +1,4 @@
+import { confirmAction } from '../../lib/confirm';
 import { useState } from 'react';
 
 import {
@@ -10,9 +11,12 @@ import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 
 import {
-  SkeletonCard,
   Spinner,
 } from '../../components/shared/Loading';
+
+import {
+  SkPlanCard,
+} from '../../components/shared/skeletons';
 
 import {
   hapticNotif,
@@ -550,8 +554,9 @@ export default function SubscriptionAdmin() {
         <Header title="مدیریت اشتراک" />
 
         <main className="page">
-          <SkeletonCard />
-          <SkeletonCard />
+          <SkPlanCard />
+          <SkPlanCard />
+          <SkPlanCard />
         </main>
       </>
     );
@@ -1211,9 +1216,9 @@ export default function SubscriptionAdmin() {
 
                     <button
                       className="btn btn-d"
-                      onClick={() => {
+                      onClick={async () => {
                         const accepted =
-                          window.confirm(
+                          await confirmAction(
                             'پلن حذف شود؟'
                           );
 
@@ -1942,9 +1947,9 @@ export default function SubscriptionAdmin() {
 
                       <button
                         className="btn btn-d"
-                        onClick={() => {
+                        onClick={async () => {
                           const accepted =
-                            window.confirm(
+                            await confirmAction(
                               'کد حذف شود؟'
                             );
 
