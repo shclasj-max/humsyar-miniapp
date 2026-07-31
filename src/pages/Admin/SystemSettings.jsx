@@ -990,7 +990,7 @@ export default function SystemSettings() {
             </div>
 
             <section
-              className="card"
+              className="card card-glow"
               style={{
                 padding: '0 14px',
                 marginBottom: 15,
