@@ -26,6 +26,8 @@ import {
   SkHero,
 } from '../../components/shared/skeletons';
 
+import SearchField from '../../components/shared/SearchField';
+
 import {
   hapticNotif,
 } from '../../lib/telegram';
@@ -363,42 +365,19 @@ export function AdminUsers() {
               13,
           }}
         >
-          <div
-            style={{
-              position:
-                'relative',
-            }}
-          >
-            <input
-              className="inp"
-              value={search}
-              onChange={(event) =>
-                setSearch(
-                  event.target.value
-                )
-              }
-              placeholder={
-                'نام، شماره دانشجویی یا یوزرنیم...'
-              }
-            />
-
-            {isFetching && (
-              <span
-                style={{
-                  position:
-                    'absolute',
-
-                  left:
-                    12,
-
-                  top:
-                    12,
-                }}
-              >
-                <Spinner size={15} />
-              </span>
-            )}
-          </div>
+          <SearchField
+            value={search}
+            onChange={(event) =>
+              setSearch(
+                event.target.value
+              )
+            }
+            placeholder={
+              'نام، یوزرنیم، شماره یا آیدی عددی...'
+            }
+            ariaLabel="جست‌وجوی کاربران"
+            loading={isFetching}
+          />
 
           <div className="grid2">
             <select
@@ -1900,40 +1879,19 @@ export function AdminContentAdmins() {
             افزودن مدیر محتوا
           </div>
 
-          <div
-            style={{
-              position:
-                'relative',
-            }}
-          >
-            <input
-              className="inp"
-              value={search}
-              onChange={(event) =>
-                setSearch(
-                  event.target.value
-                )
-              }
-              placeholder="جست‌وجوی دانشجو..."
-            />
-
-            {isFetching && (
-              <span
-                style={{
-                  position:
-                    'absolute',
-
-                  left:
-                    12,
-
-                  top:
-                    12,
-                }}
-              >
-                <Spinner size={15} />
-              </span>
-            )}
-          </div>
+          <SearchField
+            value={search}
+            onChange={(event) =>
+              setSearch(
+                event.target.value
+              )
+            }
+            placeholder={
+              'نام، یوزرنیم یا آیدی عددی دانشجو...'
+            }
+            ariaLabel="جست‌وجوی دانشجو"
+            loading={isFetching}
+          />
 
           {(
             Array.isArray(students)
