@@ -16,9 +16,15 @@ import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 
 import {
-  SkeletonCard,
   Spinner,
 } from '../../components/shared/Loading';
+
+import {
+  UsersActionsSkeleton,
+  UsersListSkeleton,
+  SkRowList,
+  SkHero,
+} from '../../components/shared/skeletons';
 
 import {
   hapticNotif,
@@ -502,10 +508,7 @@ export function AdminUsers() {
 
 
         {isLoading ? (
-          <>
-            <SkeletonCard />
-            <SkeletonCard />
-          </>
+          <UsersActionsSkeleton />
         ) : isError ? (
           <Empty icon="🌐">
             دریافت کاربران انجام نشد.
@@ -877,7 +880,19 @@ export function AdminUserDetail() {
 
       <main className="page fade-up">
         {isLoading ? (
-          <SkeletonCard />
+          <>
+            <SkHero avatar={50} />
+
+            <div
+              style={{ height: 12 }}
+            />
+
+            <SkRowList
+              n={2}
+              icon={40}
+              circle
+            />
+          </>
         ) : isError || !user ? (
           <Empty icon="🌐">
             کاربر پیدا نشد.
@@ -1556,7 +1571,10 @@ export function AdminIntakes() {
 
 
         {isLoading ? (
-          <SkeletonCard />
+          <SkRowList
+            n={4}
+            icon={40}
+          />
         ) : items.length === 0 ? (
           <Empty>
             ورودی‌ای ثبت نشده است.
@@ -1991,7 +2009,11 @@ export function AdminContentAdmins() {
 
 
         {isLoading ? (
-          <SkeletonCard />
+          <SkRowList
+            n={3}
+            icon={40}
+            circle
+          />
         ) : adminList.length === 0 ? (
           <Empty>
             مدیر محتوایی ثبت نشده است.
@@ -2231,7 +2253,7 @@ export function AdminBlacklist() {
 
 
         {isLoading ? (
-          <SkeletonCard />
+          <UsersListSkeleton />
         ) : isError ? (
           <Empty icon="🌐">
             دریافت فهرست انجام نشد.
