@@ -3,8 +3,7 @@ import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 
 import {
-  SkeletonCard,
-  SkeletonHero,
+  GradesSkeleton,
   Spinner,
 } from '../../components/shared/Loading';
 
@@ -567,17 +566,7 @@ export default function Grades() {
 
       <main className="page fade-up">
         {isLoading ? (
-          <div
-            className="swap-in"
-            style={{
-              display: 'grid',
-              gap: 12,
-            }}
-          >
-            <SkeletonHero />
-            <SkeletonCard />
-            <SkeletonCard />
-          </div>
+          <GradesSkeleton />
         ) : isError ? (
           <div className="empty card">
             <div className="empty__ic">
@@ -636,7 +625,6 @@ export default function Grades() {
           </div>
         ) : (
           <div
-            className="swap-in"
             style={{
               display:
                 'grid',
