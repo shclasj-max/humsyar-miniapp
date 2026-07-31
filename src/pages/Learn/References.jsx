@@ -12,9 +12,12 @@ import {
 import Header from '../../components/layout/Header';
 
 import {
-  SkeletonCard,
   Spinner,
 } from '../../components/shared/Loading';
+
+import {
+  SkRowList,
+} from '../../components/shared/skeletons';
 
 import api from '../../lib/api';
 
@@ -61,9 +64,11 @@ function errorText(
 function LoadingList() {
   return (
     <div style={styles.list}>
-      <SkeletonCard lines={2} />
-      <SkeletonCard lines={2} />
-      <SkeletonCard lines={2} />
+      <SkRowList
+        n={3}
+        icon={46}
+        lines={2}
+      />
     </div>
   );
 }
