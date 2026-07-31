@@ -13,9 +13,12 @@ import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 
 import {
-  SkeletonCard,
   Spinner,
 } from '../../components/shared/Loading';
+
+import {
+  SettingsSkeleton,
+} from '../../components/shared/skeletons';
 
 import {
   haptic,
@@ -930,10 +933,7 @@ export default function SystemSettings() {
 
       <main className="page fade-up">
         {isLoading ? (
-          <>
-            <SkeletonCard />
-            <SkeletonCard />
-          </>
+          <SettingsSkeleton />
         ) : isError ? (
           <div className="empty card">
             دریافت تنظیمات انجام نشد.
