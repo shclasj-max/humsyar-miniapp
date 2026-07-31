@@ -10,9 +10,13 @@ import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 
 import {
-  SkeletonCard,
   Spinner,
 } from '../../components/shared/Loading';
+
+import {
+  TicketsSkeleton,
+  SkRowList,
+} from '../../components/shared/skeletons';
 
 import {
   hapticNotif,
@@ -525,7 +529,11 @@ export default function Tickets() {
 
         <main className="page fade-up">
           {detailLoading ? (
-            <SkeletonCard />
+            <SkRowList
+              n={2}
+              icon={38}
+              lines={2}
+            />
           ) : detailError ? (
             <div className="empty card">
               دریافت تیکت انجام نشد.
@@ -939,10 +947,7 @@ export default function Tickets() {
 
 
         {isLoading ? (
-          <>
-            <SkeletonCard />
-            <SkeletonCard />
-          </>
+          <TicketsSkeleton />
         ) : isError ? (
           <div className="empty card">
             <div className="empty__ic">
