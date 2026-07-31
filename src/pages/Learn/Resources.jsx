@@ -22,6 +22,9 @@ import SubscriptionLock, {
   isSubscriptionLock,
 } from '../../components/shared/SubscriptionLock';
 
+import ResourceAccessGate
+  from '../../components/shared/ResourceAccessGate';
+
 import {
   haptic,
   hapticNotif,
@@ -248,7 +251,7 @@ function EmptyState({
 }
 
 
-export default function Resources() {
+function ResourcesPage() {
   const [
     view,
     setView,
@@ -1505,3 +1508,19 @@ const styles = {
     textAlign: 'center',
   },
 };
+
+
+/* ── دروازه‌ی اشتراک (موج ۴.۳۰) ──
+   خودِ صفحه فقط برای کاربرِ دارای دسترسی
+   Mount می‌شود — بدون حتی یک فریم لودینگ یا
+   ریکوئستِ محتوا برای کاربرِ بدون اشتراک.
+   جزئیات معماری در ResourceAccessGate */
+export default function Resources() {
+  return (
+    <ResourceAccessGate
+      feature="منابع علوم پایه"
+    >
+      <ResourcesPage />
+    </ResourceAccessGate>
+  );
+}
