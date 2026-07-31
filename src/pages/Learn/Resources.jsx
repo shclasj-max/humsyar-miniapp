@@ -28,6 +28,9 @@ import SubscriptionLock, {
 import ResourceAccessGate
   from '../../components/shared/ResourceAccessGate';
 
+import SearchField
+  from '../../components/shared/SearchField';
+
 import {
   haptic,
   hapticNotif,
@@ -721,45 +724,18 @@ function ResourcesPage() {
                 </div>
               </section>
 
-              <div
-                style={styles.searchBox}
-              >
-                <span>⌕</span>
-
-                <input
-                  className="inp"
-                  value={search}
-                  onChange={
-                    (event) =>
-                      setSearch(
-                        event.target.value
-                      )
-                  }
-                  placeholder="جست‌وجوی نام درس، جلسه یا فایل..."
-                  maxLength={100}
-                  style={
-                    styles.searchInput
-                  }
-                />
-
-                {
-                  search
-                  && (
-                    <button
-                      type="button"
-                      style={
-                        styles.clearSearch
-                      }
-                      onClick={
-                        () => setSearch('')
-                      }
-                      aria-label="پاک‌کردن جست‌وجو"
-                    >
-                      ×
-                    </button>
-                  )
+              <SearchField
+                value={search}
+                onChange={
+                  (event) =>
+                    setSearch(
+                      event.target.value
+                    )
                 }
-              </div>
+                placeholder="جست‌وجوی نام درس، جلسه یا فایل..."
+                maxLength={100}
+                ariaLabel="جست‌وجوی منابع"
+              />
 
               {
                 normalizedSearch
@@ -1327,30 +1303,6 @@ const styles = {
     color: 'var(--tx2)',
     fontSize: 10.5,
     lineHeight: 1.9,
-  },
-
-  searchBox: {
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-  },
-
-  searchInput: {
-    paddingInline:
-      '34px 36px',
-  },
-
-  clearSearch: {
-    position: 'absolute',
-    left: 8,
-    width: 27,
-    height: 27,
-    color: 'var(--tx2)',
-    cursor: 'pointer',
-    border: 0,
-    borderRadius: 8,
-    background: 'var(--ovr)',
   },
 
   list: {
