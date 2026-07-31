@@ -1,8 +1,42 @@
 import axios from 'axios';
 import { getInitData } from './telegram';
 
+/* 🔥 گرم‌کردن اتصال (موج ۴.۶۰): لینک preconnect
+   به مبدأ API قبل از اولین درخواست تزریق می‌شود
+   تا handshake ِ TLS از قبل آماده باشد — اولین
+   ریکوئست واقعی دیگر هزینه‌ی اتصال ندارد.
+   dns-prefetch هم به‌عنوان fallback سبک. */
+try {
+  const apiOrigin = new URL(
+    import.meta.env?.VITE_API_URL ||
+      'http://localhost:8000'
+  ).origin;
+
+  if (
+    typeof document !== 'undefined' &&
+    !apiOrigin.startsWith('http://localhost')
+  ) {
+    const preconnect =
+      document.createElement('link');
+    preconnect.rel = 'preconnect';
+    preconnect.href = apiOrigin;
+
+    const dnsPrefetch =
+      document.createElement('link');
+    dnsPrefetch.rel = 'dns-prefetch';
+    dnsPrefetch.href = apiOrigin;
+
+    document.head.append(
+      preconnect,
+      dnsPrefetch
+    );
+  }
+} catch (_) {
+  /* در صورت خطا، بدون preconnect ادامه می‌دهیم */
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+  baseURL: import.meta.env?.VITE_API_URL || 'http://localhost:8000',
   timeout: 15000,
   headers: { Accept: 'application/json' },
 });
