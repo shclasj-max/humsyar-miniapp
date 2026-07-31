@@ -10,9 +10,12 @@ import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 
 import {
-  SkeletonCard,
   Spinner,
 } from '../../components/shared/Loading';
+
+import {
+  ProfileSkeleton,
+} from '../../components/shared/skeletons';
 
 import {
   haptic,
@@ -676,16 +679,7 @@ export default function Profile() {
 
       <main className="page fade-up">
         {isLoading ? (
-          <div
-            style={{
-              display: 'grid',
-              gap: 10,
-            }}
-          >
-            <SkeletonCard />
-            <SkeletonCard />
-            <SkeletonCard />
-          </div>
+          <ProfileSkeleton />
         ) : isError ? (
           <div className="empty card">
             دریافت پروفایل انجام نشد.
