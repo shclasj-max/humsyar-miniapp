@@ -3854,30 +3854,210 @@ textarea:focus:not(:focus-visible) {
    حباب‌ها و کرتِ استریم نرم
 ═══════════════════════════════════════ */
 
-/* ── جعبه‌ی جست‌وجو با آیکون داخلی ── */
+/* ── فیلد جست‌وجوی یکپارچه (موج ۴.۵۰) ──
+   نسخه‌ی واحد سیستم دیزاین برای همه‌ی
+   جست‌وجوها: آیکون وکتوری واکنش‌گر به فوکوس،
+   اسپینر وضعیت و دکمه‌ی پاک‌کردن.
+   REPLACE برای .conv-searchbox قدیمی —
+   آیکون 🔍 ریزِ ثابت و ناهماهنگ با هویت
+   بصری بود و در چند صفحه تکثیر شده بود. */
 
-.conv-searchbox {
+.search-field {
   position: relative;
-  margin-bottom: 9px;
+
+  display: flex;
+  align-items: center;
 }
 
-.conv-searchbox .inp {
-  width: 100%;
-  min-height: 44px;
-  padding-right: 40px;
+.search-field__inp {
+  padding-right: 39px;
+  padding-left: 34px;
 }
 
-.conv-searchbox__icon {
+.search-field__icon {
   position: absolute;
-  top: 50%;
   right: 13px;
 
-  color: var(--txm);
-  font-size: 14px;
+  width: 17px;
+  height: 17px;
 
-  transform: translateY(-50%);
+  color: var(--txm);
 
   pointer-events: none;
+
+  transition: color .18s;
+}
+
+/* جزئیات لذت‌بخش: با فوکوس، ذره‌بین رنگ
+   برند می‌گیرد — بدون هیچ هزینه‌ی GPU */
+.search-field:focus-within
+  .search-field__icon {
+  color: var(--acc2);
+}
+
+.search-field__meta {
+  position: absolute;
+  left: 11px;
+
+  display: grid;
+  place-items: center;
+
+  pointer-events: none;
+}
+
+.search-field__clear {
+  position: absolute;
+  left: 6px;
+
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+
+  color: var(--txm);
+  cursor: pointer;
+
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
+}
+
+.search-field__clear:hover {
+  color: var(--tx);
+
+  background: var(--ovr);
+}
+
+.search-field__clear:active {
+  transform: scale(.92);
+}
+
+/* ── انتخاب‌گر دانشجو (UserSearchSelect) ── */
+
+.user-pick__box {
+  position: relative;
+}
+
+.user-pick__drop {
+  position: absolute;
+  top: calc(100% + 7px);
+  right: 0;
+  left: 0;
+  z-index: 60;
+
+  max-height: 264px;
+  padding: 6px;
+  overflow-y: auto;
+
+  /* دراپ‌داون روی کارت‌های پایینی
+     می‌ایستد — باید کاملاً مات باشد */
+  background:
+    linear-gradient(
+      165deg,
+      rgba(24, 34, 53, .99),
+      rgba(13, 19, 32, .99)
+    );
+
+  box-shadow: var(--shd-1);
+}
+
+.user-pick__row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 10px;
+  padding: 8px 10px;
+
+  text-align: right;
+  cursor: pointer;
+
+  background: transparent;
+  border: 0;
+  border-radius: 12px;
+
+  transition: background .15s;
+}
+
+.user-pick__row:hover {
+  background: var(--elev);
+}
+
+.user-pick__meta {
+  flex: 1;
+  min-width: 0;
+
+  text-align: right;
+}
+
+.user-pick__meta b {
+  display: block;
+  overflow: hidden;
+
+  font-size: 12px;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-pick__sub {
+  display: block;
+  overflow: hidden;
+  margin-top: 2px;
+
+  color: var(--txm);
+  font-size: 9.5px;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-pick__empty {
+  padding: 16px 10px;
+
+  color: var(--txm);
+  font-size: 10.5px;
+  text-align: center;
+}
+
+/* چیپ دانشجوی انتخاب‌شده — تأیید بصری
+   هدف قبل از عمل حساس (مثل اعطای اشتراک) */
+.user-pick {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(16, 185, 129, .12),
+      rgba(16, 24, 39, .95)
+    );
+
+  border:
+    1px solid rgba(16, 185, 129, .3);
+  border-radius: var(--r-md);
+}
+
+.user-pick__clear {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+
+  color: var(--txm);
+  cursor: pointer;
+
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+}
+
+.user-pick__clear:hover {
+  color: var(--err);
+
+  background: rgba(239, 68, 68, .12);
 }
 
 /* ── نشان همگام‌سازی ردیف‌ها ── */
