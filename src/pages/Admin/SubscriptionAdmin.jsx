@@ -1,5 +1,8 @@
 import { confirmAction } from '../../lib/confirm';
-import { useState } from 'react';
+import {
+  useEffect,
+  useState,
+} from 'react';
 
 import {
   useMutation,
@@ -197,6 +200,27 @@ export default function SubscriptionAdmin() {
     revokeFor,
     setRevokeFor,
   ] = useState(null);
+
+  /* 📄 رندر افزایشی (موج ۴.۶۰) — رسیدها و
+     مشترکین تا ۱۰۰ ردیف؛ ۴۰ تای اول آنی رندر
+     می‌شود و بقیه با یک تپ. */
+  const [
+    payVisible,
+    setPayVisible,
+  ] = useState(40);
+
+  const [
+    subVisible,
+    setSubVisible,
+  ] = useState(40);
+
+  useEffect(() => {
+    setPayVisible(40);
+  }, [paymentStatus, payQuery]);
+
+  useEffect(() => {
+    setSubVisible(40);
+  }, [subscriberStatus, subQuery]);
 
   const toast = useUIStore(
     (state) => state.toast
@@ -1403,7 +1427,10 @@ export default function SubscriptionAdmin() {
                     8,
                 }}
               >
-                {paymentRows.map(
+                {paymentRows.slice(
+                  0,
+                  payVisible
+                ).map(
                   (item) => (
                     <article
                       key={item.id}
@@ -1623,6 +1650,30 @@ export default function SubscriptionAdmin() {
                 )}
               </section>
             )}
+
+          {paymentRows.length >
+            payVisible && (
+            <button
+              type="button"
+              className={
+                'btn btn-dark btn-full'
+              }
+              style={{
+                marginTop: 9,
+              }}
+              onClick={() =>
+                setPayVisible(
+                  (current) =>
+                    current + 40
+                )
+              }
+            >
+              نمایش بیشتر (
+              {paymentRows.length -
+                payVisible}{' '}
+              رسید دیگر)
+            </button>
+          )}
           </>
         ) : tab ===
           'subscribers' ? (
@@ -1710,7 +1761,10 @@ export default function SubscriptionAdmin() {
                     8,
                 }}
               >
-                {subscriberRows.map(
+                {subscriberRows.slice(
+                  0,
+                  subVisible
+                ).map(
                   (item) => (
                     <article
                       key={
@@ -1905,6 +1959,30 @@ export default function SubscriptionAdmin() {
                 )}
               </section>
             )}
+
+          {subscriberRows.length >
+            subVisible && (
+            <button
+              type="button"
+              className={
+                'btn btn-dark btn-full'
+              }
+              style={{
+                marginTop: 9,
+              }}
+              onClick={() =>
+                setSubVisible(
+                  (current) =>
+                    current + 40
+                )
+              }
+            >
+              نمایش بیشتر (
+              {subscriberRows.length -
+                subVisible}{' '}
+              مشترک دیگر)
+            </button>
+          )}
           </>
         ) : (
           <>
