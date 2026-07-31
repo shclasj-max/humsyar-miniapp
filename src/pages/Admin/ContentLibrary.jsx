@@ -1,3 +1,4 @@
+import { confirmAction } from '../../lib/confirm';
 import { useState } from 'react';
 
 import {
@@ -10,9 +11,13 @@ import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 
 import {
-  SkeletonCard,
   Spinner,
 } from '../../components/shared/Loading';
+
+import {
+  LibraryTilesSkeleton,
+  LibraryRowsSkeleton,
+} from '../../components/shared/skeletons';
 
 import {
   hapticNotif,
@@ -454,9 +459,7 @@ export function BasicScienceAdmin() {
 
               : 'درس‌ها و محتوای آموزشی'
         }
-        back={
-          Boolean(lesson)
-        }
+        back
         onBack={
           lesson
             ? goBack
@@ -570,7 +573,7 @@ export function BasicScienceAdmin() {
 
 
             {lessonsLoading ? (
-              <SkeletonCard />
+              <LibraryTilesSkeleton />
             ) : lessons.length ===
               0 ? (
               <Empty>
@@ -688,9 +691,9 @@ export function BasicScienceAdmin() {
                             mutation
                               .isPending
                           }
-                          onClick={() => {
+                          onClick={async () => {
                             const accepted =
-                              window.confirm(
+                              await confirmAction(
                                 'درس و زیرمجموعه‌های آن حذف شود؟'
                               );
 
@@ -816,7 +819,7 @@ export function BasicScienceAdmin() {
 
 
             {sessionsLoading ? (
-              <SkeletonCard />
+              <LibraryRowsSkeleton />
             ) : sessions.length ===
               0 ? (
               <Empty>
@@ -933,9 +936,9 @@ export function BasicScienceAdmin() {
                             mutation
                               .isPending
                           }
-                          onClick={() => {
+                          onClick={async () => {
                             const accepted =
-                              window.confirm(
+                              await confirmAction(
                                 'جلسه حذف شود؟'
                               );
 
@@ -1088,7 +1091,7 @@ export function BasicScienceAdmin() {
 
 
             {contentLoading ? (
-              <SkeletonCard />
+              <LibraryRowsSkeleton />
             ) : content.length ===
               0 ? (
               <Empty>
@@ -1192,9 +1195,9 @@ export function BasicScienceAdmin() {
                             mutation
                               .isPending
                           }
-                          onClick={() => {
+                          onClick={async () => {
                             const accepted =
-                              window.confirm(
+                              await confirmAction(
                                 'محتوا حذف شود؟'
                               );
 
@@ -1487,9 +1490,7 @@ export function ReferencesAdmin() {
           subject?.name ||
           'مدیریت رفرنس‌ها'
         }
-        back={
-          Boolean(subject)
-        }
+        back
         onBack={
           subject
             ? back
@@ -1669,7 +1670,7 @@ export function ReferencesAdmin() {
 
         {!subject ? (
           isLoading ? (
-            <SkeletonCard />
+            <LibraryTilesSkeleton />
           ) : (
             <section
               style={{
@@ -1740,9 +1741,9 @@ export function ReferencesAdmin() {
                         mutation
                           .isPending
                       }
-                      onClick={() => {
+                      onClick={async () => {
                         const accepted =
-                          window.confirm(
+                          await confirmAction(
                             'موضوع حذف شود؟'
                           );
 
@@ -1832,9 +1833,9 @@ export function ReferencesAdmin() {
                         mutation
                           .isPending
                       }
-                      onClick={() => {
+                      onClick={async () => {
                         const accepted =
-                          window.confirm(
+                          await confirmAction(
                             'کتاب حذف شود؟'
                           );
 
@@ -1935,9 +1936,9 @@ export function ReferencesAdmin() {
                         mutation
                           .isPending
                       }
-                      onClick={() => {
+                      onClick={async () => {
                         const accepted =
-                          window.confirm(
+                          await confirmAction(
                             'فایل حذف شود؟'
                           );
 
@@ -2207,7 +2208,7 @@ export function QbankAdmin() {
 
 
         {isLoading ? (
-          <SkeletonCard />
+          <LibraryRowsSkeleton />
         ) : isError ? (
           <Empty>
             دریافت فایل‌ها انجام نشد.
@@ -2319,9 +2320,9 @@ export function QbankAdmin() {
                     pending={
                       mutation.isPending
                     }
-                    onClick={() => {
+                    onClick={async () => {
                       const accepted =
-                        window.confirm(
+                        await confirmAction(
                           'فایل حذف شود؟'
                         );
 
@@ -2617,7 +2618,7 @@ export function ContentReportsAdmin() {
 
 
         {isLoading ? (
-          <SkeletonCard />
+          <LibraryRowsSkeleton />
         ) : isError ? (
           <Empty>
             دریافت گزارش‌ها انجام نشد.
