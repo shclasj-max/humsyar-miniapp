@@ -1,3 +1,4 @@
+import { confirmAction } from '../../lib/confirm';
 import {
   useEffect,
   useState,
@@ -13,9 +14,13 @@ import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 
 import {
-  SkeletonCard,
   Spinner,
 } from '../../components/shared/Loading';
+
+import {
+  AdminOpsSkeleton,
+  SkRowList,
+} from '../../components/shared/skeletons';
 
 import {
   hapticNotif,
@@ -253,7 +258,11 @@ export function AdminTickets() {
 
         <main className="page fade-up">
           {detailLoading ? (
-            <SkeletonCard />
+            <SkRowList
+              n={2}
+              icon={38}
+              lines={2}
+            />
           ) : (
             <div
               style={{
@@ -650,7 +659,7 @@ export function AdminTickets() {
 
 
         {isLoading ? (
-          <SkeletonCard />
+          <AdminOpsSkeleton />
         ) : isError ? (
           <Empty>
             دریافت تیکت‌ها انجام نشد.
@@ -1252,9 +1261,9 @@ export function BroadcastAdmin() {
               preview == null ||
               sendMutation.isPending
             }
-            onClick={() => {
+            onClick={async () => {
               const accepted =
-                window.confirm(
+                await confirmAction(
                   `پیام برای ${
                     preview || 0
                   } نفر ارسال شود؟`
@@ -1758,9 +1767,9 @@ export function PollAdmin() {
             !valid ||
             pollMutation.isPending
           }
-          onClick={() => {
+          onClick={async () => {
             const accepted =
-              window.confirm(
+              await confirmAction(
                 'نظرسنجی در کانال ارسال شود؟'
               );
 
@@ -2049,7 +2058,10 @@ export function NotificationsAdmin() {
 
 
         {isLoading ? (
-          <SkeletonCard />
+          <SkRowList
+            n={3}
+            icon={36}
+          />
         ) : runs.length === 0 ? (
           <Empty>
             تاریخچه‌ای ثبت نشده است.
