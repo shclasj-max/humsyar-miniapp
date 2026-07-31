@@ -8,9 +8,12 @@ import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 
 import {
-  SkeletonCard,
   Spinner,
 } from '../../components/shared/Loading';
+
+import {
+  NotificationsSkeleton,
+} from '../../components/shared/skeletons';
 
 import {
   haptic,
@@ -433,16 +436,7 @@ export function Notifications() {
 
 
         {isLoading ? (
-          <div
-            style={{
-              display: 'grid',
-              gap: 9,
-            }}
-          >
-            <SkeletonCard />
-            <SkeletonCard />
-            <SkeletonCard />
-          </div>
+          <NotificationsSkeleton />
         ) : isError ? (
           <div className="empty card">
             <div className="empty__ic">
