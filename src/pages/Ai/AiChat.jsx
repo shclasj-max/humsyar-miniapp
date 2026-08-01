@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react';
@@ -1173,7 +1174,20 @@ export default function AiChat() {
 
   // بذردهی live — فقط یک‌بار (این نمونه‌ی
   // کامپوننت به هر convId ری‌ماونت می‌شود)
-  useEffect(() => {
+  //
+  // 🔥 FIX فلیکر (موج ۴.۹۰ — ریشه‌ای، نه پنهان‌کننده):
+  // این افکت قبلاً useEffect بود و «پس از Paint»
+  // اجرا می‌شد. داخل یک گفت‌وگوی قدیمی، با رسیدن
+  // دیتا (کش گرم یا پاسخ fetch) یک فریم با
+  // live خالی رندر و روی صفحه نقش می‌بست؛ در آن
+  // فریم، گیت Empty-State فقط isPending را چک
+  // می‌کرد (false) — پس برای یک فریم، صفحه‌ی
+  // «گفت‌وگوی جدید» (لوگو، Welcome، پیشنهادها)
+  // نمایش داده و سپس ناگهان جایش را به تاریخچه
+  // می‌داد. useLayoutEffect «قبل از Paint» بذردهی
+  // را انجام می‌دهد، پس آن فریمِ غلط اصلاً روی
+  // صفحه نمی‌آید — نه یک فریم.
+  useLayoutEffect(() => {
     if (!msgsQuery.data) {
       return;
     }
@@ -2408,6 +2422,11 @@ export default function AiChat() {
 
           {
             !msgsQuery.isPending
+            /* دفاع لایه‌ی دوم: Empty-State فقط
+               وقتی که بذردهی live برای همین
+               رشته تمام شده (یا کوئری خطا خورده —
+               رفتار قبلی fallback به صفحه‌ی شروع) */
+            && (seedTick > 0 || msgsQuery.isError)
             && live.length === 0
             && (
               <div className="chat-empty">
