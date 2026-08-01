@@ -2090,9 +2090,26 @@ input:focus-visible
     calc(24px + env(safe-area-inset-bottom));
   overflow: hidden;
 
-  /* شفاف — لایه‌ی fixed مشترک body نمایان است تا
-     ورود/خروج Onboarding هیچ پرش نوری نداشته باشد */
-  background: transparent;
+  /* FIX ریشه‌ای (گزارش کاربر): قبلاً پس‌زمینه شفاف بود با
+     استدلال «لایه‌ی fixed مشترک body پشتش دیده می‌شود» — اما
+     شفافیت یعنی کلِ کروم و محتوای داشبورد (هدر z:100، ناوبری
+     z:110، کارت‌ها و اسکلت‌ها) هم از پشت اوورلی دیده می‌شد و
+     اسلایدها عملاً «توی قسمت داشبورد» می‌افتادند. حالا همان
+     پس‌زمینه‌ی مشترک صفحه، عیناً روی خودِ اوورلی هم آمده تا
+     پرده‌ی کاملی بسازد؛ چون دقیقاً همان گرادیان است، هنگام
+     بسته‌شدن‌اش هم هیچ پرش نوری رخ نمی‌دهد. */
+  background:
+    var(--grad-page),
+    linear-gradient(
+      180deg,
+      var(--bg-soft),
+      var(--bg)
+    );
+
+  /* ورود نرم — فقط opacity (GPU-first، بدون transform) */
+  animation:
+    overlayIn .28s var(--ease-out)
+    both;
 }
 
 .onb__glow {
