@@ -221,6 +221,31 @@ export default function Me() {
     donation?.enabled && donation?.link
   );
 
+  /* 🔔 موج ۴.۹۰ — بج خوانده‌نشده‌های مرکز
+     اعلان. کلید عمداً با صفحه‌ی مرکز اعلان
+     یکی است (همان کش مشترک) ولی بدون ایمپورت
+     استاتیک آن فایل تا code-split نشکند */
+  const {
+    data: inbox,
+  } = useQuery({
+    queryKey: ['notif-inbox'],
+
+    queryFn: () =>
+      api
+        .get('/api/notifications/inbox')
+        .then(
+          (response) =>
+            response.data
+        ),
+
+    staleTime: 15_000,
+    retry: false,
+  });
+
+  const notifUnread = number(
+    inbox?.unread
+  );
+
   const {
     data: subscription,
   } = useQuery({
@@ -783,12 +808,35 @@ export default function Me() {
                 <MenuRow
                   icon="🔔"
                   title={
+                    'مرکز اعلان‌ها'
+                  }
+                  description={
+                    'همه‌ی رویدادهای مهم حسابت،'
+                    + ' یک‌جا'
+                  }
+                  badge={
+                    notifUnread
+                      ? notifUnread
+                          .toLocaleString('fa-IR')
+                      : ''
+                  }
+                  tone="yellow"
+                  onClick={() =>
+                    navigate(
+                      '/me/notifications/inbox'
+                    )
+                  }
+                />
+
+                <MenuRow
+                  icon="⚙️"
+                  title={
                     'تنظیمات اعلان‌ها'
                   }
                   description={
                     'مدیریت یادآوری کلاس، امتحان و محتوا'
                   }
-                  tone="yellow"
+                  tone="purple"
                   onClick={() =>
                     navigate(
                       '/me/notifications'
