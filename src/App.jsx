@@ -191,6 +191,15 @@ const NotificationsScreen = lazyScreen(
   'Notifications'
 );
 
+// 🔔 موج ۴.۹۰ — مرکز اعلان (inbox) جدا از
+// «تنظیمات اعلان‌ها»؛‌ اسکلت فهرستی تیکت‌ها
+// چیدمان همین صفحه را هم پوشش می‌دهد
+const NotificationCenterScreen = lazyScreen(
+  () => import('./pages/Me/NotificationCenter'),
+  FaqListSkeleton,
+  'NotificationCenter'
+);
+
 const SubscriptionScreen = lazyScreen(
   () => import('./pages/Me/Subscription'),
   SubscriptionSkeleton
@@ -881,6 +890,13 @@ export default function App() {
           path="/me/notifications"
           element={
             <NotificationsScreen />
+          }
+        />
+
+        <Route
+          path="/me/notifications/inbox"
+          element={
+            <NotificationCenterScreen />
           }
         />
 
