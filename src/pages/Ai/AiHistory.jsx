@@ -217,38 +217,18 @@ export default function AiHistory() {
     || patchRenameMutation.isPending;
 
 
-  const headerAction = (
-    <button
-      type="button"
-      className="btn btn-p"
-      style={{
-        minHeight: 32,
-        padding: '5px 9px',
-        fontSize: 11,
-      }}
-      onClick={() =>
-        createConvMutation.mutate()
-      }
-      disabled={busy}
-      aria-label="گفت‌وگوی جدید"
-    >
-      {
-        createConvMutation.isPending
-          ? <Spinner size={15} />
-          : '＋'
-      }
-
-      جدید
-    </button>
-  );
-
+  /* 🎯 موج ۴.۹۰ — هدر Context-Aware: در صفحه‌ی
+     فهرست، دکمه‌ی «جدید» هدر حذف شد چون دقیقاً
+     همان کار دکمه‌ی بزرگ «شروع گفت‌وگوی جدید»
+     داخل صفحه را می‌کرد (Duplicate Action).
+     داخل خودِ گفت‌وگو، دکمه‌ی هدر باقی است تا
+     لازم نباشد برای رشته‌ی تازه بیرون برگردی. */
 
   return (
     <>
       <Header
         title="هوشیار"
         subtitle="تاریخچه‌ی گفت‌وگوها"
-        right={headerAction}
         backTo="/"
       />
 
