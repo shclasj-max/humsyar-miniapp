@@ -32,6 +32,7 @@ import {
 import SearchField from '../../components/shared/SearchField';
 
 import {
+  haptic,
   hapticNotif,
 } from '../../lib/telegram';
 
@@ -749,6 +750,22 @@ export function AdminUserDetail() {
     setForm,
   ] = useState({});
 
+  /* ✉️ موج ۴.۸۰ — پیام مستقیم به کاربر */
+  const [
+    dmOpen,
+    setDmOpen,
+  ] = useState(false);
+
+  const [
+    dmText,
+    setDmText,
+  ] = useState('');
+
+  const [
+    dmBusy,
+    setDmBusy,
+  ] = useState(false);
+
   const toast = useUIStore(
     (state) => state.toast
   );
@@ -797,6 +814,47 @@ export function AdminUserDetail() {
           ],
         }),
     ]);
+  };
+
+
+  /* ✉️ ارسال پیام مستقیم به همین کاربر — موج ۴.۸۰
+     (سمت سرور در صف outbox قرار می‌گیرد) */
+  const sendDm = async () => {
+    const text = dmText.trim();
+
+    if (text.length < 2 || dmBusy) return;
+
+    haptic('light');
+    setDmBusy(true);
+
+    try {
+      await api.post(
+        `/api/admin/users/${uid}/message`,
+        { text }
+      );
+
+      hapticNotif('success');
+
+      toast(
+        'پیام در صف ارسال به کاربر قرار گرفت ✅',
+        'success'
+      );
+
+      setDmText('');
+      setDmOpen(false);
+    } catch (error) {
+      hapticNotif('error');
+
+      toast(
+        errorText(
+          error,
+          'ارسال پیام ناموفق بود'
+        ),
+        'error'
+      );
+    } finally {
+      setDmBusy(false);
+    }
   };
 
 
@@ -1389,7 +1447,82 @@ export function AdminUserDetail() {
                 >
                   🚫 مسدودسازی
                 </button>
+
+                <button
+                  className="btn btn-dark"
+                  onClick={() => {
+                    haptic('light');
+                    setDmOpen(
+                      (open) => !open
+                    );
+                  }}
+                >
+                  ✉️ ارسال پیام
+                </button>
               </div>
+
+              {/* ✉️ کامپوزر پیام مستقیم
+                  — گیرنده: همین کاربر */}
+              {dmOpen && (
+                <div
+                  className="pop-in"
+                  style={{
+                    marginTop: 10,
+                  }}
+                >
+                  <textarea
+                    className="inp"
+                    style={{
+                      minHeight: 76,
+                      resize:
+                        'vertical',
+                    }}
+                    placeholder={`متن پیام برای ${user.name}...`}
+                    value={dmText}
+                    maxLength={3500}
+                    onChange={(event) =>
+                      setDmText(
+                        event.target
+                          .value
+                      )
+                    }
+                  />
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: 8,
+                      marginTop: 8,
+                    }}
+                  >
+                    <button
+                      className="btn btn-p"
+                      style={{ flex: 1 }}
+                      disabled={
+                        dmBusy ||
+                        dmText.trim()
+                          .length < 2
+                      }
+                      onClick={sendDm}
+                    >
+                      {dmBusy
+                        ? '⏳ در حال ارسال...'
+                        : '📨 ارسال'}
+                    </button>
+
+                    <button
+                      className="btn btn-dark"
+                      onClick={() => {
+                        haptic('light');
+                        setDmOpen(false);
+                        setDmText('');
+                      }}
+                    >
+                      لغو
+                    </button>
+                  </div>
+                </div>
+              )}
             </section>
           </div>
         )}
