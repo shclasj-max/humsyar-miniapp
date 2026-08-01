@@ -1,10 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import {
   useMutation,
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
+
+import {
+  useSearchParams,
+} from 'react-router-dom';
 
 import api from '../../lib/api';
 import Header from '../../components/layout/Header';
@@ -75,6 +79,31 @@ export default function Tickets() {
     subject: '',
     message: '',
   });
+
+  /* 🔔 موج ۴.۹۰ — Deep Link از مرکز اعلان:
+     /me/tickets?t=<id> همان تیکت را مستقیم
+     در نمای جزئیات باز می‌کند (یک‌بار) */
+  const [searchParams] = useSearchParams();
+
+  const deepLinkDone = useRef(false);
+
+  useEffect(() => {
+    if (deepLinkDone.current) {
+      return;
+    }
+
+    const tid = Number(
+      searchParams.get('t'),
+    );
+
+    if (tid > 0) {
+      deepLinkDone.current = true;
+
+      setSelectedId(tid);
+
+      setView('detail');
+    }
+  }, [searchParams]);
 
   const [
     reply,
