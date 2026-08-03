@@ -4,6 +4,7 @@ import {
   Navigate,
   useLocation,
   useNavigationType,
+  useNavigate,
 } from 'react-router-dom';
 
 import {
@@ -14,6 +15,7 @@ import {
 } from 'react';
 
 import {
+  getStartParam,
   initTelegram,
 } from './lib/telegram';
 
@@ -182,6 +184,22 @@ const ReferencesScreen = lazyScreen(
 
 const ProfileScreen = lazyScreen(
   () => import('./pages/Me/Profile'),
+  ProfileSkeleton
+);
+
+/* 👑 موج P1/P2 — Prestige: نشان‌ها، میدان رقابت، HeroCard */
+const BadgesScreen = lazyScreen(
+  () => import('./pages/Me/Badges'),
+  TicketsSkeleton
+);
+
+const LeaderboardScreen = lazyScreen(
+  () => import('./pages/Leaderboard/index'),
+  UsersListSkeleton
+);
+
+const RankHeroScreen = lazyScreen(
+  () => import('./pages/Rank/HeroCard'),
   ProfileSkeleton
 );
 
@@ -620,15 +638,49 @@ export default function App() {
   }, [init]);
 
 
+  const user = useAuthStore(
+    (state) => state.user
+  );
+
+
+  /* 👑 موج P0 — دیپ‌لینک startapp سبک:
+     rank_<uid> (اشتراک کارت رنک) فعلاً به
+     همان کارت Prestigeِ پروفایل می‌رسد؛
+     HeroCard عمومی در P2 می‌آید. هر پارامتر
+     ناشناخته بی‌خطر نادیده گرفته می‌شود. */
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!user) return;
+
+    const startParam = (
+      getStartParam() || ''
+    ).trim();
+
+    if (!startParam) return;
+
+    try {
+      if (
+        /^rank_[0-9a-zA-Z]+$/.test(
+          startParam
+        )
+      ) {
+        navigate('/me/profile');
+      }
+      /* پارامترهای ناشناخته: ignore */
+    } catch (_) {
+      /* ناوبری دیپ‌لینک هرگز اپ را نمی‌شکند */
+    }
+    /* eslint-disable-next-line
+       react-hooks/exhaustive-deps */
+  }, [user]);
+
+
   /* 🔥 Prefetch بیکار (موج ۴.۶۰) — وقتی اپ بالا
      آمد و کاربر شناخته شد، در زمان بیکارِ
      مرورگر چانک مسیرهای محتمل‌بعدی دانلود می‌شود
      تا اولین ناوبری هم «آنی» باشد. هزینه: چند
      ده KB در پس‌زمینه — اثر روی FCP: صفر. */
-  const user = useAuthStore(
-    (state) => state.user
-  );
-
   useEffect(() => {
     if (!user) return undefined;
 
@@ -883,6 +935,27 @@ export default function App() {
           path="/me/profile"
           element={
             <ProfileScreen />
+          }
+        />
+
+        <Route
+          path="/me/badges"
+          element={
+            <BadgesScreen />
+          }
+        />
+
+        <Route
+          path="/leaderboard"
+          element={
+            <LeaderboardScreen />
+          }
+        />
+
+        <Route
+          path="/rank/:uid"
+          element={
+            <RankHeroScreen />
           }
         />
 
