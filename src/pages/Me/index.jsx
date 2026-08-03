@@ -806,6 +806,38 @@ export default function Me() {
                 />
 
                 <MenuRow
+                  icon="🏅"
+                  title={
+                    'نشان‌های من'
+                  }
+                  description={
+                    'کلکسیون نشان‌ها و شوکیس'
+                  }
+                  tone="yellow"
+                  onClick={() =>
+                    navigate(
+                      '/me/badges'
+                    )
+                  }
+                />
+
+                <MenuRow
+                  icon="🏟️"
+                  title={
+                    'میدان رقابت'
+                  }
+                  description={
+                    'لیدربرد هفته، ماه و سیزن'
+                  }
+                  tone="green"
+                  onClick={() =>
+                    navigate(
+                      '/leaderboard'
+                    )
+                  }
+                />
+
+                <MenuRow
                   icon="🔔"
                   title={
                     'مرکز اعلان‌ها'
