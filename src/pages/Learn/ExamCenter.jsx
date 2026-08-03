@@ -4,6 +4,8 @@ import {
   useState,
 } from 'react';
 
+import { useSearchParams } from 'react-router-dom';
+
 import {
   useMutation,
   useQuery,
@@ -13,6 +15,7 @@ import {
 import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 import QuestionCard from '../../components/shared/QuestionCard';
+import CelebrationOverlay from '../../components/shared/CelebrationOverlay';
 
 import {
 
@@ -134,6 +137,29 @@ export default function ExamCenter() {
   const [
     secondsLeft,
     setSecondsLeft,
+  ] = useState(null);
+
+  /* 👑 موج P0 — جشن ارتقا (پیلود
+     celebration آزمون/پاسخ) */
+  const [
+    celebration,
+    setCelebration,
+  ] = useState(null);
+
+  /* ⚔️ موج P1 — جریان چالش ارتقا (?promo=1):
+     promoInfo = وضعیت چالش از سرور،
+     promoResult = نتیجه‌ی سرورمحور پایان */
+  const [searchParams] =
+    useSearchParams();
+
+  const [
+    promoInfo,
+    setPromoInfo,
+  ] = useState(null);
+
+  const [
+    promoResult,
+    setPromoResult,
   ] = useState(null);
 
   const toast = useUIStore(
@@ -371,17 +397,95 @@ export default function ExamCenter() {
             ? 'success'
             : 'error'
         );
+
+        /* ⚔️ موج P1 — نتیجه‌ی چالش در پاسخ
+           پایانی: جشن برد یا کارت آرام شکست */
+        const promoRes =
+          response.data
+            ?.promotion_result;
+
+        if (promoRes) {
+          setPromoResult(promoRes);
+
+          if (promoRes.celebration) {
+            setCelebration(
+              promoRes.celebration
+            );
+          }
+
+          queryClient
+            .invalidateQueries({
+              queryKey: ['prestige'],
+            });
+        }
+
+        /* 👑 موج P0 — جشن ارتقا: اولویت
+           با رویداد تکمیل آزمون (جشن کلان‌تر)
+           وگرنه جشن خودِ پاسخ */
+        const prestigeCelebration =
+          promoRes?.celebration ||
+          response.data?.prestige_exam
+            ?.celebration ||
+          response.data?.prestige
+            ?.celebration;
+
+        if (prestigeCelebration) {
+          setCelebration(
+            prestigeCelebration
+          );
+        }
+
+        if (
+          response.data?.prestige ||
+          response.data?.prestige_exam ||
+          promoRes
+        ) {
+          queryClient
+            .invalidateQueries({
+              queryKey: ['prestige'],
+            });
+
+          queryClient
+            .invalidateQueries({
+              queryKey: ['dashboard'],
+            });
+        }
       },
 
-      onError: (error) =>
+      onError: (error) => {
+        /* ⚔️ TTL چالش: 409 با detail شی —
+           Fail خودکار + کول‌داون */
+        const detail =
+          error?.response?.data?.detail;
+
+        if (
+          detail &&
+          typeof detail === 'object' &&
+          detail.code === 'promotion_failed_ttl'
+        ) {
+          setPromoResult({
+            win: false,
+            pct: detail.pct,
+            cooldown_h:
+              detail.cooldown_h,
+            ttl: true,
+          });
+
+          setSession(null);
+          setQuestion(null);
+          setView('result');
+
+          return;
+        }
+
         toast(
-          error?.response
-            ?.data
-            ?.detail ||
-            'ثبت پاسخ انجام نشد',
+          typeof detail === 'string'
+            ? detail
+            : 'ثبت پاسخ انجام نشد',
 
           'error'
-        ),
+        );
+      },
     });
 
 
@@ -392,12 +496,148 @@ export default function ExamCenter() {
           `/api/questions/custom-exam/${session.session_id}`
         ),
 
-      onSuccess: async () => {
+      onSuccess: async (response) => {
+        /* ⚔️ رهاسازی چالش = Fail سروری */
+        const pr =
+          response?.data
+            ?.promotion_result;
+
+        if (pr) {
+          setPromoResult(pr);
+          setSession(null);
+          setQuestion(null);
+          setView('result');
+
+          queryClient
+            .invalidateQueries({
+              queryKey: ['prestige'],
+            });
+
+          return;
+        }
+
         setSession(null);
         setQuestion(null);
         setView('history');
 
         await refreshHistory();
+      },
+    });
+
+  /* ⚔️ موج P1 — بوت جریان چالش با ?promo=1 */
+  useEffect(() => {
+    if (
+      searchParams.get('promo') !== '1'
+    ) {
+      return undefined;
+    }
+
+    let alive = true;
+
+    (async () => {
+      try {
+        const resp = await api.get(
+          '/api/profile/prestige'
+        );
+
+        if (!alive) {
+          return;
+        }
+
+        const ch =
+          resp.data?.prestige
+            ?.challenge || null;
+
+        setPromoInfo(
+          ch || { mode: 'none' }
+        );
+
+        if (
+          ch &&
+          ['ready', 'cooldown', 'locked']
+            .includes(ch.mode)
+        ) {
+          setResult(null);
+          setPromoResult(null);
+          setView('promo');
+        }
+      } catch (err) {
+        /* سکوت — مرکز آزمون معمول می‌ماند */
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const promoMutation =
+    useMutation({
+      mutationFn: () =>
+        api.post(
+          '/api/questions/custom-exam/start',
+          {
+            lesson: 'چالش',
+            count: 5,
+            minutes: 0,
+            promotion: true,
+          }
+        ),
+
+      onSuccess: async (response) => {
+        const data =
+          response.data || {};
+
+        setSession({
+          ...data,
+          promotion: true,
+        });
+
+        setResult(null);
+        setPromoResult(null);
+
+        await loadNext(
+          data.session_id
+        );
+      },
+
+      onError: (error) => {
+        const d =
+          error?.response?.data?.detail;
+
+        if (d && typeof d === 'object') {
+          if (d.code === 'cooldown') {
+            setPromoInfo((prev) => ({
+              ...(prev || {}),
+              mode: 'cooldown',
+              cooldown_until:
+                d.cooldown_until,
+              hours_left: d.hours_left,
+            }));
+
+            setView('promo');
+
+            return;
+          }
+
+          if (
+            d.code === 'insufficient_pool'
+          ) {
+            toast(
+              'بانک سؤال فعلاً برای چالش کافی نیست',
+              'error'
+            );
+
+            return;
+          }
+        }
+
+        toast(
+          typeof d === 'string'
+            ? d
+            : 'شروع چالش انجام نشد',
+          'error'
+        );
       },
     });
 
@@ -638,6 +878,65 @@ export default function ExamCenter() {
                       : '❌ پاسخ نادرست'}
                   </div>
 
+                  {/* 👑 موج P0 — XP کسب‌شده
+                      (پاسخ + تکمیل آزمون) */}
+                  {(() => {
+                    const xpTotal =
+                      (Number(
+                        answer.prestige
+                          ?.xp_gained
+                      ) || 0) +
+                      (Number(
+                        answer.prestige_exam
+                          ?.xp_gained
+                      ) || 0);
+
+                    const display =
+                      answer.prestige_exam
+                        ?.display ||
+                      answer.prestige
+                        ?.display;
+
+                    return xpTotal > 0 ||
+                      display?.title ? (
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          alignItems:
+                            'center',
+                          gap: 6,
+                          marginTop: 7,
+
+                          color:
+                            'var(--tx2)',
+                          fontSize: 10.5,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {xpTotal > 0 && (
+                          <span
+                            style={{
+                              color:
+                                'var(--warn)',
+                            }}
+                          >
+                            ⚡ +{xpTotal}{' '}
+                            XP
+                          </span>
+                        )}
+
+                        {display?.title && (
+                          <span>
+                            {display.icon}{' '}
+                            {display.title}{' '}
+                            {display.stars}
+                          </span>
+                        )}
+                      </div>
+                    ) : null;
+                  })()}
+
                   {answer.explanation && (
                     <div
                       style={{
@@ -711,10 +1010,297 @@ export default function ExamCenter() {
             رهاکردن آزمون
           </button>
         </main>
+
+        {/* 👑 موج P0 — جشن ارتقا روی
+            کارت نتیجه‌ی آزمون */}
+        {celebration && (
+          <CelebrationOverlay
+            celebration={celebration}
+            onClose={() =>
+              setCelebration(null)
+            }
+          />
+        )}
       </>
     );
   }
 
+
+  /* ⚔️ موج P1 — کارت معارفه/قفل چالش ارتقا */
+  if (view === 'promo') {
+    const ch = promoInfo || {};
+
+    const mode =
+      ch.mode || 'ready';
+
+    const hoursLeft =
+      ch.hours_left ??
+      (ch.cooldown_until
+        ? Math.max(
+            1,
+            Math.ceil(
+              (new Date(
+                ch.cooldown_until
+              ).getTime() -
+                Date.now()) /
+                36e5
+            )
+          )
+        : null);
+
+    return (
+      <>
+        <Header
+          title="چالش ارتقا"
+          onBack={() =>
+            setView('setup')
+          }
+        />
+
+        <main className="page fade-up">
+          <section
+            className={
+              'card card-glow hero-card'
+            }
+            style={{
+              padding: 25,
+              textAlign: 'center',
+            }}
+          >
+            <div
+              style={{ fontSize: 53 }}
+            >
+              {ch.icon || '⚔️'}
+            </div>
+
+            <h2
+              style={{
+                margin: '8px 0 4px',
+                fontSize: 17,
+              }}
+            >
+              {mode === 'ready'
+                ? `چالش ارتقا به ${
+                    ch.title || 'رنک بعدی'
+                  }`
+                : mode === 'cooldown'
+                  ? 'چالش در کول‌داون است'
+                  : mode === 'locked'
+                    ? 'چالش Apex قفل است'
+                    : 'چالش ارتقا'}
+            </h2>
+
+            {mode === 'ready' && (
+              <>
+                <p
+                  style={{
+                    color: 'var(--txm)',
+                    fontSize: 11.5,
+                    lineHeight: 2,
+                  }}
+                >
+                  {ch.apex
+                    ? 'باس‌فایت نهایی: ۳۰ سؤال، قبولی با ۹۰٪ — افسانه‌ای شو 🌌'
+                    : '۲۰ سؤال ترکیبی از سراسر بانک · قبولی با ۸۰٪ · مهلت ۲۴ ساعت'}
+                </p>
+
+                <button
+                  type="button"
+                  className={
+                    'btn btn-p btn-full'
+                  }
+                  style={{ marginTop: 16 }}
+                  disabled={
+                    promoMutation.isPending
+                  }
+                  onClick={() => {
+                    haptic();
+                    promoMutation.mutate();
+                  }}
+                >
+                  {promoMutation.isPending
+                    ? 'در حال ساخت چالش…'
+                    : `⚔️ شروع چالش${
+                        ch.apex ? ' Apex' : ''
+                      }`}
+                </button>
+              </>
+            )}
+
+            {mode === 'cooldown' && (
+              <p
+                style={{
+                  color: 'var(--txm)',
+                  fontSize: 11.5,
+                  lineHeight: 2,
+                }}
+              >
+                ⏳{' '}
+                {hoursLeft != null
+                  ? `حدود ${hoursLeft} ساعت دیگر`
+                  : 'کمی بعد'}{' '}
+                می‌توانی دوباره تلاش کنی. هیچ
+                XP‌ای از دست نرفته است 💪
+              </p>
+            )}
+
+            {mode === 'locked' && (
+              <p
+                style={{
+                  color: 'var(--txm)',
+                  fontSize: 11.5,
+                  lineHeight: 2,
+                }}
+              >
+                🔒 پیش‌شرط‌ها: بهترین استریک ≥{' '}
+                {ch?.need?.streak_best ?? '—'}{' '}
+                روز (الان:{' '}
+                {ch?.have?.streak_best ?? 0})
+                {' · '}
+                {ch?.need?.contrib ?? '—'}{' '}
+                مشارکت تأییدشده (الان:{' '}
+                {ch?.have?.contrib ?? 0})
+              </p>
+            )}
+
+            <button
+              type="button"
+              className={
+                'btn btn-g btn-full'
+              }
+              style={{ marginTop: 10 }}
+              onClick={() =>
+                setView('setup')
+              }
+            >
+              بازگشت به مرکز آزمون
+            </button>
+          </section>
+        </main>
+      </>
+    );
+  }
+
+  /* ⚔️ موج P1 — نتیجه‌ی چالش (برد جشن‌دار /
+     شکست آرام — بدون احساس جریمه) */
+  if (
+    view === 'result' &&
+    promoResult
+  ) {
+    const won = Boolean(promoResult.win);
+
+    return (
+      <>
+        <Header
+          title={
+            won
+              ? '🎉 ارتقا رسمی شد'
+              : 'نتیجه چالش'
+          }
+          onBack={() => {
+            setPromoResult(null);
+            setView('history');
+          }}
+        />
+
+        <main className="page fade-up">
+          <section
+            className={
+              'card card-glow hero-card'
+            }
+            style={{
+              padding: 25,
+              textAlign: 'center',
+            }}
+          >
+            <div
+              style={{ fontSize: 53 }}
+            >
+              {won ? '🏆' : '💪'}
+            </div>
+
+            <div
+              style={{
+                color: won
+                  ? 'var(--ok)'
+                  : 'var(--warn)',
+                fontSize: 32,
+                fontWeight: 900,
+                marginTop: 8,
+              }}
+            >
+              {promoResult.pct ?? 0}٪
+            </div>
+
+            <h3
+              style={{
+                fontSize: 14,
+                margin: '6px 0',
+              }}
+            >
+              {won
+                ? `چالش را بردی — ${
+                    promoInfo?.title ||
+                    'رنک جدید'
+                  } رسمی شد!`
+                : 'این بار نشد — نزدیک بود'}
+            </h3>
+
+            <p
+              style={{
+                color: 'var(--txm)',
+                fontSize: 11,
+                lineHeight: 2,
+              }}
+            >
+              {won
+                ? `${
+                    promoResult.reward || 0
+                  }+ XP جایزه‌ی چالش · سپر ارتقا فعال شد 🛡`
+                : promoResult.ttl
+                  ? `مهلت ۲۴ ساعته تمام شد. XP‌ات محفوظ است — ${
+                      promoResult.cooldown_h ??
+                      12
+                    } ساعت دیگر دوباره.`
+                  : `حد قبولی ${
+                      promoResult.pass_pct ??
+                      80
+                    }٪ بود. XP‌ات محفوظ است — ${
+                      promoResult.cooldown_h ??
+                      12
+                    } ساعت دیگر دوباره.`}
+            </p>
+
+            <button
+              type="button"
+              className={
+                'btn btn-p btn-full'
+              }
+              style={{ marginTop: 17 }}
+              onClick={() => {
+                setPromoResult(null);
+                setView('history');
+              }}
+            >
+              {won ? 'ادامه' : 'بازگشت'}
+            </button>
+          </section>
+        </main>
+
+        {/* ⚔️ موج P1 — جشن ارتقای رنک روی
+            نتیجه‌ی چالش (هم‌پوشانی با نمای
+            فعال — تا از دست نرود) */}
+        {celebration && (
+          <CelebrationOverlay
+            celebration={celebration}
+            onClose={() =>
+              setCelebration(null)
+            }
+          />
+        )}
+      </>
+    );
+  }
 
   if (view === 'result') {
     const score =
@@ -883,6 +1469,18 @@ export default function ExamCenter() {
             </button>
           </section>
         </main>
+
+        {/* 👑 موج P0 — جشن ارتقا روی نتیجه‌ی
+            آزمون (تکمیل آزمون ممکن است خودش
+            چالش‌زننده‌ی رنک باشد) */}
+        {celebration && (
+          <CelebrationOverlay
+            celebration={celebration}
+            onClose={() =>
+              setCelebration(null)
+            }
+          />
+        )}
       </>
     );
   }
