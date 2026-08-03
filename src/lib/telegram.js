@@ -40,6 +40,12 @@ export const getInitData = () => tg?.initData || '';
 export const getTgUser = () =>
   tg?.initDataUnsafe?.user || null;
 
+/* پارامتر startapp دیپ‌لینک (Bot API 6.x+)
+   — مثل rank_<uid> در لینک اشتراک Prestige؛
+   اگر کلاینت قدیمی باشد رشته‌ی خالی می‌دهد */
+export const getStartParam = () =>
+  tg?.initDataUnsafe?.start_param || '';
+
 export const haptic = (type = 'light') => {
   safeCall(() => tg?.HapticFeedback?.impactOccurred(type));
 };
