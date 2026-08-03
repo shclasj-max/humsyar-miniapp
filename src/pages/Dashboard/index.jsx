@@ -1,396 +1,1550 @@
 import { useState } from 'react';
-
-import { useNavigate } from 'react-router-dom';
-
-import { useQuery } from '@tanstack/react-query';
-
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
+import { useNavigate, Link } from 'react-router-dom';
 import api from '../../lib/api';
 import Header from '../../components/layout/Header';
-import NameChip from '../../components/shared/NameChip';
+import PrestigeHero from '../../components/shared/PrestigeHero';
+import {
+  Spinner,
+} from '../../components/shared/Loading';
 
 import {
-  UsersListSkeleton,
+  DashboardSkeleton,
 } from '../../components/shared/skeletons';
+import { haptic, tg } from '../../lib/telegram';
 
-import { haptic } from '../../lib/telegram';
-
-/* 👑 موج P2 Prestige — میدان رقابت:
-   ماتریس بازه × دامنه × تب (کاملاً سرورمحور)
-   + ردیف چسبان «من» با Jump هفتگی + رقبا.
-   هیچ فرمول رتبه‌بندی در FE نیست. */
-
+/* 👑 موج P2 Prestige — ارقام فارسی کوتاه */
 const faNum = (value) =>
   String(value ?? '').replace(
     /\d/g,
     (digit) => '۰۱۲۳۴۵۶۷۸۹'[digit]
   );
 
-const RANGES = [
-  ['week', 'هفته'],
-  ['month', 'ماه'],
-  ['all', 'کل'],
-  ['season', 'سیزن'],
-];
+/* ⚔️ کارت «چالش ارتقا آماده است» — از نمای
+   چالش داخل همان پیلود یکتای ['prestige'] */
+export function ChallengeCard() {
+  const { data: prestige } = useQuery({
+    queryKey: ['prestige'],
+    queryFn: () =>
+      api
+        .get('/api/profile/prestige')
+        .then(
+          (response) =>
+            response.data?.prestige
+        ),
+    staleTime: 60 * 1000,
+  });
 
-const SCOPES = [
-  ['all', 'همه'],
-  ['intake', 'ورودی من'],
-  ['group', 'گروه من'],
-];
+  const ch = prestige?.challenge;
 
-const TABS = [
-  ['xp', '⚡ XP', 'XP'],
-  ['acc', '🎯 دقت', '٪'],
-  ['exam', '📝 آزمون', 'آزمون'],
-  ['contrib', '✍️ مشارکت', 'سؤال'],
-];
-
-function ChipRow({ options, value, onPick }) {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        gap: 6,
-        flexWrap: 'wrap',
-      }}
-    >
-      {options.map(([key, label]) => (
-        <button
-          key={key}
-          type="button"
-          className={
-            'tab-btn' +
-            (value === key ? ' active' : '')
-          }
-          style={{ fontSize: 11 }}
-          onClick={() => {
-            haptic();
-            onPick(key);
-          }}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function JumpBadge({ jump }) {
-  if (jump == null) {
+  if (!ch || ch.mode === 'none') {
     return null;
   }
 
-  if (jump === 0) {
+  if (ch.mode === 'ready') {
     return (
-      <span
+      <Link
+        to="/learn/exams?promo=1"
+        className="card card-tap fade-up"
         style={{
-          color: 'var(--txm)',
-          fontSize: 9.5,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          border:
+            '1.5px solid var(--warn)',
+          textDecoration: 'none',
+          color: 'var(--tx)',
         }}
       >
-        ▬ بدون تغییر
-      </span>
+        <span style={{ fontSize: 26 }}>
+          ⚔️
+        </span>
+
+        <div style={{ flex: 1 }}>
+          <b style={{ fontSize: 12.5 }}>
+            چالش ارتقا آماده است — {ch.icon}{' '}
+            {ch.title}
+          </b>
+
+          <div
+            style={{
+              color: 'var(--txm)',
+              fontSize: 9.5,
+            }}
+          >
+            {ch.apex
+              ? 'باس‌فایت: ۳۰ سؤال با قبولی ۹۰٪ — برو برای افسانه شدن!'
+              : '۲۰ سؤال با قبولی ۸۰٪ · مهلت ۲۴ ساعت'}
+          </div>
+        </div>
+
+        <span
+          style={{
+            color: 'var(--warn)',
+            fontSize: 12,
+          }}
+        >
+          ›
+        </span>
+      </Link>
     );
   }
 
-  return (
-    <span
-      style={{
-        color:
-          jump > 0
-            ? 'var(--ok)'
-            : 'var(--err)',
-        fontSize: 9.5,
-        fontWeight: 700,
-      }}
-    >
-      {jump > 0 ? '▲' : '▼'} {faNum(
-        Math.abs(jump)
-      )}{' '}
-      نسبت به هفته‌ی قبل
-    </span>
-  );
+  if (ch.mode === 'cooldown') {
+    return (
+      <div
+        className="card fade-up"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 9,
+          color: 'var(--txm)',
+          fontSize: 10.5,
+        }}
+      >
+        <span style={{ fontSize: 18 }}>
+          ⏳
+        </span>
+        چالش ارتقا در کول‌داون است — XP‌ات
+        محفوظ است، کمی دیگر برگرد 💪
+      </div>
+    );
+  }
+
+  if (ch.mode === 'locked') {
+    return (
+      <div
+        className="card fade-up"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 9,
+          color: 'var(--txm)',
+          fontSize: 10.5,
+        }}
+      >
+        <span style={{ fontSize: 18 }}>
+          🔒
+        </span>
+        چالش Apex هنوز قفل است — پیش‌شرط‌ها را
+        در کارت قهرمان ببین.
+      </div>
+    );
+  }
+
+  return null;
 }
 
-export default function Leaderboard() {
-  const navigate = useNavigate();
+/* ✨ کارت فید رویدادها — ۵ رویداد عمومی ۴۸
+   ساعت اخیر + واکنش ناشناس (بدون کامنت) */
+export function FeedCard() {
+  const queryClient = useQueryClient();
 
-  const [range, setRange] =
-    useState('week');
-
-  const [scope, setScope] =
-    useState('all');
-
-  const [tab, setTab] =
-    useState('xp');
-
-  const { data, isLoading } = useQuery({
-    queryKey: [
-      'leaderboard',
-      range,
-      scope,
-      tab,
-    ],
+  const { data } = useQuery({
+    queryKey: ['prestige-feed'],
     queryFn: () =>
       api
-        .get('/api/dashboard/leaderboard', {
-          params: {
-            range_: range,
-            scope,
-            tab,
-            limit: 50,
-          },
-        })
+        .get('/api/dashboard/feed?limit=5')
         .then(
           (response) => response.data
         ),
-    staleTime: 30 * 1000,
+    staleTime: 60 * 1000,
   });
 
-  const tabMeta =
-    TABS.find(([key]) => key === tab) ||
-    TABS[0];
+  const reactMutation = useMutation({
+    mutationFn: ({ id, kind }) =>
+      api.post('/api/dashboard/feed/react', {
+        event_id: id,
+        kind,
+      }),
 
-  const rows = data?.rows || [];
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ['prestige-feed'],
+      }),
+  });
 
-  const me = data?.me;
+  const items = data?.items || [];
 
-  const valueLabel = (row) =>
-    `${faNum(row.value)} ${tabMeta[2]}`;
+  if (!items.length) {
+    return null;
+  }
 
-  const renderRow = (row) => (
-    <div
-      key={row.uid}
-      className="card"
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 9,
-        border: row.is_me
-          ? '1.5px solid var(--acc)'
-          : '1px solid var(--bd)',
-      }}
-    >
-      <b
-        style={{
-          width: 26,
-          textAlign: 'center',
-          color:
-            row.rank === 1
-              ? 'var(--warn)'
-              : 'var(--txm)',
-          fontSize: 13,
-        }}
-      >
-        {faNum(row.rank)}
-      </b>
-
-      <div style={{ flex: 1 }}>
-        <NameChip
-          icon={row.icon}
-          name={
-            row.is_me
-              ? `${row.name} (تو)`
-              : row.name
-          }
-          color={row.color}
-          roman={row.roman}
-        />
-      </div>
-
-      <div
-        style={{
-          display: 'grid',
-          justifyItems: 'end',
-          gap: 2,
-        }}
-      >
-        <b style={{ fontSize: 12 }}>
-          {valueLabel(row)}
-        </b>
-
-        <JumpBadge jump={row.jump} />
-      </div>
-    </div>
-  );
+  const EMOJI = {
+    clap: '👏',
+    fire: '🔥',
+    crown: '👑',
+  };
 
   return (
-    <>
-      <Header
-        title="🏟️ میدان رقابت"
-        onBack={() => navigate(-1)}
-      />
+    <section
+      className="card fade-up"
+      style={{
+        display: 'grid',
+        gap: 10,
+      }}
+    >
+      <div
+        className="sec-title"
+        style={{ margin: 0 }}
+      >
+        ✨ تازه‌های میدان
+      </div>
 
-      <main className="page fade-up">
-        {range === 'season' &&
-          data?.season?.label && (
-            <div
-              className="card"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 7,
-                color: 'var(--acc)',
-                fontSize: 11,
-              }}
-            >
-              🗓 {data.season.label}
-              <span
-                style={{
-                  color: 'var(--txm)',
-                  fontSize: 9,
-                }}
-              >
-                — All-Time هرگز ریست نمی‌شود
-              </span>
-            </div>
-          )}
-
+      {items.map((item) => (
         <div
-          className="card"
+          key={item.id}
           style={{
             display: 'grid',
-            gap: 9,
+            gap: 5,
           }}
         >
-          <ChipRow
-            options={RANGES}
-            value={range}
-            onPick={setRange}
-          />
-
-          <ChipRow
-            options={SCOPES}
-            value={scope}
-            onPick={setScope}
-          />
-
-          <ChipRow
-            options={TABS.map(
-              ([key, label]) => [
-                key,
-                label,
-              ]
-            )}
-            value={tab}
-            onPick={setTab}
-          />
-        </div>
-
-        {/* ردیف چسبان «من» */}
-        {me && (
-          <section
-            className="card card-glow"
+          <div
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 9,
-              border:
-                '1.5px solid var(--acc)',
+              fontSize: 11.5,
+              lineHeight: 1.8,
             }}
           >
-            <b
-              style={{
-                fontSize: 15,
-                color: 'var(--acc)',
-              }}
-            >
-              #{faNum(me.rank)}
-            </b>
+            {item.text}
+          </div>
 
-            <div style={{ flex: 1 }}>
-              <NameChip
-                icon={me.icon}
-                name="تو"
-                color={me.color}
-                roman={me.roman}
-              />
-            </div>
-
-            <div
-              style={{
-                display: 'grid',
-                justifyItems: 'end',
-                gap: 2,
-              }}
-            >
-              <b style={{ fontSize: 12.5 }}>
-                {valueLabel(me)}
-              </b>
-
-              <JumpBadge jump={me.jump} />
-            </div>
-          </section>
-        )}
-
-        {/* رقبای نزدیک (با XP مؤثر — منبع state) */}
-        {(data?.rival_above ||
-          data?.rival_below) && (
           <div
             style={{
               display: 'flex',
-              gap: 7,
-              color: 'var(--txm)',
-              fontSize: 9,
-              justifyContent: 'center',
-              flexWrap: 'wrap',
+              gap: 6,
             }}
           >
-            {data?.rival_above && (
-              <span>
-                ⬆️ {data.rival_above.icon}{' '}
-                {data.rival_above.name} · فاصله{' '}
-                {faNum(data.rival_above.gap)} XP
-              </span>
-            )}
+            {['clap', 'fire', 'crown'].map(
+              (kind) => (
+                <button
+                  key={kind}
+                  type="button"
+                  className={
+                    'tab-btn' +
+                    (item.my_reaction ===
+                    kind
+                      ? ' active'
+                      : '')
+                  }
+                  style={{
+                    fontSize: 10.5,
+                    padding: '3px 10px',
+                  }}
+                  onClick={() => {
+                    haptic();
 
-            {data?.rival_below && (
-              <span>
-                ⬇️ {data.rival_below.icon}{' '}
-                {data.rival_below.name} · فاصله{' '}
-                {faNum(data.rival_below.gap)} XP
-              </span>
+                    reactMutation.mutate({
+                      id: item.id,
+                      kind:
+                        item.my_reaction ===
+                        kind
+                          ? null
+                          : kind,
+                    });
+                  }}
+                >
+                  {EMOJI[kind]}{' '}
+                  {faNum(
+                    item.reactions?.[
+                      kind
+                    ] || 0
+                  )}
+                </button>
+              )
             )}
           </div>
-        )}
+        </div>
+      ))}
+    </section>
+  );
+}
 
-        {isLoading && <UsersListSkeleton />}
+/* باز کردن لینک خارجی از داخل مینی‌اپ —
+   اولویت با openLink نیتیو تلگرام */
+export const openExternal = (url) => {
+  try {
+    if (tg?.openLink) {
+      tg.openLink(url);
+      return;
+    }
+  } catch (_) {
+    /* fallback به مرورگر */
+  }
+  window.open(url, '_blank', 'noopener');
+};
 
-        {!isLoading &&
-          !rows.length && (
-            <div
-              className="card"
-              style={{
-                color: 'var(--txm)',
-                fontSize: 11,
-                textAlign: 'center',
-              }}
-            >
-              هنوز کسی در این جدول نیست —
-              اولین نفر باش! 🌱
-            </div>
-          )}
+const number = (value) => {
+  const parsed = Number(value);
 
+  return Number.isFinite(parsed)
+    ? Math.max(0, parsed)
+    : 0;
+};
+
+const percent = (value) =>
+  Math.min(
+    100,
+    number(value)
+  );
+
+/* ✅ سلام متناسب با ساعت روز —
+   میکروجزئیتی که محصول را زنده
+   و شخصی حس می‌کند */
+const dayGreeting = () => {
+  const hour = new Date().getHours();
+
+  if (hour >= 5 && hour < 12)
+    return 'صبح بخیر ☀️';
+  if (hour >= 12 && hour < 17)
+    return 'ظهر بخیر 👋';
+  if (hour >= 17 && hour < 20)
+    return 'عصر بخیر 🌆';
+  return 'شب بخیر 🌙';
+};
+
+function Ring({
+  value = 0,
+}) {
+  const safe = percent(value);
+  const radius = 29;
+
+  const circumference =
+    2 * Math.PI * radius;
+
+  return (
+    <div
+      style={{
+        position: 'relative',
+        width: 82,
+        height: 82,
+        flexShrink: 0,
+      }}
+    >
+      <svg
+        width="82"
+        height="82"
+        viewBox="0 0 82 82"
+        style={{
+          transform:
+            'rotate(-90deg)',
+        }}
+      >
+        <circle
+          cx="41"
+          cy="41"
+          r={radius}
+          fill="none"
+          stroke="var(--ovr)"
+          strokeWidth="7"
+        />
+
+        <circle
+          cx="41"
+          cy="41"
+          r={radius}
+          fill="none"
+          stroke="url(#dashboard-ring)"
+          strokeWidth="7"
+          strokeLinecap="round"
+          strokeDasharray={`${
+            (safe / 100) *
+            circumference
+          } ${circumference}`}
+        />
+
+        <defs>
+          <linearGradient
+            id="dashboard-ring"
+            x1="0"
+            y1="0"
+            x2="1"
+            y2="1"
+          >
+            <stop
+              stopColor="#3B82F6"
+            />
+
+            <stop
+              offset="1"
+              stopColor="#22D3EE"
+            />
+          </linearGradient>
+        </defs>
+      </svg>
+
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'grid',
+          placeItems: 'center',
+        }}
+      >
         <div
           style={{
-            display: 'grid',
-            gap: 7,
+            textAlign: 'center',
           }}
         >
-          {rows.map(renderRow)}
+          <div
+            style={{
+              color: 'var(--tx)',
+              fontSize: 17,
+              fontWeight: 900,
+              lineHeight: 1,
+            }}
+          >
+            {safe}٪
+          </div>
+
+          <div
+            style={{
+              color: 'var(--txm)',
+              fontSize: 8,
+              marginTop: 3,
+            }}
+          >
+            آمادگی
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Metric({
+  icon,
+  value,
+  label,
+  color,
+  soft,
+}) {
+  return (
+    <div
+      className="card"
+      style={{
+        padding: 12,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+      }}
+    >
+      <div
+        style={{
+          width: 38,
+          height: 38,
+          borderRadius: 12,
+          display: 'grid',
+          placeItems: 'center',
+          background: soft,
+          fontSize: 18,
+        }}
+      >
+        {icon}
+      </div>
+
+      <div>
+        <div
+          style={{
+            color,
+            fontSize: 18,
+            fontWeight: 900,
+            lineHeight: 1.2,
+          }}
+        >
+          {value}
         </div>
 
         <div
           style={{
             color: 'var(--txm)',
-            fontSize: 9,
-            textAlign: 'center',
+            fontSize: 9.5,
+            marginTop: 2,
           }}
         >
-          {faNum(data?.total_users || 0)}{' '}
-          رقبا در این جدول · صدر هفته با بستن
-          هفته (دوشنبه ۰۰:۰۰) +۱۰۰ XP می‌گیرد 👑
+          {label}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function WeekChart({
+  rows = [],
+}) {
+  const values = rows.map(
+    (item) =>
+      number(item?.count)
+  );
+
+  const max = Math.max(
+    ...values,
+    1
+  );
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'flex-end',
+        height: 84,
+        gap: 7,
+        paddingTop: 8,
+      }}
+    >
+      {rows.map(
+        (item, index) => {
+          const value =
+            values[index];
+
+          return (
+            <div
+              key={`${
+                item?.date || 'day'
+              }-${index}`}
+              style={{
+                flex: 1,
+                display: 'flex',
+                height: '100%',
+                flexDirection:
+                  'column',
+                alignItems:
+                  'center',
+                justifyContent:
+                  'flex-end',
+                gap: 5,
+              }}
+            >
+              <div
+                style={{
+                  color:
+                    'var(--tx2)',
+                  fontSize: 8.5,
+                }}
+              >
+                {value || ''}
+              </div>
+
+              <div
+                style={{
+                  width: '100%',
+                  minHeight: 4,
+
+                  height: `${Math.max(
+                    4,
+                    (
+                      value / max
+                    ) * 48
+                  )}px`,
+
+                  borderRadius:
+                    '7px 7px 3px 3px',
+
+                  background:
+                    value
+                      ? 'var(--grad-brand)'
+                      : 'var(--ovr)',
+
+                  boxShadow:
+                    value
+                      ? '0 5px 14px rgba(59,130,246,.18)'
+                      : 'none',
+                }}
+              />
+
+              <div
+                style={{
+                  color:
+                    'var(--txm)',
+                  fontSize: 8,
+                }}
+              >
+                {String(
+                  item?.date || ''
+                ).slice(-2)}
+              </div>
+            </div>
+          );
+        }
+      )}
+    </div>
+  );
+}
+
+function ErrorState({
+  onRetry,
+  loading,
+}) {
+  return (
+    <div className="empty card">
+      <div className="empty__ic">
+        🌐
+      </div>
+
+      <div>
+        دریافت اطلاعات داشبورد انجام
+        نشد.
+      </div>
+
+      <button
+        className="btn btn-p"
+        onClick={onRetry}
+        disabled={loading}
+      >
+        {loading ? (
+          <Spinner size={16} />
+        ) : (
+          'تلاش دوباره'
+        )}
+      </button>
+    </div>
+  );
+}
+
+export default function Dashboard() {
+  const navigate =
+    useNavigate();
+
+  const [
+    tab,
+    setTab,
+  ] = useState('stats');
+
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+    isRefetching,
+  } = useQuery({
+    queryKey: [
+      'dashboard',
+    ],
+
+    queryFn: () =>
+      api
+        .get('/api/dashboard')
+        .then(
+          (response) =>
+            response.data
+        ),
+
+    staleTime:
+      3 * 60 * 1000,
+  });
+
+  const {
+    data: weeklyData = [],
+  } = useQuery({
+    queryKey: [
+      'weekly',
+    ],
+
+    queryFn: () =>
+      api
+        .get(
+          '/api/dashboard/weekly'
+        )
+        .then(
+          (response) =>
+            response.data
+              ?.weekly || []
+        ),
+
+    staleTime:
+      5 * 60 * 1000,
+  });
+
+  /* 💙 تنظیمات زنده حمایت مالی —
+     سینک با دکمه «حمایت مالی» ربات */
+  const {
+    data: donation,
+  } = useQuery({
+    queryKey: ['donation-config'],
+
+    queryFn: () =>
+      api
+        .get('/api/profile/donation')
+        .then(
+          (response) =>
+            response.data
+        ),
+
+    staleTime:
+      10 * 60 * 1000,
+    retry: false,
+  });
+
+  const showDonation = Boolean(
+    donation?.enabled && donation?.link
+  );
+
+  const {
+    data: leaderboard = [],
+
+    isLoading:
+      rankLoading,
+
+    isError:
+      rankError,
+
+    refetch:
+      refetchRank,
+  } = useQuery({
+    queryKey: [
+      'leaderboard',
+    ],
+
+    queryFn: () =>
+      api
+        .get(
+          '/api/dashboard/leaderboard'
+        )
+        .then(
+          (response) =>
+            response.data
+              ?.leaderboard || []
+        ),
+
+    enabled:
+      tab === 'rank',
+
+    staleTime:
+      5 * 60 * 1000,
+  });
+
+  const user =
+    data?.user || {};
+
+  const stats =
+    data?.stats || {};
+
+  const exams =
+    Array.isArray(
+      data?.upcoming_exams
+    )
+      ? data.upcoming_exams
+      : [];
+
+  const weakTopics =
+    Array.isArray(
+      stats.weak_topics
+    )
+      ? stats.weak_topics
+      : [];
+
+  const weekly =
+    Array.isArray(weeklyData)
+      ? weeklyData
+      : [];
+
+  const leaders =
+    Array.isArray(leaderboard)
+      ? leaderboard
+      : [];
+
+  const openTickets =
+    number(
+      data?.open_tickets
+    );
+
+  const role = {
+    admin: '👑 مدیر',
+
+    content_admin:
+      '🎓 مدیر محتوا',
+
+    support:
+      '🛟 پشتیبان',
+  }[user.role];
+
+  return (
+    <>
+      <Header
+        title="داشبورد"
+        back={false}
+        subtitle={`ورودی ${
+          user.intake || '—'
+        } • گروه ${
+          user.group || '—'
+        }`}
+        onRefresh={refetch}
+        refreshing={isRefetching}
+      />
+
+      <main className="page fade-up">
+        {isLoading ? (
+          <DashboardSkeleton />
+        ) : isError ? (
+          <ErrorState
+            onRetry={refetch}
+            loading={
+              isRefetching
+            }
+          />
+        ) : (
+          <div
+            style={{
+              display: 'grid',
+              gap: 12,
+            }}
+          >
+            <section
+              className={
+                'card card-glow hero-card'
+              }
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems:
+                    'center',
+                  gap: 13,
+                }}
+              >
+                <div
+                  className="avatar"
+                  style={{
+                    width: 52,
+                    height: 52,
+                    fontSize: 21,
+                  }}
+                >
+                  {user.name?.[0] ||
+                    'ه'}
+                </div>
+
+                <div
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                  }}
+                >
+                  <div
+                    style={{
+                      color:
+                        'var(--txm)',
+                      fontSize: 10.5,
+                    }}
+                  >
+                    {dayGreeting()}
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: 19,
+                      fontWeight: 900,
+                      marginTop: 2,
+                      overflow:
+                        'hidden',
+                      textOverflow:
+                        'ellipsis',
+                      whiteSpace:
+                        'nowrap',
+                    }}
+                  >
+                    {user.name ||
+                      'کاربر هامزیار'}
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap:
+                        'wrap',
+                      gap: 5,
+                      marginTop: 7,
+                    }}
+                  >
+                    {role && (
+                      <span className="badge b-yel">
+                        {role}
+                      </span>
+                    )}
+
+                    {stats.level && (
+                      <span className="badge b-acc">
+                        {stats
+                          .level
+                          .icon ||
+                          '📈'}{' '}
+
+                        {stats
+                          .level
+                          .label ||
+                          'سطح کاربر'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <Ring
+                  value={
+                    stats.percentage
+                  }
+                />
+              </div>
+            </section>
+
+            {/* 👑 موج P0 — بریف فشرده‌ی
+                Prestige (جری/هدف/استریک) */}
+            <PrestigeHero compact />
+
+            {/* 👑 P2 — کارت چالش آماده + فید تازه‌های میدان */}
+            <ChallengeCard />
+            <FeedCard />
+
+            {/* 💙 حمایت مالی — فقط وقتی
+                مدیر فعالش کرده (سینک با ربات) */}
+            {showDonation && (
+              <button
+                type="button"
+                className="card card-tap fade-up"
+                onClick={() => {
+                  haptic('light');
+                  openExternal(
+                    donation.link
+                  );
+                }}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 11,
+                  padding: 13,
+                  textAlign: 'right',
+                  borderColor:
+                    'rgba(244,114,182,.28)',
+                  background:
+                    'linear-gradient(145deg,rgba(236,72,153,.12),rgba(16,24,39,.95) 55%,rgba(244,114,182,.07))',
+                }}
+              >
+                <span
+                  style={{
+                    display: 'grid',
+                    width: 42,
+                    height: 42,
+                    placeItems: 'center',
+                    borderRadius: 14,
+                    background:
+                      'rgba(236,72,153,.14)',
+                    fontSize: 20,
+                  }}
+                >
+                  💙
+                </span>
+
+                <span
+                  style={{ flex: 1 }}
+                >
+                  <b
+                    style={{
+                      display: 'block',
+                      color: '#F9A8D4',
+                      fontSize: 12.5,
+                    }}
+                  >
+                    حمایت از هامزیار
+                  </b>
+
+                  <span
+                    style={{
+                      display: 'block',
+                      color: 'var(--txm)',
+                      fontSize: 9.6,
+                      marginTop: 3,
+                      lineHeight: 1.7,
+                    }}
+                  >
+                    با حمایت کوچیکت به ادامه‌دار
+                    بودن و پیشرفت هامزیار کمک کن 🙏
+                  </span>
+                </span>
+
+                <span
+                  className="badge"
+                  style={{
+                    background:
+                      'rgba(236,72,153,.14)',
+                    color: '#F9A8D4',
+                  }}
+                >
+                  💙 حمایت
+                </span>
+              </button>
+            )}
+
+            <section className="grid2">
+              <Metric
+                icon="🧪"
+                value={
+                  number(
+                    stats
+                      .total_answers
+                  )
+                }
+                label="سؤال پاسخ‌داده"
+                color="#70A7FF"
+                soft={
+                  'rgba(59,130,246,.12)'
+                }
+              />
+
+              <Metric
+                icon="✅"
+                value={
+                  number(
+                    stats
+                      .correct_answers
+                  )
+                }
+                label="پاسخ صحیح"
+                color="#34D399"
+                soft={
+                  'rgba(16,185,129,.12)'
+                }
+              />
+
+              <Metric
+                icon="📥"
+                value={
+                  number(
+                    stats.downloads
+                  )
+                }
+                label="دانلود منابع"
+                color="#22D3EE"
+                soft={
+                  'rgba(34,211,238,.12)'
+                }
+              />
+
+              <Metric
+                icon="🔥"
+                value={
+                  number(
+                    stats
+                      .week_activity
+                  )
+                }
+                label="فعالیت این هفته"
+                color="#FCD34D"
+                soft={
+                  'rgba(245,158,11,.12)'
+                }
+              />
+            </section>
+
+            <div
+              className="tab-bar"
+              role="tablist"
+            >
+              {[
+                [
+                  'stats',
+                  '📈 عملکرد',
+                ],
+
+                [
+                  'exams',
+                  '⏳ امتحانات',
+                ],
+
+                [
+                  'rank',
+                  '🏅 رتبه‌بندی',
+                ],
+              ].map(
+                ([
+                  key,
+                  label,
+                ]) => (
+                  <button
+                    type="button"
+                    key={key}
+                    className={`tab-btn ${
+                      tab === key
+                        ? 'tab-btn--on'
+                        : ''
+                    }`}
+                    role="tab"
+                    aria-selected={
+                      tab === key
+                    }
+                    onClick={() => {
+                      haptic();
+                      setTab(key);
+                    }}
+                  >
+                    {label}
+                  </button>
+                )
+              )}
+            </div>
+
+            {tab === 'stats' && (
+              <>
+                {weekly.length >
+                  0 && (
+                  <section className="card">
+                    <div className="sec-title">
+                      فعالیت هفت روز اخیر
+                    </div>
+
+                    <WeekChart
+                      rows={weekly}
+                    />
+                  </section>
+                )}
+
+                {weakTopics.length >
+                  0 && (
+                  <section className="card">
+                    <div className="sec-title">
+                      ⚡ مباحث نیازمند تمرین
+                    </div>
+
+                    <div
+                      style={{
+                        display:
+                          'flex',
+
+                        flexWrap:
+                          'wrap',
+
+                        gap: 7,
+                      }}
+                    >
+                      {weakTopics.map(
+                        (topic) => (
+                          <button
+                            type="button"
+                            key={topic}
+                            className={
+                              'badge b-red'
+                            }
+                            style={{
+                              padding:
+                                '6px 11px',
+                            }}
+                            onClick={() =>
+                              navigate(
+                                '/learn/questions?mode=weak'
+                              )
+                            }
+                          >
+                            {topic}
+                          </button>
+                        )
+                      )}
+                    </div>
+                  </section>
+                )}
+
+                <button
+                  className={
+                    'btn btn-p btn-full'
+                  }
+                  onClick={() => {
+                    haptic(
+                      'medium'
+                    );
+
+                    navigate(
+                      '/learn/questions?mode=weak'
+                    );
+                  }}
+                >
+                  ⚡ شروع تمرین هوشمند
+                </button>
+              </>
+            )}
+
+            {tab === 'exams' && (
+              <section
+                style={{
+                  display: 'grid',
+                  gap: 9,
+                }}
+              >
+                {exams.length ===
+                0 ? (
+                  <div className="empty card">
+                    📭 امتحانی در هفت روز
+                    آینده ثبت نشده است.
+                  </div>
+                ) : (
+                  exams.map(
+                    (
+                      exam,
+                      index
+                    ) => {
+                      const days =
+                        exam.days_left ==
+                        null
+                          ? null
+                          : number(
+                              exam.days_left
+                            );
+
+                      const urgent =
+                        days != null &&
+                        days <= 3;
+
+                      return (
+                        <div
+                          key={
+                            exam.id ||
+                            index
+                          }
+                          className="card"
+                          style={{
+                            borderColor:
+                              urgent
+                                ? 'rgba(239,68,68,.3)'
+                                : 'var(--bd)',
+                          }}
+                        >
+                          <div
+                            style={{
+                              display:
+                                'flex',
+
+                              alignItems:
+                                'center',
+
+                              gap: 11,
+                            }}
+                          >
+                            <div
+                              style={{
+                                width:
+                                  44,
+
+                                height:
+                                  44,
+
+                                display:
+                                  'grid',
+
+                                placeItems:
+                                  'center',
+
+                                borderRadius:
+                                  13,
+
+                                background:
+                                  urgent
+                                    ? 'rgba(239,68,68,.12)'
+                                    : 'var(--acc-soft)',
+
+                                fontSize:
+                                  20,
+                              }}
+                            >
+                              📝
+                            </div>
+
+                            <div
+                              style={{
+                                flex: 1,
+                              }}
+                            >
+                              <div
+                                style={{
+                                  fontWeight:
+                                    800,
+                                }}
+                              >
+                                {exam.lesson ||
+                                  'امتحان'}
+                              </div>
+
+                              <div
+                                style={{
+                                  color:
+                                    'var(--txm)',
+
+                                  fontSize:
+                                    10.5,
+
+                                  marginTop:
+                                    3,
+                                }}
+                              >
+                                {exam.date ||
+                                  'تاریخ نامشخص'}
+
+                                {exam.time
+                                  ? ` • ${exam.time}`
+                                  : ''}
+                              </div>
+                            </div>
+
+                            {days !=
+                              null && (
+                              <span
+                                className={`badge ${
+                                  urgent
+                                    ? 'b-red'
+                                    : 'b-grn'
+                                }`}
+                              >
+                                {days === 0
+                                  ? 'امروز'
+                                  : days ===
+                                      1
+                                    ? 'فردا'
+                                    : `${days} روز`}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }
+                  )
+                )}
+
+                <button
+                  className={
+                    'btn btn-dark btn-full'
+                  }
+                  onClick={() =>
+                    navigate(
+                      '/schedule'
+                    )
+                  }
+                >
+                  مشاهده برنامه کامل
+                </button>
+              </section>
+            )}
+
+            {tab === 'rank' && (
+              <section className="card">
+                <div className="sec-title">
+                  🏆 برترین دانشجویان
+                </div>
+
+                {rankLoading ? (
+                  <div
+                    style={{
+                      display: 'grid',
+                      placeItems:
+                        'center',
+                      padding: 30,
+                    }}
+                  >
+                    <Spinner />
+                  </div>
+                ) : rankError ? (
+                  <button
+                    className={
+                      'btn btn-dark btn-full'
+                    }
+                    onClick={() =>
+                      refetchRank()
+                    }
+                  >
+                    تلاش دوباره
+                  </button>
+                ) : leaders.length ===
+                  0 ? (
+                  <div className="empty">
+                    هنوز رتبه‌ای ثبت نشده
+                    است.
+                  </div>
+                ) : (
+                  leaders.map(
+                    (
+                      item,
+                      index
+                    ) => (
+                      <div
+                        key={`${
+                          item.rank
+                        }-${
+                          item.name
+                        }-${index}`}
+                        style={{
+                          display:
+                            'flex',
+
+                          alignItems:
+                            'center',
+
+                          gap: 10,
+
+                          padding:
+                            '10px 0',
+
+                          borderBottom:
+                            index <
+                            leaders.length -
+                              1
+                              ? '1px solid var(--bd)'
+                              : 0,
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 30,
+                            textAlign:
+                              'center',
+                            fontWeight:
+                              900,
+                          }}
+                        >
+                          {item.rank ===
+                          1
+                            ? '🥇'
+                            : item.rank ===
+                                2
+                              ? '🥈'
+                              : item.rank ===
+                                  3
+                                ? '🥉'
+                                : item.rank}
+                        </div>
+
+                        <div
+                          style={{
+                            flex: 1,
+
+                            color:
+                              item.is_me
+                                ? 'var(--acc2)'
+                                : 'var(--tx)',
+
+                            fontWeight:
+                              item.is_me
+                                ? 800
+                                : 600,
+                          }}
+                        >
+                          {item.name ||
+                            'کاربر'}
+
+                          {item.is_me
+                            ? ' • شما'
+                            : ''}
+                        </div>
+
+                        <div
+                          style={{
+                            textAlign:
+                              'left',
+                          }}
+                        >
+                          <div
+                            style={{
+                              color:
+                                'var(--ok)',
+
+                              fontSize:
+                                12,
+
+                              fontWeight:
+                                800,
+                            }}
+                          >
+                            {percent(
+                              item.percent
+                            )}
+                            ٪
+                          </div>
+
+                          <div
+                            style={{
+                              color:
+                                'var(--txm)',
+
+                              fontSize:
+                                9,
+                            }}
+                          >
+                            {number(
+                              item.correct
+                            )}
+                            /
+                            {number(
+                              item.total
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  )
+                )}
+              </section>
+            )}
+
+            {openTickets > 0 && (
+              <button
+                type="button"
+                className={
+                  'card card-tap'
+                }
+                onClick={() =>
+                  navigate(
+                    '/me/tickets'
+                  )
+                }
+                style={{
+                  display: 'flex',
+                  alignItems:
+                    'center',
+                  gap: 11,
+                  width: '100%',
+                  textAlign:
+                    'right',
+
+                  borderColor:
+                    'rgba(245,158,11,.25)',
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 22,
+                  }}
+                >
+                  🎫
+                </span>
+
+                <span
+                  style={{
+                    flex: 1,
+                  }}
+                >
+                  <b>
+                    {openTickets} تیکت باز
+                  </b>
+
+                  <span
+                    style={{
+                      display:
+                        'block',
+
+                      color:
+                        'var(--txm)',
+
+                      fontSize:
+                        10.5,
+                    }}
+                  >
+                    پیگیری گفت‌وگوهای
+                    پشتیبانی
+                  </span>
+                </span>
+
+                <span>←</span>
+              </button>
+            )}
+          </div>
+        )}
       </main>
     </>
   );
