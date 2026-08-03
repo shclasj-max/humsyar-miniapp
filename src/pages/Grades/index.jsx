@@ -1,4 +1,6 @@
+import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 
@@ -130,6 +132,7 @@ const visual = (value) => {
 function GradeRow({
   grade,
   index,
+  flash,
 }) {
   const score =
     finite(grade.score);
@@ -157,7 +160,12 @@ function GradeRow({
 
   return (
     <article
-      className="card pop-in"
+      data-gidx={index}
+      className={
+        flash
+          ? 'card pop-in hl-flash'
+          : 'card pop-in'
+      }
       style={{
         padding: 13,
 
@@ -458,6 +466,45 @@ export default function Grades() {
     )
       ? data.grades
       : [];
+
+  /* 🧠 موج N3 — Deep Link برنامه/نمرات:
+     /grades?hl=<درس> ⇒ اسکرول + فلش روی نمره‌ی همان درس */
+  const [flashIdx, setFlashIdx] = useState(-1);
+  const [searchParams] = useSearchParams();
+  const hlDone = useRef(false);
+
+  useEffect(() => {
+    if (hlDone.current || !grades.length) return;
+
+    const hl = searchParams.get('hl');
+    if (!hl) return;
+
+    const match = grades.findIndex(
+      (g) =>
+        (g.lesson || '') === hl ||
+        (g.lesson || '').includes(hl)
+    );
+
+    if (match < 0) return;
+
+    hlDone.current = true;
+    setFlashIdx(match);
+
+    const el = document.querySelector(
+      `[data-gidx="${match}"]`
+    );
+
+    if (el) {
+      setTimeout(() => {
+        el.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }, 60);
+
+      setTimeout(() => setFlashIdx(-1), 3200);
+    }
+  }, [grades, searchParams]);
 
 
   const average =
@@ -976,6 +1023,9 @@ export default function Grades() {
                     }
                     grade={grade}
                     index={index}
+                    flash={
+                      flashIdx === index
+                    }
                   />
                 )
               )}
