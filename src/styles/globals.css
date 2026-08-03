@@ -1357,6 +1357,21 @@ input:focus-visible
   }
 }
 
+
+/* 🧠 موج N3 — هایلایت Deep Link (اسکرول + رینگ یک‌باره) */
+@keyframes hl-flash {
+  0%   { box-shadow: 0 0 0 0 rgba(96,165,250,.55); }
+  55%  { box-shadow: 0 0 0 4px rgba(96,165,250,.18); }
+  100% { box-shadow: 0 0 0 0 rgba(96,165,250,0); }
+}
+.hl-flash {
+  animation: hl-flash 1.4s ease-out 2;
+  border-color: rgba(96,165,250,.5) !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hl-flash { animation: none; }
+}
+
 .pop-in {
   animation:
     popIn .3s
@@ -4369,3 +4384,438 @@ button.badge:active {
   }
 }
 
+
+/* ═══════════════════════════════════════════
+   👑 Prestige — موج P0 (v3 LOCKED)
+   کارت قهرمان رنک، چیپ نام، جشن ارتقا
+   رنگ/گرادیان از پیلود API (تک‌منبع: بک‌اند)
+   و به‌صورت متغیرهای --prc / --prg تزریق می‌شوند.
+   انیمیشن‌ها GPU-first (transform/opacity) و
+   کلید یک‌باره — بدون حلقه‌ی دائمی.
+═══════════════════════════════════════════ */
+
+/* ── کارت قهرمان Prestige ── */
+.pr-hero {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* قاب گرادیانی رنک — بدون repaint: لایه‌ی پدینگِ
+   شفافِ border-box با گرادیان رنک زیر کارت */
+.pr-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  border-radius: inherit;
+
+  padding: 1.2px;
+  background: var(--prg, var(--grad-brand));
+
+  -webkit-mask:
+    linear-gradient(#000 0 0)
+    content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0)
+    content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+/* هاله‌ی نور رنک — تزئینی، غیرتعاملی */
+.pr-hero__glow {
+  position: absolute;
+  inset: -30% -10% auto;
+  height: 190px;
+  z-index: -1;
+
+  background:
+    radial-gradient(
+      ellipse 60% 100% at 82% 0%,
+      color-mix(
+        in srgb,
+        var(--prc, var(--acc)) 26%,
+        transparent
+      ),
+      transparent 70%
+    );
+
+  pointer-events: none;
+}
+
+/* دایس آیکون رنک با حلقه‌ی گرادیانی */
+.pr-hero__badge {
+  display: grid;
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+  place-items: center;
+
+  font-size: 27px;
+  line-height: 1;
+
+  background:
+    radial-gradient(
+      circle at 32% 28%,
+      color-mix(
+        in srgb,
+        var(--prc, var(--acc)) 34%,
+        var(--elev)
+      ),
+      var(--elev) 72%
+    );
+
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 1.6px
+      color-mix(
+        in srgb,
+        var(--prc, var(--acc)) 65%,
+        transparent
+      ),
+    0 6px 22px
+      color-mix(
+        in srgb,
+        var(--prc, var(--acc)) 34%,
+        transparent
+      );
+}
+
+/* حلقه‌ی آواتار (قاب conic رنک) */
+.pr-ava {
+  padding: 2.4px;
+  border-radius: 50%;
+  background: var(--prg, var(--grad-brand));
+}
+
+.pr-ava > .avatar {
+  display: grid;
+  place-items: center;
+
+  background: var(--elev);
+}
+
+/* عنوان رنک با متنِ گرادیانی */
+.pr-title {
+  font-weight: 900;
+
+  background: var(--prg, var(--grad-brand));
+  -webkit-background-clip: text;
+  background-clip: text;
+
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* ستاره‌های دیویژن (III⭐ · II⭐⭐ · I⭐⭐⭐) */
+.pr-stars {
+  color: var(--warn);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+}
+
+/* چیپ کوچکِ آمارhero (Top% · رتبه · سپر) */
+.pr-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  padding: 3px 8px;
+
+  color:
+    color-mix(
+      in srgb,
+      var(--prc, var(--acc2)) 88%,
+      var(--tx)
+    );
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1.6;
+  white-space: nowrap;
+
+  background:
+    color-mix(
+      in srgb,
+      var(--prc, var(--acc)) 12%,
+      transparent
+    );
+
+  border:
+    1px solid
+    color-mix(
+      in srgb,
+      var(--prc, var(--acc)) 30%,
+      transparent
+    );
+
+  border-radius: 999px;
+}
+
+/* نوار XP نازک — fill با transform (GPU) */
+.pr-bar {
+  position: relative;
+
+  height: 5px;
+  overflow: hidden;
+
+  background: var(--ovr);
+  border-radius: 999px;
+}
+
+.pr-bar__fill {
+  position: absolute;
+  inset: 0;
+
+  background: var(--prg, var(--grad-brand));
+  border-radius: inherit;
+
+  transform: scaleX(0);
+  transform-origin: right center;
+
+  transition:
+    transform .55s
+    var(--ease-out);
+}
+
+/* ── چیپ نام + رنک (NameChip) ── */
+.name-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+
+  padding: 3px 9px;
+
+  color: var(--tx);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.6;
+
+  background: var(--elev);
+
+  border:
+    1px solid
+    color-mix(
+      in srgb,
+      var(--prc, var(--acc)) 45%,
+      var(--bd)
+    );
+
+  border-radius: 999px;
+}
+
+.name-chip__icon {
+  font-size: 12px;
+}
+
+/* ── جشن ارتقا (CelebrationOverlay) ── */
+.prx-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+
+  display: grid;
+  place-items: center;
+  padding: 22px;
+
+  background:
+    rgba(3, 6, 12, .72);
+  backdrop-filter:
+    blur(7px);
+  -webkit-backdrop-filter:
+    blur(7px);
+
+  animation:
+    prxFade .24s
+    var(--ease-out) both;
+}
+
+@keyframes prxFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* کارت جشن — قاب گرادیانی + ورود فنری یک‌باره */
+.prx-card {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+
+  width: 100%;
+  max-width: 330px;
+
+  padding: 30px 20px 24px;
+
+  text-align: center;
+
+  background:
+    linear-gradient(
+      158deg,
+      color-mix(
+        in srgb,
+        var(--prc, var(--acc)) 15%,
+        var(--surf)
+      ),
+      var(--surf) 58%
+    );
+
+  border-radius: var(--r-xl);
+  box-shadow: var(--shd-3);
+
+  animation:
+    prxPop .42s
+    var(--ease-spring) both;
+}
+
+.prx-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+
+  padding: 1.6px;
+  background: var(--prg, var(--grad-brand));
+
+  -webkit-mask:
+    linear-gradient(#000 0 0)
+    content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0)
+    content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+@keyframes prxPop {
+  from {
+    opacity: 0;
+    transform:
+      translateY(26px)
+      scale(.9);
+  }
+
+  to {
+    opacity: 1;
+    transform:
+      translateY(0)
+      scale(1);
+  }
+}
+
+/* آیکون مرکزی جشن */
+.prx-icon {
+  display: grid;
+  width: 84px;
+  height: 84px;
+  place-items: center;
+  margin: 0 auto 14px;
+
+  font-size: 40px;
+  line-height: 1;
+
+  background:
+    radial-gradient(
+      circle at 34% 30%,
+      color-mix(
+        in srgb,
+        var(--prc, var(--acc)) 38%,
+        var(--elev)
+      ),
+      var(--elev) 74%
+    );
+
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 2px
+      color-mix(
+        in srgb,
+        var(--prc, var(--acc)) 68%,
+        transparent
+      ),
+    0 10px 36px
+      color-mix(
+        in srgb,
+        var(--prc, var(--acc)) 42%,
+        transparent
+      );
+}
+
+/* کانتینر کاغذرنگی‌ها — لایه‌ی بالای کارت */
+.prx-confetti {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+
+  overflow: hidden;
+
+  pointer-events: none;
+}
+
+/* هر قطعه: سقوط + چرخش + محو — فقط
+   transform/opacity (سنتز GPU) */
+.prx-confetti span {
+  position: absolute;
+  top: -4%;
+  left: 50%;
+
+  width:
+    var(--w, 7px);
+  height:
+    var(--h, 11px);
+
+  background:
+    var(--c, var(--acc));
+  border-radius: 2px;
+
+  opacity: 0;
+
+  animation:
+    prxFly
+    var(--dur, 2.3s)
+    var(--delay, 0s)
+    ease-in forwards;
+}
+
+@keyframes prxFly {
+  0% {
+    opacity: 0;
+    transform:
+      translate(-50%, 0)
+      rotate(0deg);
+  }
+
+  12% {
+    opacity: .95;
+  }
+
+  100% {
+    opacity: 0;
+    transform:
+      translate(
+          calc(-50% + var(--dx, 0px)),
+          var(--dy, 340px)
+        )
+      rotate(var(--rot, 360deg));
+  }
+}
+
+/* احترام به reduced-motion: کاغذرنگی حذف و
+   کارت فقط با fade ساده ظاهر می‌شود؛ قانون
+   سراسری فایل هم مدت انیمیشن‌ها را ناچیز
+   می‌کند (دو لایه‌ی اطمینان) */
+@media (
+  prefers-reduced-motion: reduce
+) {
+  .prx-confetti {
+    display: none;
+  }
+
+  .prx-confetti span {
+    animation: none;
+  }
+}
