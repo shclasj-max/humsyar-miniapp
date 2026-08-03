@@ -39,6 +39,7 @@ import {
 import {
   useUIStore,
 } from '../../stores/uiStore';
+import { useSearchParams } from 'react-router-dom';
 
 
 const TYPES = {
@@ -685,7 +686,11 @@ function ResourcesPage() {
       />
 
       <main
-        className="page fade-up"
+        className={
+          hlFlash
+            ? 'page fade-up hl-flash'
+            : 'page fade-up'
+        }
         style={styles.page}
       >
         {subLock && (
@@ -1473,6 +1478,11 @@ const styles = {
    ریکوئستِ محتوا برای کاربرِ بدون اشتراک.
    جزئیات معماری در ResourceAccessGate */
 export default function Resources() {
+  /* 🧠 موج N3 — Deep Link: ?hl=new ⇒ فلش یک‌باره‌ی
+     قسمت فایل‌های تازه (منابع/رفرنس‌های پرتابی) */
+  const [searchParams] = useSearchParams();
+  const hlFlash = searchParams.get('hl') === 'new';
+
   return (
     <ResourceAccessGate
       feature="منابع علوم پایه"
