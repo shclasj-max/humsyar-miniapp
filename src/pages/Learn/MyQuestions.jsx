@@ -1,5 +1,10 @@
 import { confirmAction } from '../../lib/confirm';
-import { useState } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import {
   useMutation,
@@ -176,6 +181,43 @@ export default function MyQuestions() {
     Array.isArray(data)
       ? data
       : [];
+
+  /* 🧠 موج N3 — Deep Link: ?hl=<qid> ⇒ اسکرول + فلش روی
+     همان سؤال (اعلان «سؤالت تأیید شد» مستقیم همین‌جا می‌آید) */
+  const [flashId, setFlashId] = useState(null);
+  const [searchParams] = useSearchParams();
+  const hlDone = useRef(false);
+
+  useEffect(() => {
+    if (hlDone.current || !questions.length) return;
+
+    const hl = searchParams.get('hl');
+    if (!hl) return;
+
+    const found = questions.find(
+      (it) => String(it.id) === String(hl)
+    );
+
+    if (!found) return;
+
+    hlDone.current = true;
+    setFlashId(String(found.id));
+
+    const el = document.querySelector(
+      `[data-mid="${found.id}"]`
+    );
+
+    if (el) {
+      setTimeout(() => {
+        el.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }, 60);
+
+      setTimeout(() => setFlashId(null), 3200);
+    }
+  }, [questions, searchParams]);
 
 
   const approved =
@@ -699,8 +741,12 @@ export default function MyQuestions() {
               ) => (
                 <article
                   key={item.id}
+                  data-mid={item.id}
                   className={
-                    'card pop-in'
+                    flashId ===
+                    String(item.id)
+                      ? 'card pop-in hl-flash'
+                      : 'card pop-in'
                   }
                   style={{
                     animationDelay:
