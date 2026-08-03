@@ -627,6 +627,34 @@ export function AdminUsers() {
                     >
                       {user.name ||
                         `#${user.id}`}
+
+                      {/* 👑 P3 — مینی-چیپ پرستیژ کنار نام */}
+                      {user.prestige?.icon && (
+                        <span
+                          title={
+                            user.prestige
+                              .title || ''
+                          }
+                          style={{
+                            color:
+                              user.prestige
+                                .color ||
+                              'var(--txm)',
+                            fontSize: 9.5,
+                            fontWeight: 700,
+                            marginRight: 5,
+                          }}
+                        >
+                          {
+                            user.prestige
+                              .icon
+                          }{' '}
+                          {
+                            user.prestige
+                              .roman
+                          }
+                        </span>
+                      )}
                     </b>
 
                     <span
