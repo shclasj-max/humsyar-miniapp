@@ -102,6 +102,22 @@ export default function Tickets() {
       setSelectedId(tid);
 
       setView('detail');
+
+      /* 🧠 موج N3 — hl=last: پس از بازشدن رشته، تهِ
+         گفت‌وگو (آخرین پاسخ) دیده شود */
+      if (searchParams.get('hl') === 'last') {
+        setTimeout(() => {
+          try {
+            window.scrollTo({
+              top:
+                document.body.scrollHeight,
+              behavior: 'smooth',
+            });
+          } catch {
+            window.scrollTo(0, 10 ** 6);
+          }
+        }, 420);
+      }
     }
   }, [searchParams]);
 
