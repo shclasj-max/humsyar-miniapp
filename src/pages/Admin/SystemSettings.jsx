@@ -1483,6 +1483,9 @@ export default function SystemSettings() {
               </span>
             </div>
 
+            {/* 👑 P3 — بخش تعادل زنده‌ی پرستیژ */}
+            <PrestigeConfigSection />
+
             <div
               className="page-hint"
               style={{ marginTop: 14 }}
@@ -1502,6 +1505,351 @@ export default function SystemSettings() {
           </>
         )}
       </main>
+    </>
+  );
+}
+
+
+/* 👑 موج P3 Prestige — بخش «تعادل زنده»
+   خودکفا: کوئری/استیت/موتاسیون مستقل.
+   آستانه‌ی رنک‌ها عمداً اینجا نیست
+   (Design Lock — فقط XP/سقف/کول‌داون/سپر). */
+function PrestigeConfigSection() {
+  const queryClient = useQueryClient();
+
+  const toast = useUIStore(
+    (state) => state.toast
+  );
+
+  const { data } = useQuery({
+    queryKey: ['admin-prestige-config'],
+    queryFn: () =>
+      api
+        .get('/api/admin/prestige-config')
+        .then(
+          (response) => response.data
+        ),
+    staleTime: 30_000,
+  });
+
+  const [draft, setDraft] =
+    useState(null);
+
+  const [dirty, setDirty] =
+    useState(false);
+
+  if (!data) {
+    return null;
+  }
+
+  const meta = data.meta || {};
+
+  const effective = data.effective || {};
+
+  const overrides = data.overrides || {};
+
+  const current =
+    draft ||
+    Object.fromEntries(
+      Object.keys(meta).map((key) => [
+        key,
+        String(
+          effective[key] ?? ''
+        ),
+      ])
+    );
+
+  const setVal = (key, value) => {
+    setDirty(true);
+
+    setDraft({
+      ...current,
+      [key]: value,
+    });
+  };
+
+  const saveMutation = useMutation({
+    mutationFn: (values) =>
+      api.put(
+        '/api/admin/prestige-config',
+        { values }
+      ),
+
+    onSuccess: (response) => {
+      const applied =
+        response.data?.applied || {};
+
+      const rejected =
+        response.data?.rejected || [];
+
+      hapticNotif('success');
+
+      queryClient.invalidateQueries({
+        queryKey: [
+          'admin-prestige-config',
+        ],
+      });
+
+      setDraft(null);
+      setDirty(false);
+
+      toast(
+        rejected.length
+          ? `ذخیره شد (${Object.keys(applied).length} مقدار) — ${rejected.length} مورد نامعتبر رد شد`
+          : 'تنظیمات تعادل به‌روز شد — بدون ری‌استارت اعمال می‌شود',
+        rejected.length
+          ? 'warning'
+          : 'success'
+      );
+    },
+
+    onError: (error) =>
+      toast(
+        error?.response?.data?.detail ||
+          'ذخیره انجام نشد',
+        'error'
+      ),
+  });
+
+  const submit = () => {
+    const values = {};
+
+    Object.keys(meta).forEach((key) => {
+      const raw =
+        current[key];
+
+      if (
+        raw === '' ||
+        raw == null
+      ) {
+        return;
+      }
+
+      const num = Number(raw);
+
+      if (Number.isFinite(num)) {
+        values[key] = num;
+      }
+    });
+
+    saveMutation.mutate(values);
+  };
+
+  const stats =
+    data.challenge_stats || {};
+
+  const groups = [
+    [
+      '🎯 XP پاسخ',
+      [
+        'xp_easy',
+        'xp_medium',
+        'xp_hard',
+        'xp_unknown',
+        'xp_wrong_first',
+        'xp_streak_day',
+      ],
+    ],
+    [
+      '📝 XP آزمون و اکوسیستم',
+      [
+        'xp_exam_complete',
+        'xp_exam_acc80',
+        'xp_exam_perfect',
+        'xp_file_download',
+        'xp_ai_daily',
+        'xp_question_approved',
+        'xp_report_useful',
+      ],
+    ],
+    [
+      '🏆 جوایز رقابتی',
+      [
+        'xp_challenge_win',
+        'xp_apex_win',
+        'xp_weekly_champion',
+      ],
+    ],
+    [
+      '⚖️ قواعد تعادل',
+      [
+        'daily_cap',
+        'diminish_after',
+        'shield_answers',
+        'shield_days',
+        'decay_idle_days',
+        'challenge_cooldown_h',
+        'challenge_cooldown_apex_h',
+      ],
+    ],
+  ];
+
+  return (
+    <>
+      <div className="sec-title">
+        👑 تعادل زنده‌ی پرستیژ (بدون ری‌استارت)
+      </div>
+
+      <section
+        className="card"
+        style={{
+          display: 'grid',
+          gap: 10,
+        }}
+      >
+        <div
+          style={{
+            color: 'var(--txm)',
+            fontSize: 9.5,
+            lineHeight: 1.8,
+          }}
+        >
+          ⚔️ چالش‌های امروز:{' '}
+          <b>{stats.started_today ?? 0}</b>{' '}
+          شروع ·{' '}
+          <b>{stats.wins_today ?? 0}</b> برد ·{' '}
+          <b>{stats.fails_today ?? 0}</b>{' '}
+          شکست ·{' '}
+          <b>{stats.pending_now ?? 0}</b> در
+          جریان
+        </div>
+
+        {groups.map(
+          ([title, keys]) => (
+            <div key={title}>
+              <div
+                style={{
+                  fontSize: 10.5,
+                  fontWeight: 700,
+                  margin:
+                    '6px 0 7px',
+                }}
+              >
+                {title}
+              </div>
+
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns:
+                    '1fr 1fr',
+                  gap: 8,
+                }}
+              >
+                {keys.map((key) => (
+                  <label
+                    key={key}
+                    style={{
+                      display: 'grid',
+                      gap: 3,
+                    }}
+                  >
+                    <span
+                      style={{
+                        color:
+                          'var(--txm)',
+                        fontSize: 8.5,
+                      }}
+                    >
+                      {meta[key]?.label ||
+                        key}
+                      {Object.prototype
+                        .hasOwnProperty.call(
+                          overrides,
+                          key
+                        ) && (
+                        <b
+                          style={{
+                            color:
+                              'var(--warn)',
+                          }}
+                        >
+                          {' '}
+                          (اورراید)
+                        </b>
+                      )}
+                    </span>
+
+                    <input
+                      type="number"
+                      className="input"
+                      value={
+                        current[key] ??
+                        ''
+                      }
+                      min={meta[key]?.min}
+                      max={meta[key]?.max}
+                      onChange={(e) =>
+                        setVal(
+                          key,
+                          e.target.value
+                        )
+                      }
+                      style={{
+                        fontSize: 12,
+                        padding:
+                          '6px 9px',
+                      }}
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+          )
+        )}
+
+        <div
+          style={{
+            display: 'flex',
+            gap: 8,
+          }}
+        >
+          <button
+            type="button"
+            className="btn btn-p"
+            style={{ flex: 1 }}
+            disabled={
+              !dirty ||
+              saveMutation.isPending
+            }
+            onClick={submit}
+          >
+            {saveMutation.isPending
+              ? 'در حال ذخیره…'
+              : '💾 ذخیره‌ی تنظیمات تعادل'}
+          </button>
+
+          <button
+            type="button"
+            className="btn btn-g"
+            disabled={
+              saveMutation.isPending
+            }
+            onClick={() => {
+              if (
+                window.confirm(
+                  'همه‌ی اوررایدها پاک و مقادیر پیش‌فرض برگردد؟'
+                )
+              ) {
+                saveMutation.mutate({});
+              }
+            }}
+          >
+            ↺ پیش‌فرض
+          </button>
+        </div>
+
+        <div
+          style={{
+            color: 'var(--txm)',
+            fontSize: 8.5,
+          }}
+        >
+          آستانه‌ی رنک‌ها (۳۰۰/۷۵۰/…) مطابق
+          سند طراحی قفل‌است و از پنل قابل
+          تغییر نیست.
+        </div>
+      </section>
     </>
   );
 }
