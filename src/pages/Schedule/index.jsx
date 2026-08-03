@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 import {
@@ -137,6 +138,46 @@ export default function Schedule() {
       (item) =>
         item?.type === tab
     );
+
+  /* 🧠 موج N3 — Deep Link: /schedule?hl=<درس>
+     اولین کارت هم‌نام درس، اسکرول + فلش می‌خورد */
+  const [flashIdx, setFlashIdx] = useState(-1);
+  const [searchParams] = useSearchParams();
+  const hlDone = useRef(false);
+
+  useEffect(() => {
+    if (hlDone.current || !items.length) return;
+
+    const hl = searchParams.get('hl');
+    if (!hl) return;
+
+    const match = items.findIndex(
+      (it) =>
+        it.id === hl ||
+        (it.lesson || '') === hl ||
+        (it.lesson || '').includes(hl)
+    );
+
+    if (match < 0) return;
+
+    hlDone.current = true;
+    setFlashIdx(match);
+
+    const el = document.querySelector(
+      `[data-lidx="${match}"]`
+    );
+
+    if (el) {
+      setTimeout(() => {
+        el.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }, 60);
+
+      setTimeout(() => setFlashIdx(-1), 3200);
+    }
+  }, [items, searchParams]);
 
   const config =
     TYPES[tab];
@@ -446,7 +487,12 @@ export default function Schedule() {
                       item.id ||
                       `${item.lesson}-${index}`
                     }
-                    className="card"
+                    data-lidx={index}
+                    className={
+                      flashIdx === index
+                        ? 'card hl-flash'
+                        : 'card'
+                    }
                     style={{
                       padding: 13,
 
