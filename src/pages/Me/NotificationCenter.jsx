@@ -1,4 +1,9 @@
 import {
+  useMemo,
+  useState,
+} from 'react';
+
+import {
   useMutation,
   useQuery,
   useQueryClient,
@@ -23,38 +28,38 @@ import {
 
 
 /* ─────────────────────────────────────────────
-   🔔 مرکز اعلان‌ها (موج ۴.۹۰)
-   بازتاب همه‌ی رویدادهای مهمی که در ربات برای
-   کاربر پیام می‌شوند — با آیکون نوع، زمان نسبی،
-   وضعیت خوانده‌نشده و Deep Link مستقیم به مقصد.
-   کلید کوئری با ردیف «مرکز اعلان‌ها» در صفحه‌ی
-   «من» مشترک است — بج همیشه همین داده را می‌خواند.
+   🧠 مرکز اعلان‌ها — بازطراحی موج N3
+   بازتاب همه‌ی رویدادهای مهم حساب با معماری
+   Notification Spine: دسته/آیکون/تُن/اولویت/pin
+   و count از خودِ سرور می‌آید (هیچ مقدار بصری
+   اینجا ساخته نمی‌شود)؛ کش با ردیف «من» و
+   BottomNav مشترک است — بج همیشه یکدست.
 ───────────────────────────────────────────── */
 
 
 export const INBOX_KEY = ['notif-inbox'];
 
 
-const TYPE_META = {
-  exam_reminder:  { icon: '📝', tone: 'red'    },
-  daily_question: { icon: '🧪', tone: 'purple' },
-  new_resources:  { icon: '📚', tone: 'green'  },
-  class:          { icon: '🏫', tone: 'blue'   },
-  exam:           { icon: '📝', tone: 'red'    },
-  makeup:         { icon: '🔄', tone: 'yellow' },
-  schedule_change:{ icon: '🔄', tone: 'yellow' },
-  grade:          { icon: '📊', tone: 'acc'    },
-  ticket_created: { icon: '🎫', tone: 'green'  },
-  ticket_reply:   { icon: '📨', tone: 'green'  },
-  ticket_closed:  { icon: '✅', tone: 'green'  },
-  ticket_reopened:{ icon: '🔓', tone: 'yellow' },
-  sub_activated:  { icon: '💎', tone: 'acc'    },
-  sub_expiring:   { icon: '⏳', tone: 'yellow' },
-  sub_expired:    { icon: '⌛', tone: 'red'    },
-  announcement:   { icon: '📢', tone: 'blue'   },
-  admin_dm:       { icon: '📩', tone: 'blue'   },
-  account:        { icon: '🎓', tone: 'green'  },
-  general:        { icon: '🔔', tone: 'blue'   },
+/* برچسب‌های رایج دسته‌ها — آیکون سروری استفاده
+   می‌شود ولی انسانی‌نویسی چیپ‌ها از همین نگاشت
+   تطبیقی است (fallback به خودِ کلید برای تازه‌ها) */
+const CAT_LABELS = {
+  resources: 'منابع',
+  references: 'رفرنس‌ها',
+  basic_sci: 'علوم پایه',
+  qbank: 'بانک سؤال',
+  schedule: 'برنامه',
+  exams: 'امتحان‌ها',
+  grades: 'نمرات',
+  tickets: 'تیکت‌ها',
+  subscription: 'اشتراک',
+  discounts: 'تخفیف‌ها',
+  ai: 'هوشیار',
+  announcement: 'اعلان‌ها',
+  polls: 'نظرسنجی',
+  gamification: 'بازی‌واری',
+  profile: 'حساب',
+  system: 'سیستم',
 };
 
 
@@ -66,6 +71,21 @@ const TONE_COLORS = {
   purple: ['rgba(139,92,246,.13)',  '#C4B5FD'],
   acc:    ['rgba(34,211,238,.12)',  '#67E8F9'],
 };
+
+
+const PRIO_META = {
+  critical: ['⚫ حیاتی', '#FB7185'],
+  high:     ['🟠 مهم',  '#FCD34D'],
+  normal:   [null,       null],
+  low:      [null,       null],
+};
+
+
+const faNum = (value) =>
+  String(value ?? '').replace(
+    /\d/g,
+    (digit) => '۰۱۲۳۴۵۶۷۸۹'[digit],
+  );
 
 
 function getErrorMessage(error, fallback) {
@@ -80,7 +100,7 @@ function getErrorMessage(error, fallback) {
 
 
 /* زمان نسبی فارسی — «همین الان» تا «x روز پیش»؛
-   قدیمی‌تر = تاریخ کامل fa-IR */
+   قدیمی‌تر از یک هفته = تاریخ کامل fa-IR */
 function timeAgo(iso) {
   const then = new Date(iso).getTime();
 
@@ -124,6 +144,45 @@ function timeAgo(iso) {
 }
 
 
+/* 🗂 گروه‌بندی تاریخی — امروز / دیروز / این هفته /
+   قدیمی‌تر (منطقه‌ی زمانی دستگاه — همان حس زمان) */
+function dateGroup(iso) {
+  const then = new Date(iso);
+
+  if (!iso || Number.isNaN(then.getTime())) {
+    return 3;
+  }
+
+  const now = new Date();
+
+  const startOfToday = new Date(
+    now.getFullYear(), now.getMonth(), now.getDate(),
+  );
+
+  const startOfThen = new Date(
+    then.getFullYear(), then.getMonth(), then.getDate(),
+  );
+
+  const dayMs = 86_400_000;
+  const diffDays = Math.round(
+    (startOfToday - startOfThen) / dayMs,
+  );
+
+  if (diffDays <= 0) return 0;
+  if (diffDays === 1) return 1;
+  if (diffDays < 7) return 2;
+  return 3;
+}
+
+
+const GROUP_TITLES = [
+  'امروز',
+  'دیروز',
+  'این هفته',
+  'قدیمی‌تر',
+];
+
+
 export default function NotificationCenter() {
   const navigate = useNavigate();
 
@@ -132,6 +191,13 @@ export default function NotificationCenter() {
   );
 
   const queryClient = useQueryClient();
+
+  const [query, setQuery]         = useState('');
+  const [unreadOnly, setUnreadOnly] =
+    useState(false);
+  const [cat, setCat]             = useState('all');
+  const [openIds, setOpenIds]     =
+    useState(() => new Set());
 
 
   const {
@@ -148,6 +214,13 @@ export default function NotificationCenter() {
         .then((response) => response.data),
 
     staleTime: 15_000,
+
+    /* 🧠 realtime نرم — کل صفحه بدون رفلش؛
+       فقط همین یک کوئری دوره‌ای (پولینگ مازاد
+       ممنوع: دقیقاً همان ریتم بج تیکت) */
+    refetchInterval: 45_000,
+
+    refetchOnWindowFocus: 'always',
   });
 
   const items  = data?.items  || [];
@@ -261,6 +334,105 @@ export default function NotificationCenter() {
   });
 
 
+  /* 📌 سنجاق — رفتهرفت به سرور؛ نمایش فوری در همین
+     کش (pin‌ها در سرور هم بالا می‌آیند، اینجا
+     صرفاً حفظ معنای سریع است) */
+  const pinMutation = useMutation({
+    mutationFn: ({ id, pinned }) =>
+      api.post(
+        `/api/notifications/inbox/${id}/pin`,
+        { pinned },
+      ),
+
+    onMutate: ({ id, pinned }) =>
+      patchCache((old) => ({
+        ...old,
+        items: old.items.map((item) =>
+          item.id === id
+            ? { ...item, pinned }
+            : item
+        ),
+      })),
+
+    onError: (_error, _vars, previous) => {
+      if (previous) {
+        queryClient.setQueryData(
+          INBOX_KEY,
+          previous,
+        );
+      }
+
+      hapticNotif('error');
+    },
+
+    onSettled: () =>
+      queryClient.invalidateQueries({
+        queryKey: INBOX_KEY,
+      }),
+  });
+
+
+  /* 🔎 فیلتر محلی روی همان داده‌ی سرور —
+     بدون هیچ درخواست اضافی (قانون پرفورمنس) */
+  const filtered = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+
+    return items.filter((item) => {
+      if (unreadOnly && item.read) return false;
+
+      if (cat !== 'all' && item.category !== cat) {
+        return false;
+      }
+
+      if (!needle) return true;
+
+      return (
+        (item.title || '')
+          .toLowerCase()
+          .includes(needle) ||
+        (item.body || '')
+          .toLowerCase()
+          .includes(needle)
+      );
+    });
+  }, [items, unreadOnly, cat, query]);
+
+
+  /* 🗂 گروه‌بندی — پین‌شده‌ها جداگانه بالای همه */
+  const pinned = filtered.filter(
+    (item) => item.pinned,
+  );
+
+  const rest = filtered.filter(
+    (item) => !item.pinned,
+  );
+
+  const groups = useMemo(() => {
+    const buckets = [[], [], [], []];
+
+    for (const item of rest) {
+      buckets[dateGroup(item.created_at)].push(item);
+    }
+
+    return buckets;
+  }, [rest]);
+
+
+  const cats = useMemo(() => {
+    const seen = new Set(
+      items.map((item) => item.category),
+    );
+
+    return Object.keys(CAT_LABELS).filter(
+      (key) => seen.has(key),
+    );
+  }, [items]);
+
+
+  /* ✔ Smart Read — «بازکردن اعلان» (= کلیک) خودش
+     خواندن است؛ مشاهده‌ی لیست هیچ‌کدام را خوانده
+     نمی‌کند. با لینک ⇒ ناوبری Deep Link؛ بدون لینک
+     ⇒ بازشدن بدنه در همان‌جا (بازشدن = خواندن). */
   const openItem = (item) => {
     haptic('light');
 
@@ -270,7 +442,20 @@ export default function NotificationCenter() {
 
     if (item.link) {
       navigate(item.link);
+      return;
     }
+
+    setOpenIds((prev) => {
+      const next = new Set(prev);
+
+      if (next.has(item.id)) {
+        next.delete(item.id);
+      } else {
+        next.add(item.id);
+      }
+
+      return next;
+    });
   };
 
 
@@ -304,13 +489,272 @@ export default function NotificationCenter() {
     : null;
 
 
+  const renderRow = (item, index) => {
+    const [
+      soft,
+      color,
+    ] = TONE_COLORS[item.tone] || TONE_COLORS.blue;
+
+    const [prioLabel, prioColor] =
+      PRIO_META[item.priority] ||
+      PRIO_META.normal;
+
+    const expanded = openIds.has(item.id);
+
+    return (
+      <div
+        key={item.id}
+        className="pop-in"
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 10,
+          padding: '11px 4px',
+          borderTop:
+            index === 0
+              ? 'none'
+              : '1px solid var(--line)',
+          animationDelay: `${Math.min(
+            index * 25, 240)}ms`,
+        }}
+      >
+        <div
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: 12,
+            background: soft,
+            color,
+            display: 'grid',
+            placeItems: 'center',
+            fontSize: 15,
+            flexShrink: 0,
+          }}
+        >
+          {item.icon}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => openItem(item)}
+          style={{
+            all: 'unset',
+            flex: 1,
+            minWidth: 0,
+            cursor: 'pointer',
+          }}
+          aria-expanded={
+            item.link
+              ? undefined
+              : expanded
+          }
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            {!item.read && (
+              <span
+                aria-hidden="true"
+                style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: '50%',
+                  background: '#60A5FA',
+                  flexShrink: 0,
+                }}
+              />
+            )}
+
+            {item.pinned && (
+              <span
+                aria-label="سنجاق‌شده"
+                style={{ fontSize: 10 }}
+              >
+                📌
+              </span>
+            )}
+
+            <b
+              style={{
+                fontSize: 11.5,
+                flex: 1,
+                minWidth: 0,
+              }}
+            >
+              {item.title}
+            </b>
+
+            {item.count > 1 && (
+              <span
+                className="badge b-pur"
+                title="موجهای چندباره‌ی یکدست"
+                style={{
+                  fontSize: 9,
+                  padding: '1px 6px',
+                }}
+              >
+                ×{faNum(item.count)}
+              </span>
+            )}
+
+            {prioLabel && (
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: 99,
+                  background: prioColor,
+                  flexShrink: 0,
+                }}
+                title={prioLabel}
+              />
+            )}
+          </div>
+
+          <div
+            style={{
+              color: 'var(--tx2)',
+              fontSize: 10,
+              marginTop: 3,
+              lineHeight: 1.7,
+              whiteSpace: 'pre-line',
+              display: expanded
+                ? 'block'
+                : '-webkit-box',
+              WebkitLineClamp: expanded
+                ? 'unset'
+                : 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+            }}
+          >
+            {item.body}
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 7,
+              marginTop: 5,
+              color: 'var(--txm)',
+              fontSize: 9,
+            }}
+          >
+            <span>
+              {timeAgo(item.created_at)}
+            </span>
+
+            <span
+              className="badge b-gray"
+              style={{
+                fontSize: 8.5,
+                padding: '1px 5px',
+              }}
+            >
+              {CAT_LABELS[item.category] ||
+                item.category}
+            </span>
+
+            {item.link ? (
+              <span
+                style={{
+                  marginInlineStart: 'auto',
+                  color: 'var(--acc)',
+                  fontSize: 12,
+                }}
+                aria-hidden="true"
+              >
+                ←
+              </span>
+            ) : (
+              <span
+                style={{
+                  marginInlineStart: 'auto',
+                }}
+                aria-hidden="true"
+              >
+                {expanded ? '▲' : '▼'}
+              </span>
+            )}
+          </div>
+        </button>
+
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 4,
+            flexShrink: 0,
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => {
+              haptic('light');
+
+              pinMutation.mutate({
+                id: item.id,
+                pinned: !item.pinned,
+              });
+            }}
+            disabled={pinMutation.isPending}
+            title={
+              item.pinned
+                ? 'برداشتن سنجاق'
+                : 'سنجاق بالا'
+            }
+            aria-label={
+              item.pinned
+                ? 'برداشتن سنجاق'
+                : 'سنجاق بالا'
+            }
+            style={{
+              all: 'unset',
+              cursor: 'pointer',
+              opacity: item.pinned ? 1 : 0.5,
+              fontSize: 11,
+            }}
+          >
+            📌
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              haptic('light');
+
+              deleteMutation.mutate(item.id);
+            }}
+            disabled={deleteMutation.isPending}
+            title="حذف اعلان"
+            aria-label="حذف اعلان"
+            style={{
+              all: 'unset',
+              cursor: 'pointer',
+              color: 'var(--txm)',
+              fontSize: 11,
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+
   return (
     <>
       <Header
         title="مرکز اعلان‌ها"
         subtitle={
           unread > 0
-            ? `${unread.toLocaleString('fa-IR')} اعلان خوانده‌نشده`
+            ? `${faNum(unread)} اعلان خوانده‌نشده`
             : 'همه‌ی رویدادهای مهم حسابت'
         }
         right={headerAction}
@@ -326,6 +770,129 @@ export default function NotificationCenter() {
           paddingInline: 12,
         }}
       >
+        {/* 🎛 نوار ابزار — جست‌وجو + سوییچ unread + دسته‌ها */}
+        <div
+          className="card fade-up"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 9,
+            padding: '10px 12px',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            <span
+              style={{
+                color: 'var(--txm)',
+                fontSize: 13,
+              }}
+              aria-hidden="true"
+            >
+              🔎
+            </span>
+
+            <input
+              type="search"
+              value={query}
+              onChange={(event) =>
+                setQuery(event.target.value)
+              }
+              placeholder="جست‌وجو در اعلان‌ها…"
+              aria-label="جست‌وجو در اعلان‌ها"
+              className="input"
+              style={{
+                flex: 1,
+                minHeight: 34,
+                padding: '7px 11px',
+                fontSize: 11.5,
+              }}
+            />
+
+            <button
+              type="button"
+              onClick={() => {
+                haptic('light');
+
+                setUnreadOnly((v) => !v);
+              }}
+              aria-pressed={unreadOnly}
+              className="tab-btn"
+              style={{
+                minHeight: 30,
+                padding: '4px 9px',
+                fontSize: 10,
+                flexShrink: 0,
+                ...(unreadOnly
+                  ? {
+                    background:
+                      'rgba(96,165,250,.16)',
+                    borderColor: '#60A5FA',
+                    color: '#93C5FD',
+                  }
+                  : {}),
+              }}
+            >
+              خوانده‌نشده
+            </button>
+          </div>
+
+          {cats.length > 0 && (
+            <div
+              style={{
+                display: 'flex',
+                gap: 6,
+                flexWrap: 'nowrap',
+                overflowX: 'auto',
+                scrollbarWidth: 'none',
+                paddingBottom: 2,
+              }}
+              role="tablist"
+              aria-label="فیلتر دسته"
+            >
+              {['all', ...cats].map((key) => {
+                const active = cat === key;
+
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => {
+                      haptic('light');
+
+                      setCat(key);
+                    }}
+                    className={
+                      active
+                        ? 'tab-btn active'
+                        : 'tab-btn'
+                    }
+                    style={{
+                      fontSize: 9.5,
+                      padding: '4px 9px',
+                      minHeight: 28,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {
+                      key === 'all'
+                        ? 'همه'
+                        : CAT_LABELS[key] || key
+                    }
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         {
           isPending
           && [0, 1, 2, 3].map((key) => (
@@ -392,252 +959,83 @@ export default function NotificationCenter() {
 
         {
           !isPending
+          && !isError
           && items.length > 0
+          && filtered.length === 0
           && (
-            <div
-              className="card"
-              style={{ padding: '0 12px' }}
-            >
-              {
-                items.map((item, index) => {
-                  const meta =
-                    TYPE_META[item.type]
-                    || TYPE_META.general;
+            <div className="empty card">
+              <div style={{ fontSize: 24 }}>
+                🔍
+              </div>
 
-                  const [
-                    soft,
-                    color,
-                  ] = TONE_COLORS[meta.tone];
+              <p>
+                نتیجه‌ای پیدا نشد
+              </p>
 
-                  return (
-                    <div
-                      key={item.id}
-                      className="pop-in"
-                      style={{
-                        display: 'flex',
-                        alignItems:
-                          'flex-start',
-                        gap: 10,
-                        padding:
-                          '11px 0',
-                        borderBottom:
-                          index
-                          < items.length - 1
-                            ? '1px solid'
-                              + ' rgba(148,163'
-                              + ',184,.10)'
-                            : 'none',
-                        animationDelay:
-                          `${Math.min(index, 8) * 30}ms`,
-                      }}
-                    >
-                      <button
-                        type="button"
-                        onClick={() =>
-                          openItem(item)
-                        }
-                        aria-label={item.title}
-                        style={{
-                          display: 'flex',
-                          flex: 1,
-                          minWidth: 0,
-                          alignItems:
-                            'flex-start',
-                          gap: 10,
-                          padding: 0,
-                          border: 0,
-                          background:
-                            'none',
-                          color: 'inherit',
-                          font: 'inherit',
-                          textAlign: 'right',
-                          cursor:
-                            'pointer',
-                        }}
-                      >
-                        <span
-                          style={{
-                            display:
-                              'grid',
-                            flex:
-                              '0 0 38px',
-                            height: 38,
-                            placeItems:
-                              'center',
-                            borderRadius: 12,
-                            background:
-                              soft,
-                            color,
-                            fontSize: 18,
-                          }}
-                        >
-                          {meta.icon}
-                        </span>
-
-                        <span
-                          style={{
-                            flex: 1,
-                            minWidth: 0,
-                          }}
-                        >
-                          <span
-                            style={{
-                              display:
-                                'flex',
-                              alignItems:
-                                'center',
-                              gap: 6,
-                            }}
-                          >
-                            {
-                              !item.read
-                              && (
-                                <span
-                                  aria-hidden
-                                  style={{
-                                    width: 7,
-                                    height: 7,
-                                    flex:
-                                      '0 0 7px',
-                                    borderRadius:
-                                      '50%',
-                                    background:
-                                      'var(--acc2)',
-                                  }}
-                                />
-                              )
-                            }
-
-                            <b
-                              style={{
-                                fontSize: 12,
-                                fontWeight:
-                                  item.read
-                                    ? 600
-                                    : 800,
-                                color:
-                                  item.read
-                                    ? 'var(--tx2)'
-                                    : 'var(--tx)',
-                              }}
-                            >
-                              {item.title}
-                            </b>
-                          </span>
-
-                          {
-                            item.body
-                            && (
-                              <span
-                                style={{
-                                  display:
-                                    'block',
-                                  marginTop: 3,
-                                  color:
-                                    'var(--txm)',
-                                  fontSize: 10,
-                                  lineHeight: 1.8,
-                                  whiteSpace:
-                                    'pre-line',
-                                }}
-                              >
-                                {item.body}
-                              </span>
-                            )
-                          }
-
-                          <span
-                            style={{
-                              display:
-                                'block',
-                              marginTop: 4,
-                              color:
-                                'var(--txm)',
-                              fontSize: 9,
-                              opacity: .8,
-                            }}
-                          >
-                            {
-                              timeAgo(
-                                item.created_at,
-                              )
-                            }
-                          </span>
-                        </span>
-
-                        {
-                          item.link
-                          && (
-                            <span
-                              aria-hidden
-                              style={{
-                                alignSelf:
-                                  'center',
-                                color:
-                                  'var(--txm)',
-                                fontSize: 13,
-                              }}
-                            >
-                              ←
-                            </span>
-                          )
-                        }
-                      </button>
-
-                      <button
-                        type="button"
-                        aria-label="حذف اعلان"
-                        onClick={() => {
-                          haptic('light');
-
-                          deleteMutation
-                            .mutate(item.id);
-                        }}
-                        disabled={
-                          deleteMutation
-                            .isPending
-                        }
-                        style={{
-                          alignSelf:
-                            'center',
-                          padding: 6,
-                          border: 0,
-                          background:
-                            'none',
-                          color:
-                            'var(--txm)',
-                          fontSize: 13,
-                          cursor:
-                            'pointer',
-                        }}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  );
-                })
-              }
+              <span
+                style={{
+                  color: 'var(--txm)',
+                  fontSize: 10.5,
+                }}
+              >
+                فیلترها یا کلمات را ساده‌تر کن
+              </span>
             </div>
           )
         }
 
+        {/* 📌 سنجاق‌شده‌ها — همیشه بالای همه */}
         {
-          !isPending
-          && items.length > 0
+          pinned.length > 0
           && (
-            <p
-              style={{
-                margin: '2px 4px 0',
-                color: 'var(--txm)',
-                fontSize: 9.5,
-                textAlign: 'center',
-              }}
+            <section
+              className="card fade-up"
+              style={{ padding: '0 12px' }}
             >
-              اعلان‌های اعتبار، برنامه و نمره
-              هم این‌جا می‌رسند — لازم نیست
-              دنبال پیام تلگرام بگردی
-            </p>
+              <div
+                style={{
+                  color: 'var(--txm)',
+                  fontSize: 9,
+                  padding: '9px 4px 0',
+                  fontWeight: 700,
+                }}
+              >
+                📌 سنجاق‌شده‌ها
+              </div>
+
+              {pinned.map(renderRow)}
+            </section>
           )
+        }
+
+        {/* 🗂 گروه‌های تاریخی */}
+        {
+          groups.map((bucket, gi) => (
+            bucket.length > 0 && (
+              <section
+                key={gi}
+                className="card fade-up"
+                style={{ padding: '0 12px' }}
+              >
+                <div
+                  style={{
+                    color: 'var(--txm)',
+                    fontSize: 9,
+                    padding: '9px 4px 0',
+                    fontWeight: 700,
+                  }}
+                >
+                  {GROUP_TITLES[gi]}
+                  {' · '}
+                  <span style={{ fontWeight: 400 }}>
+                    {faNum(bucket.length)}
+                  </span>
+                </div>
+
+                {bucket.map(renderRow)}
+              </section>
+            )
+          ))
         }
       </main>
     </>
