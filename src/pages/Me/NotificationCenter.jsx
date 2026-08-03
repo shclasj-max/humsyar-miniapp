@@ -39,6 +39,14 @@ import {
 
 export const INBOX_KEY = ['notif-inbox'];
 
+/* ⚙ قرارداد رجیستری App.lazyScreen: این صفحه با
+   exportName='NotificationCenter' resolve می‌شود؛
+   export ایمن‌نام نباید حذف شود — حذفش = صفحهٔ
+   تیره در روت /me/notifications/inbox (regression
+   lock: رجیستری ۳۸ مسیر باید با exportها ۳۸/۳۸
+   تطبیق داشته باشد) */
+export { NotificationCenter };
+
 
 /* برچسب‌های رایج دسته‌ها — آیکون سروری استفاده
    می‌شود ولی انسانی‌نویسی چیپ‌ها از همین نگاشت
