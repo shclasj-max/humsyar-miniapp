@@ -285,21 +285,34 @@ export default function Me() {
       profile?.tickets?.open
     );
 
-  const manager = [
-    'admin',
-    'content_admin',
-  ].includes(user.role);
+  /* 🛡 RBAC-W3 (افزایشی): هر مجوز RBAC هم ورودی
+     مدیریت را فعال می‌کند؛ سطح دسترسی واقعی را
+     سرور با require_perm اعمال می‌کند (§۸) */
+  const manager =
+    [
+      'admin',
+      'content_admin',
+    ].includes(user.role) ||
+    (user.perms || []).length > 0;
 
-  const roleLabel = {
-    admin: 'مدیر اصلی',
+  /* برچسب نقش: اولویت با نقش‌های دیتابیسی
+     (roles_detail از /api/profile)، fallback به
+     نقش قدیمی — هیچ برچسب جدیدی هاردکد نشده */
+  const rbacPrimary =
+    (profile?.user || user).roles_detail?.[0];
 
-    content_admin:
-      'مدیر محتوا',
+  const roleLabel = rbacPrimary
+    ? `${rbacPrimary.icon} ${rbacPrimary.label}`
+    : {
+      admin: 'مدیر اصلی',
 
-    support:
-      'پشتیبان',
-  }[user.role] ||
-    'دانشجو';
+      content_admin:
+        'مدیر محتوا',
+
+      support:
+        'پشتیبان',
+    }[user.role] ||
+      'دانشجو';
 
   return (
     <>
