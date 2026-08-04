@@ -1,6 +1,7 @@
 import { confirmAction } from '../../lib/confirm';
 import {
   useEffect,
+  useMemo,
   useState,
 } from 'react';
 
@@ -760,6 +761,329 @@ export function AdminUsers() {
 
 /* جزئیات کاربر */
 
+/* عدد فارسی محلی — این صفحه faNum خارجی ندارد */
+const faNum = (value) =>
+  String(value ?? '').replace(
+    /\d/g,
+    (digit) => '۰۱۲۳۴۵۶۷۸۹'[digit],
+  );
+
+
+/* 🛡 کارت نقش‌های RBAC — موج RBAC-W2 (قرارداد §UserManagement)
+   نقش‌ها کاملاً داینامیک از /api/admin/rbac می‌آیند (بدون لیست
+   استاتیک): تخصیص/حذف چندنقشی، جست‌وجو، پیش‌نمایش‌ی مجوزهای
+   موروثی. سازگاری: mirror سرور users.role را هم‌زمان به‌روز نگه
+   می‌دارد و این صفحه هم آن‌را از کوئری admin-user بازخوانی می‌کند. */
+function UserRbacCard({ uid }) {
+  const toast = useUIStore(
+    (state) => state.toast,
+  );
+  const queryClient = useQueryClient();
+
+  const [q, setQ] = useState('');
+  const [showPerms, setShowPerms] =
+    useState(false);
+
+  const rolesQ = useQuery({
+    queryKey: ['rbac-roles'],
+    queryFn: () =>
+      api
+        .get('/api/admin/rbac/roles')
+        .then((response) => response.data),
+    staleTime: 30_000,
+  });
+
+  const permsQ = useQuery({
+    queryKey: ['rbac-perms'],
+    queryFn: () =>
+      api
+        .get('/api/admin/rbac/permissions')
+        .then((response) => response.data),
+    staleTime: 300_000,
+  });
+
+  const userQ = useQuery({
+    queryKey: ['rbac-user', uid],
+    queryFn: () =>
+      api
+        .get(`/api/admin/rbac/users/${uid}`)
+        .then((response) => response.data),
+  });
+
+  const assignM = useMutation({
+    mutationFn: (payload) =>
+      api.post(
+        `/api/admin/rbac/users/${uid}/roles`,
+        payload,
+      ),
+
+    onSuccess: () => {
+      hapticNotif('success');
+      queryClient.invalidateQueries({
+        queryKey: ['rbac-user', uid],
+      });
+      /* mirror سرور users.role را هم عوض می‌کند —
+         بج نقش قدیمی این صفحه باید بازخوانی شود */
+      queryClient.invalidateQueries({
+        queryKey: ['admin-user', uid],
+        exact: true,
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['admin-users'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['rbac-roles'],
+      });
+    },
+
+    onError: (error) => {
+      hapticNotif('error');
+      const detail =
+        error?.response?.data?.detail;
+      toast(
+        typeof detail === 'string' && detail
+          ? detail
+          : 'تغییر نقش انجام نشد',
+        'error',
+      );
+    },
+  });
+
+  const assigned = userQ.data?.roles || [];
+  const assignedKeys = new Set(
+    userQ.data?.keys || [],
+  );
+  const userPerms = userQ.data?.perms || [];
+
+  const permLabels = useMemo(() => {
+    const catalog = permsQ.data?.permissions || [];
+    return Object.fromEntries(
+      catalog.map((perm) => [perm.key, perm.label]),
+    );
+  }, [permsQ.data]);
+
+  const needle = q.trim().toLowerCase();
+  const available = (
+    rolesQ.data?.roles || []
+  ).filter((role) =>
+    !assignedKeys.has(role.key) &&
+    (!needle ||
+      role.label.toLowerCase().includes(needle) ||
+      role.key.toLowerCase().includes(needle)),
+  );
+
+  return (
+    <section
+      className="card fade-up"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 8,
+        padding: '11px 13px',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 7,
+        }}
+      >
+        <b style={{ fontSize: 11 }}>
+          🛡 نقش‌های RBAC
+        </b>
+        <span
+          className="badge b-gray"
+          style={{ fontSize: 8.5 }}
+        >
+          {faNum(assigned.length)} نقش ·
+          {' '}{faNum(userPerms.length)} مجوز
+        </span>
+        <button
+          type="button"
+          className="tab-btn"
+          style={{
+            marginInlineStart: 'auto',
+            fontSize: 8.5,
+            minHeight: 24,
+            padding: '2px 8px',
+          }}
+          onClick={() =>
+            setShowPerms((value) => !value)
+          }
+          aria-expanded={showPerms}
+        >
+          {showPerms
+            ? 'بستن مجوزها ▲'
+            : 'پیش‌نمایش مجوزها ▼'}
+        </button>
+      </div>
+
+      {/* بج‌های نقش تخصیص‌یافته — رنگ از سرور */}
+      <div
+        style={{
+          display: 'flex',
+          gap: 6,
+          flexWrap: 'wrap',
+        }}
+      >
+        {userQ.isPending && (
+          <span
+            className="skeleton"
+            style={{ height: 22, width: 90, borderRadius: 8 }}
+          />
+        )}
+        {!userQ.isPending &&
+          assigned.length === 0 && (
+            <span
+              style={{
+                color: 'var(--txm)',
+                fontSize: 9.5,
+              }}
+            >
+              هنوز نقشی ندارد (دانشجوِ عادی)
+            </span>
+          )}
+        {assigned.map((role) => (
+          <span
+            key={role.key}
+            className="badge"
+            title={role.desc || role.label}
+            style={{
+              fontSize: 9,
+              background: `${role.color}1f`,
+              color: role.color,
+              border: `1px solid ${role.color}55`,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+            }}
+          >
+            {role.icon} {role.label}
+            <button
+              type="button"
+              aria-label={`حذف نقش ${role.label}`}
+              disabled={assignM.isPending}
+              onClick={() => {
+                haptic('light');
+                assignM.mutate({
+                  add: [],
+                  remove: [role.key],
+                });
+              }}
+              style={{
+                all: 'unset',
+                cursor: 'pointer',
+                fontSize: 10,
+                opacity: 0.7,
+              }}
+            >
+              ✕
+            </button>
+          </span>
+        ))}
+      </div>
+
+      {/* افزودن نقش — جست‌وجو + چیپ‌های دردسترس */}
+      <input
+        type="search"
+        className="input"
+        style={{ minHeight: 32, fontSize: 10.5 }}
+        placeholder="جست‌وجوی نقش برای افزودن…"
+        value={q}
+        onChange={(event) =>
+          setQ(event.target.value)
+        }
+        aria-label="جست‌وجوی نقش"
+      />
+      {needle && (
+        <div
+          style={{
+            display: 'flex',
+            gap: 6,
+            flexWrap: 'wrap',
+          }}
+        >
+          {available.length === 0 && (
+            <span
+              style={{
+                color: 'var(--txm)',
+                fontSize: 9.5,
+              }}
+            >
+              نقشی پیدا نشد
+            </span>
+          )}
+          {available.map((role) => (
+            <button
+              key={role.key}
+              type="button"
+              className="tab-btn"
+              disabled={assignM.isPending}
+              style={{
+                fontSize: 9.5,
+                minHeight: 26,
+                borderColor: `${role.color}66`,
+                color: role.color,
+              }}
+              onClick={() => {
+                haptic('light');
+                setQ('');
+                assignM.mutate({
+                  add: [role.key],
+                  remove: [],
+                  scope_intake:
+                    role.key.endsWith('scoped') ||
+                      role.key === 'grade_rep'
+                      ? undefined
+                      : undefined,
+                });
+              }}
+            >
+              + {role.icon} {role.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* پیش‌نمایش‌ی مجوزهای موروثی (Union نقش‌ها) */}
+      {showPerms && (
+        <div
+          style={{
+            display: 'flex',
+            gap: 5,
+            flexWrap: 'wrap',
+            borderTop: '1px solid var(--line)',
+            paddingTop: 8,
+          }}
+        >
+          {userPerms.length === 0 && (
+            <span
+              style={{
+                color: 'var(--txm)',
+                fontSize: 9.5,
+              }}
+            >
+              مجوزی در کار نیست
+            </span>
+          )}
+          {userPerms.map((permKey) => (
+            <span
+              key={permKey}
+              className="badge b-gray"
+              title={permKey}
+              style={{ fontSize: 8.5 }}
+            >
+              {permLabels[permKey] || permKey}
+            </span>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+
 export function AdminUserDetail() {
   const {
     uid,
@@ -1128,6 +1452,9 @@ export function AdminUserDetail() {
               </div>
             </section>
 
+            {/* 🛡 RBAC-W2 — نقش‌های چندتایی دیتابیس‌محور */}
+            <UserRbacCard uid={uid} />
+
 
             {editing ? (
               <section
@@ -1217,33 +1544,20 @@ export function AdminUserDetail() {
                   </select>
                 </div>
 
-                <select
-                  className="inp"
-                  value={
-                    form.role
-                  }
-                  onChange={(event) =>
-                    setForm({
-                      ...form,
-
-                      role:
-                        event.target
-                          .value,
-                    })
-                  }
+                {/* 🛡 RBAC-W2: سلکت سه‌تایی هاردکد حذف شد؛ نقش‌ها
+                    فقط از کارت RBAC بالای صفحه (دیتابیس‌محور، چندنقشی)
+                    مدیریت می‌شوند — users.role به‌عنوان mirror از
+                    سرور می‌آید (تک‌منبع، بدون تعریف موازی) */}
+                <div
+                  style={{
+                    color: 'var(--txm)',
+                    fontSize: 9.5,
+                    lineHeight: 1.8,
+                  }}
                 >
-                  <option value="student">
-                    دانشجو
-                  </option>
-
-                  <option value="content_admin">
-                    مدیر محتوا
-                  </option>
-
-                  <option value="support">
-                    پشتیبان
-                  </option>
-                </select>
+                  🛡 نقش‌های کاربر (چندنقشی) از کارت
+                  RBAC بالای صفحه مدیریت می‌شود، نه از این فرم.
+                </div>
 
                 <div
                   style={{
