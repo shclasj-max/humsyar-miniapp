@@ -162,6 +162,17 @@ const SECTIONS = [
   },
 
   {
+    icon: '🛡',
+    title: 'مدیریت نقش‌ها',
+    description:
+      'ساخت نقش دلخواه + سوییچ مجوزها (RBAC)',
+    route: '/admin/roles',
+    color: '#93C5FD',
+    soft:
+      'rgba(59,130,246,.13)',
+  },
+
+  {
     icon: '🎫',
     title: 'تیکت‌های پشتیبانی',
     description:
