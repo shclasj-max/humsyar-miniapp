@@ -285,6 +285,13 @@ const SystemSettingsScreen = lazyScreen(
   SettingsSkeleton
 );
 
+/* 🛡 مدیریت نقش‌ها — موج RBAC-W2 */
+const RolesScreen = lazyScreen(
+  () => import('./pages/Admin/Roles'),
+  UsersListSkeleton,
+  'AdminRoles'
+);
+
 
 /* مدیریت کاربران */
 
@@ -566,9 +573,16 @@ function AdminRoute({
     (state) => state.user
   );
 
+  /* 🛡 RBAC-W3 (افزایشی): گذر اگر نقش admin قدیمی
+     یا هر مجوز RBAC (perms از /api/profile) دارد —
+     سطح دسترسی واقعی هر صفحه را سرور با
+     require_perm اعمال می‌کند (§۸) */
+  const hasAnyPerm = (user?.perms || []).length > 0;
+
   if (
     !user ||
-    user.role !== 'admin'
+    (user.role !== 'admin' &&
+      !hasAnyPerm)
   ) {
     return (
       <Navigate
@@ -594,10 +608,21 @@ function ContentAdminRoute({
     'content_admin',
   ];
 
+  /* 🛡 RBAC-W3 (افزایشی): مجوز content.* هم عبور
+     می‌دهد — معادل دقیق گیت get_content_admin_user
+     و هوک has_perm در بک‌اند */
+  const hasContentPerm = (user?.perms || []).some(
+    (perm) =>
+      perm === 'content.manage' ||
+      perm === 'content.scoped'
+  );
+
   if (
     !user ||
-    !allowedRoles.includes(
-      user.role
+    (
+      !allowedRoles.includes(
+        user.role
+      ) && !hasContentPerm
     )
   ) {
     return (
@@ -1084,6 +1109,16 @@ export default function App() {
           element={
             <AdminRoute>
               <AdminUserDetailScreen />
+            </AdminRoute>
+          }
+        />
+
+        {/* 🛡 RBAC-W2 — مدیریت نقش‌ها/مجوزها */}
+        <Route
+          path="/admin/roles"
+          element={
+            <AdminRoute>
+              <RolesScreen />
             </AdminRoute>
           }
         />
