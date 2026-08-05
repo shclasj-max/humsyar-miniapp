@@ -75,7 +75,7 @@ function SettingRow({
       style={{
         borderColor: danger &&
           checked
-          ? 'rgba(239,68,68,.3)'
+          ? 'var(--bd-err)'
           : undefined,
       }}
     >
@@ -85,11 +85,11 @@ function SettingRow({
           flex: '0 0 40px',
           height: 40,
           placeItems: 'center',
-          borderRadius: 12,
+          borderRadius: 'var(--r-md)',
           background: danger
-            ? 'rgba(239,68,68,.1)'
-            : 'rgba(59,130,246,.1)',
-          fontSize: 19,
+            ? 'var(--soft-err)'
+            : 'var(--soft-acc)',
+          fontSize: 'var(--fs-xl)',
         }}
       >
         {icon}
@@ -105,7 +105,7 @@ function SettingRow({
         <b
           style={{
             display: 'block',
-            fontSize: 12.3,
+            fontSize: 'var(--fs-sm)',
           }}
         >
           {title}
@@ -115,7 +115,7 @@ function SettingRow({
           style={{
             display: 'block',
             color: 'var(--txm)',
-            fontSize: 9.6,
+            fontSize: 'var(--fs-cap)',
             marginTop: 2,
             lineHeight: 1.8,
           }}
@@ -166,8 +166,8 @@ function LogGroupCard({
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 10,
-          marginBottom: 10,
+          gap: 'var(--sp-3)',
+          marginBottom: 'var(--sp-3)',
         }}
       >
         <span
@@ -176,10 +176,10 @@ function LogGroupCard({
             flex: '0 0 40px',
             height: 40,
             placeItems: 'center',
-            borderRadius: 12,
+            borderRadius: 'var(--r-md)',
             background:
-              'rgba(59,130,246,.1)',
-            fontSize: 19,
+              'var(--soft-acc)',
+            fontSize: 'var(--fs-xl)',
           }}
         >
           {icon}
@@ -194,7 +194,7 @@ function LogGroupCard({
           <b
             style={{
               display: 'block',
-              fontSize: 12.3,
+              fontSize: 'var(--fs-sm)',
             }}
           >
             {title}
@@ -204,9 +204,9 @@ function LogGroupCard({
             style={{
               display: 'block',
               color: savedId
-                ? '#4ADE80'
+                ? 'var(--t-ok)'
                 : 'var(--txm)',
-              fontSize: 9.6,
+              fontSize: 'var(--fs-cap)',
               marginTop: 2,
             }}
           >
@@ -216,7 +216,7 @@ function LogGroupCard({
                 <code
                   dir="ltr"
                   style={{
-                    fontSize: 9.4,
+                    fontSize: 'var(--fs-cap)',
                   }}
                 >
                   {savedId}
@@ -249,7 +249,7 @@ function LogGroupCard({
           style={{
             display: 'block',
             color: 'var(--err)',
-            fontSize: 9,
+            fontSize: 'var(--fs-cap)',
             marginTop: 6,
           }}
         >
@@ -262,7 +262,7 @@ function LogGroupCard({
         style={{
           display: 'flex',
           gap: 8,
-          marginTop: 10,
+          marginTop: 'var(--sp-3)',
         }}
       >
         <button
@@ -270,7 +270,7 @@ function LogGroupCard({
           style={{
             flex: 1,
             minHeight: 34,
-            fontSize: 10.5,
+            fontSize: 'var(--fs-cap)',
           }}
           disabled={
             !dirty || invalid || saving
@@ -288,7 +288,7 @@ function LogGroupCard({
           className="btn btn-dark"
           style={{
             minHeight: 34,
-            fontSize: 10.5,
+            fontSize: 'var(--fs-cap)',
           }}
           disabled={!savedId || testing}
           onClick={onTest}
@@ -305,7 +305,7 @@ function LogGroupCard({
         style={{
           display: 'block',
           color: 'var(--txm)',
-          fontSize: 8.8,
+          fontSize: 'var(--fs-cap)',
           marginTop: 8,
           lineHeight: 1.8,
         }}
@@ -343,7 +343,7 @@ function DonationLinkCard({
       <b
         style={{
           display: 'block',
-          fontSize: 12.3,
+          fontSize: 'var(--fs-sm)',
           marginBottom: 8,
         }}
       >
@@ -353,16 +353,16 @@ function DonationLinkCard({
       {enabled && !savedLink && (
         <div
           style={{
-            marginBottom: 10,
+            marginBottom: 'var(--sp-3)',
             padding: '9px 11px',
-            borderRadius: 10,
-            fontSize: 9.8,
+            borderRadius: 'var(--r-sm)',
+            fontSize: 'var(--fs-cap)',
             lineHeight: 1.8,
-            color: '#FCD34D',
+            color: 'var(--t-warn)',
             background:
-              'rgba(252,211,77,.07)',
+              'var(--soft-warn)',
             border:
-              '1px solid rgba(252,211,77,.25)',
+              '1px solid var(--bd-warn)',
           }}
         >
           ⚠️ بخش فعال است اما لینکی
@@ -393,7 +393,7 @@ function DonationLinkCard({
           style={{
             display: 'block',
             color: 'var(--err)',
-            fontSize: 9,
+            fontSize: 'var(--fs-cap)',
             marginTop: 6,
           }}
         >
@@ -408,14 +408,14 @@ function DonationLinkCard({
           alignItems: 'center',
           justifyContent:
             'space-between',
-          gap: 10,
-          marginTop: 10,
+          gap: 'var(--sp-3)',
+          marginTop: 'var(--sp-3)',
         }}
       >
         <span
           style={{
             color: 'var(--txm)',
-            fontSize: 8.8,
+            fontSize: 'var(--fs-cap)',
             lineHeight: 1.8,
             flex: 1,
           }}
@@ -432,7 +432,7 @@ function DonationLinkCard({
           style={{
             minHeight: 34,
             padding: '6px 14px',
-            fontSize: 10.5,
+            fontSize: 'var(--fs-cap)',
           }}
           disabled={
             !dirty || invalid || saving
@@ -955,15 +955,15 @@ export default function SystemSettings() {
                   padding:
                     '12px 14px',
                   borderColor:
-                    'rgba(239,68,68,.35)',
+                    'var(--bd-err)',
                   background:
-                    'linear-gradient(145deg,rgba(239,68,68,.08),rgba(16,24,39,.95))',
+                    'linear-gradient(145deg,var(--soft-err),var(--surf-card))',
                 }}
               >
                 <b
                   style={{
                     color: 'var(--err)',
-                    fontSize: 12,
+                    fontSize: 'var(--fs-sm)',
                   }}
                 >
                   🔧 حالت تعمیر فعال است
@@ -973,8 +973,8 @@ export default function SystemSettings() {
                   style={{
                     display: 'block',
                     color: 'var(--txm)',
-                    fontSize: 9.8,
-                    marginTop: 4,
+                    fontSize: 'var(--fs-cap)',
+                    marginTop: 'var(--sp-1)',
                     lineHeight: 1.8,
                   }}
                 >
@@ -1051,13 +1051,13 @@ export default function SystemSettings() {
                   alignItems: 'center',
                   justifyContent:
                     'space-between',
-                  marginTop: 10,
+                  marginTop: 'var(--sp-3)',
                 }}
               >
                 <span
                   style={{
                     color: 'var(--txm)',
-                    fontSize: 8.8,
+                    fontSize: 'var(--fs-cap)',
                   }}
                 >
                   خالی = متن پیش‌فرض ربات •{' '}
@@ -1072,7 +1072,7 @@ export default function SystemSettings() {
                   style={{
                     minHeight: 34,
                     padding: '6px 14px',
-                    fontSize: 10.5,
+                    fontSize: 'var(--fs-cap)',
                   }}
                   disabled={
                     !textDirty ||
@@ -1221,8 +1221,8 @@ export default function SystemSettings() {
               <b
                 style={{
                   display: 'block',
-                  fontSize: 12.3,
-                  marginBottom: 4,
+                  fontSize: 'var(--fs-sm)',
+                  marginBottom: 'var(--sp-1)',
                 }}
               >
                 🕐 ساعت اجرای بکاپ خودکار
@@ -1232,8 +1232,8 @@ export default function SystemSettings() {
                 style={{
                   display: 'block',
                   color: 'var(--txm)',
-                  fontSize: 9.4,
-                  marginBottom: 10,
+                  fontSize: 'var(--fs-cap)',
+                  marginBottom: 'var(--sp-3)',
                   lineHeight: 1.8,
                 }}
               >
@@ -1290,7 +1290,7 @@ export default function SystemSettings() {
                     minHeight: 34,
                     padding:
                       '6px 16px',
-                    fontSize: 10.5,
+                    fontSize: 'var(--fs-cap)',
                   }}
                   disabled={
                     !backupHourDirty ||
@@ -1316,8 +1316,8 @@ export default function SystemSettings() {
               <b
                 style={{
                   display: 'block',
-                  fontSize: 12.3,
-                  marginBottom: 4,
+                  fontSize: 'var(--fs-sm)',
+                  marginBottom: 'var(--sp-1)',
                 }}
               >
                 📦 دریافت فایل پشتیبان
@@ -1328,7 +1328,7 @@ export default function SystemSettings() {
                 style={{
                   display: 'block',
                   color: 'var(--txm)',
-                  fontSize: 9.4,
+                  fontSize: 'var(--fs-cap)',
                   marginBottom: 12,
                   lineHeight: 1.8,
                 }}
@@ -1361,7 +1361,7 @@ export default function SystemSettings() {
                         className="btn btn-dark"
                         style={{
                           minHeight: 36,
-                          fontSize: 10,
+                          fontSize: 'var(--fs-cap)',
                           gridColumn:
                             button.wide
                               ? '1 / -1'
@@ -1488,7 +1488,7 @@ export default function SystemSettings() {
 
             <div
               className="page-hint"
-              style={{ marginTop: 14 }}
+              style={{ marginTop: 'var(--sp-4)' }}
             >
               <span>🛡</span>
 
@@ -1694,13 +1694,13 @@ function PrestigeConfigSection() {
         className="card"
         style={{
           display: 'grid',
-          gap: 10,
+          gap: 'var(--sp-3)',
         }}
       >
         <div
           style={{
             color: 'var(--txm)',
-            fontSize: 9.5,
+            fontSize: 'var(--fs-cap)',
             lineHeight: 1.8,
           }}
         >
@@ -1719,7 +1719,7 @@ function PrestigeConfigSection() {
             <div key={title}>
               <div
                 style={{
-                  fontSize: 10.5,
+                  fontSize: 'var(--fs-cap)',
                   fontWeight: 700,
                   margin:
                     '6px 0 7px',
@@ -1748,7 +1748,7 @@ function PrestigeConfigSection() {
                       style={{
                         color:
                           'var(--txm)',
-                        fontSize: 8.5,
+                        fontSize: 'var(--fs-cap)',
                       }}
                     >
                       {meta[key]?.label ||
@@ -1786,7 +1786,7 @@ function PrestigeConfigSection() {
                         )
                       }
                       style={{
-                        fontSize: 12,
+                        fontSize: 'var(--fs-sm)',
                         padding:
                           '6px 9px',
                       }}
@@ -1842,7 +1842,7 @@ function PrestigeConfigSection() {
         <div
           style={{
             color: 'var(--txm)',
-            fontSize: 8.5,
+            fontSize: 'var(--fs-cap)',
           }}
         >
           آستانه‌ی رنک‌ها (۳۰۰/۷۵۰/…) مطابق
