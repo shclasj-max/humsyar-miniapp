@@ -100,7 +100,7 @@ export function SkChipRow({ n = 3, w = 62 }) {
             style={{
               width: w,
               height: 26,
-              borderRadius: 999,
+              borderRadius: 'var(--r-pill)',
             }}
           />
         )
@@ -139,7 +139,7 @@ export function SkHero({
             height={15}
           />
 
-          <div style={{ marginTop: 7 }}>
+          <div style={{ marginTop: 'var(--sp-2)' }}>
             <SkeletonLine
               width="58%"
               height={10}
@@ -162,7 +162,7 @@ export function SkHero({
             style={{
               width: 46,
               height: 20,
-              borderRadius: 999,
+              borderRadius: 'var(--r-pill)',
             }}
           />
         )}
@@ -253,14 +253,14 @@ export function SkKpiGrid({ n = 4 }) {
                 width: 40,
                 height: 40,
                 marginBottom: 9,
-                borderRadius: 13,
+                borderRadius: 'var(--r-md)',
               }}
             />
             <SkeletonLine
               width={44}
               height={17}
             />
-            <div style={{ marginTop: 4 }}>
+            <div style={{ marginTop: 'var(--sp-1)' }}>
               <SkeletonLine
                 width={58}
                 height={9}
@@ -400,7 +400,7 @@ export function SkMenuCard({ n = 4 }) {
                 width: 40,
                 height: 40,
                 flexShrink: 0,
-                borderRadius: 12,
+                borderRadius: 'var(--r-md)',
               }}
             />
 
@@ -427,7 +427,7 @@ export function SkMenuCard({ n = 4 }) {
               style={{
                 width: 22,
                 height: 22,
-                borderRadius: 8,
+                borderRadius: 'var(--r-sm)',
               }}
             />
           </div>
@@ -463,7 +463,7 @@ export function SkTileGrid({ n = 4 }) {
                 width: 36,
                 height: 36,
                 marginBottom: 8,
-                borderRadius: 12,
+                borderRadius: 'var(--r-md)',
               }}
             />
             <SkeletonLine
@@ -490,7 +490,7 @@ export function SkPlanCard() {
     <article
       className="card"
       aria-hidden="true"
-      style={{ padding: 14 }}
+      style={{ padding: 'var(--sp-4)' }}
     >
       <div
         style={{
@@ -521,7 +521,7 @@ export function SkPlanCard() {
           style={{
             width: 46,
             height: 20,
-            borderRadius: 999,
+            borderRadius: 'var(--r-pill)',
           }}
         />
       </div>
@@ -543,7 +543,7 @@ export function SkPlanCard() {
           width: '100%',
           height: 38,
           marginTop: 12,
-          borderRadius: 13,
+          borderRadius: 'var(--r-md)',
         }}
       />
     </article>
@@ -675,7 +675,7 @@ export function ProfileSkeleton() {
 export function SubscriptionSkeleton() {
   return (
     <div
-      style={{ display: 'grid', gap: 14 }}
+      style={{ display: 'grid', gap: 'var(--sp-4)' }}
     >
       <section
         className="card card-glow"
@@ -697,7 +697,7 @@ export function SubscriptionSkeleton() {
               width="44%"
               height={14}
             />
-            <div style={{ marginTop: 7 }}>
+            <div style={{ marginTop: 'var(--sp-2)' }}>
               <SkeletonLine
                 width="64%"
                 height={10}
@@ -710,7 +710,7 @@ export function SubscriptionSkeleton() {
             style={{
               width: 52,
               height: 22,
-              borderRadius: 999,
+              borderRadius: 'var(--r-pill)',
             }}
           />
         </div>
@@ -838,14 +838,14 @@ export function SettingsSkeleton() {
       <section
         className="card"
         aria-hidden="true"
-        style={{ padding: 14 }}
+        style={{ padding: 'var(--sp-4)' }}
       >
         <div
           className="skeleton"
           style={{
             width: '100%',
             height: 62,
-            borderRadius: 10,
+            borderRadius: 'var(--r-sm)',
           }}
         />
 
@@ -855,7 +855,7 @@ export function SettingsSkeleton() {
             justifyContent:
               'space-between',
             alignItems: 'center',
-            marginTop: 10,
+            marginTop: 'var(--sp-3)',
           }}
         >
           <SkeletonLine
@@ -867,7 +867,7 @@ export function SettingsSkeleton() {
             style={{
               width: 66,
               height: 32,
-              borderRadius: 11,
+              borderRadius: 'var(--r-md)',
             }}
           />
         </div>
