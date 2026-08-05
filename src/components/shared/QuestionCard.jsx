@@ -81,7 +81,7 @@ export default function QuestionCard({
           12,
 
         background:
-          'linear-gradient(155deg,rgba(59,130,246,.08),rgba(16,24,39,.97) 42%)',
+          'linear-gradient(155deg,var(--acc-soft),var(--surf-card) 42%)',
       }}
     >
       <div
@@ -161,16 +161,14 @@ export default function QuestionCard({
               'center',
 
             color:
-              '#fff',
+              'var(--t-white)',
 
             background:
               'var(--grad-brand)',
 
-            borderRadius:
-              10,
+            borderRadius: 'var(--r-sm)',
 
-            fontSize:
-              11,
+            fontSize: 'var(--fs-meta)',
 
             fontWeight:
               900,
@@ -184,8 +182,7 @@ export default function QuestionCard({
             color:
               'var(--tx)',
 
-            fontSize:
-              13.5,
+            fontSize: 'var(--fs-md)',
 
             fontWeight:
               700,
@@ -231,10 +228,10 @@ export default function QuestionCard({
 
             const border =
               correct
-                ? 'rgba(16,185,129,.45)'
+                ? 'var(--bd-ok)'
 
                 : wrongSelected
-                  ? 'rgba(239,68,68,.45)'
+                  ? 'var(--bd-err)'
 
                   : chosen
                     ? 'var(--acc)'
@@ -244,15 +241,15 @@ export default function QuestionCard({
 
             const background =
               correct
-                ? 'rgba(16,185,129,.12)'
+                ? 'var(--soft-ok)'
 
                 : wrongSelected
-                  ? 'rgba(239,68,68,.12)'
+                  ? 'var(--soft-err)'
 
                   : chosen
                     ? 'var(--acc-soft)'
 
-                    : 'rgba(24,34,53,.72)';
+                    : 'var(--scrim)';
 
 
             const color =
@@ -287,8 +284,7 @@ export default function QuestionCard({
                   width:
                     '100%',
 
-                  gap:
-                    10,
+                  gap: 'var(--sp-3)',
 
                   padding:
                     '10px 11px',
@@ -303,8 +299,7 @@ export default function QuestionCard({
                   border:
                     `1px solid ${border}`,
 
-                  borderRadius:
-                    13,
+                  borderRadius: 'var(--r-md)',
 
                   cursor:
                     answered != null
@@ -338,18 +333,16 @@ export default function QuestionCard({
 
                     background:
                       correct
-                        ? 'rgba(16,185,129,.15)'
+                        ? 'var(--soft-ok)'
 
                         : wrongSelected
-                          ? 'rgba(239,68,68,.15)'
+                          ? 'var(--soft-err)'
 
                           : 'var(--elev)',
 
-                    borderRadius:
-                      9,
+                    borderRadius: 'var(--r-sm)',
 
-                    fontSize:
-                      10,
+                    fontSize: 'var(--fs-cap)',
 
                     fontWeight:
                       900,
@@ -367,8 +360,7 @@ export default function QuestionCard({
                     paddingTop:
                       3,
 
-                    fontSize:
-                      11.5,
+                    fontSize: 'var(--fs-meta)',
 
                     lineHeight:
                       1.7,
@@ -403,11 +395,9 @@ export default function QuestionCard({
             alignItems:
               'center',
 
-            gap:
-              4,
+            gap: 'var(--sp-1)',
 
-            marginTop:
-              10,
+            marginTop: 'var(--sp-3)',
 
             padding:
               0,
@@ -421,8 +411,7 @@ export default function QuestionCard({
             border:
               0,
 
-            fontSize:
-              9.5,
+            fontSize: 'var(--fs-cap)',
 
             cursor:
               'pointer',
