@@ -315,7 +315,7 @@ export default function AcademicScheduleAdmin() {
             style={{
               display: 'flex',
               flexDirection: 'column',
-              gap: 10,
+              gap: 'var(--sp-3)',
             }}
           >
             <label className="fld-label">
@@ -491,7 +491,7 @@ export default function AcademicScheduleAdmin() {
           <button
             className="btn btn-p btn-full"
             style={{
-              marginTop: 14,
+              marginTop: 'var(--sp-4)',
             }}
             disabled={
               !validForm ||
@@ -541,7 +541,7 @@ export default function AcademicScheduleAdmin() {
 
                   color:
                     tab === value
-                      ? '#fff'
+                      ? 'var(--t-white)'
                       : 'var(--tx2)',
                 }}
               >
@@ -554,7 +554,7 @@ export default function AcademicScheduleAdmin() {
         <button
           className="btn btn-p btn-full"
           style={{
-            marginBottom: 14,
+            marginBottom: 'var(--sp-4)',
           }}
           onClick={startCreate}
         >
@@ -592,7 +592,7 @@ export default function AcademicScheduleAdmin() {
                   display: 'flex',
                   justifyContent:
                     'space-between',
-                  gap: 10,
+                  gap: 'var(--sp-3)',
                 }}
               >
                 <div style={{ flex: 1 }}>
@@ -607,7 +607,7 @@ export default function AcademicScheduleAdmin() {
 
                   <div
                     style={{
-                      fontSize: 11,
+                      fontSize: 'var(--fs-meta)',
                       color: 'var(--txm)',
                       marginTop: 3,
                     }}
@@ -662,7 +662,7 @@ export default function AcademicScheduleAdmin() {
               <div
                 style={{
                   display: 'flex',
-                  gap: 7,
+                  gap: 'var(--sp-2)',
                   marginTop: 11,
                 }}
               >
@@ -729,7 +729,7 @@ export default function AcademicScheduleAdmin() {
             inset: 0,
             zIndex: 300,
             background:
-              'rgba(0,0,0,.7)',
+              'var(--scrim-strong)',
             display: 'flex',
             alignItems: 'flex-end',
           }}
