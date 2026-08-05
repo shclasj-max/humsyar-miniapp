@@ -1,3 +1,7 @@
+import StatTile from '../../components/shared/StatTile';
+
+import { number } from '../../lib/format';
+
 import {
   useMutation,
   useQuery,
@@ -28,91 +32,19 @@ import {
 } from '../../stores/uiStore';
 
 
-const number = (value) =>
-  Math.max(
-    0,
-    Number(value) || 0
-  );
 
-
-function Stat({
-  icon,
-  value,
-  label,
-  color,
-  soft,
-}) {
-  return (
-    <div
-      className="card"
-      style={{
-        padding: 12,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 9,
-      }}
-    >
-      <span
-        style={{
-          display: 'grid',
-          width: 38,
-          height: 38,
-          placeItems: 'center',
-          borderRadius: 12,
-          color,
-          background: soft,
-          fontSize: 18,
-        }}
-      >
-        {icon}
-      </span>
-
-      <div>
-        <b
-          style={{
-            display: 'block',
-            color,
-            fontSize: 18,
-          }}
-        >
-          {value}
-        </b>
-
-        <span
-          style={{
-            color: 'var(--txm)',
-            fontSize: 9,
-          }}
-        >
-          {label}
-        </span>
-      </div>
-    </div>
-  );
-}
 
 
 const SECTIONS = [
-  {
-    icon: '📈',
-    title: 'آمار تحلیلی',
-    description:
-      'ترند عضویت، فعالیت و اوج ساعات',
-    route: '/admin/analytics',
-    color: '#22D3EE',
-    soft:
-      'rgba(34,211,238,.12)',
-  },
-
   {
     icon: '👥',
     title: 'مدیریت کاربران',
     description:
       'جست‌وجو، تأیید، ویرایش و تعلیق',
     route: '/admin/users',
-    color: '#70A7FF',
+    color: 'var(--t-acc)',
     soft:
-      'rgba(59,130,246,.12)',
+      'var(--soft-acc)',
   },
 
   {
@@ -122,9 +54,9 @@ const SECTIONS = [
       'پلن‌ها، رسیدها، مشترکین و تخفیف',
     route:
       '/admin/subscription',
-    color: '#34D399',
+    color: 'var(--t-ok)',
     soft:
-      'rgba(16,185,129,.12)',
+      'var(--soft-ok)',
   },
 
   {
@@ -133,9 +65,9 @@ const SECTIONS = [
     description:
       'مدل، API Key، سهمیه و گزارش‌ها',
     route: '/admin/ai',
-    color: '#C4B5FD',
+    color: 'var(--t-pur)',
     soft:
-      'rgba(139,92,246,.13)',
+      'var(--soft-pur)',
   },
 
   {
@@ -144,9 +76,9 @@ const SECTIONS = [
     description:
       'ورودی‌ها، گروه‌ها و آمار دانشجویان',
     route: '/admin/intakes',
-    color: '#34D399',
+    color: 'var(--t-ok)',
     soft:
-      'rgba(16,185,129,.12)',
+      'var(--soft-ok)',
   },
 
   {
@@ -156,20 +88,9 @@ const SECTIONS = [
       'اعطا و لغو دسترسی محتوا',
     route:
       '/admin/content-admins',
-    color: '#C4B5FD',
+    color: 'var(--t-pur)',
     soft:
-      'rgba(139,92,246,.13)',
-  },
-
-  {
-    icon: '🛡',
-    title: 'مدیریت نقش‌ها',
-    description:
-      'ساخت نقش دلخواه + سوییچ مجوزها (RBAC)',
-    route: '/admin/roles',
-    color: '#93C5FD',
-    soft:
-      'rgba(59,130,246,.13)',
+      'var(--soft-pur)',
   },
 
   {
@@ -178,9 +99,9 @@ const SECTIONS = [
     description:
       'پاسخ، بستن و بازگشایی تیکت',
     route: '/admin/tickets',
-    color: '#FCD34D',
+    color: 'var(--t-warn)',
     soft:
-      'rgba(245,158,11,.12)',
+      'var(--soft-warn)',
   },
 
   {
@@ -189,9 +110,9 @@ const SECTIONS = [
     description:
       'ارسال هدفمند به کاربران',
     route: '/admin/broadcast',
-    color: '#22D3EE',
+    color: 'var(--t-info)',
     soft:
-      'rgba(34,211,238,.12)',
+      'var(--soft-info)',
   },
 
   {
@@ -200,9 +121,9 @@ const SECTIONS = [
     description:
       'ساخت نظرسنجی در کانال',
     route: '/admin/poll',
-    color: '#70A7FF',
+    color: 'var(--t-acc)',
     soft:
-      'rgba(59,130,246,.12)',
+      'var(--soft-acc)',
   },
 
   {
@@ -212,9 +133,9 @@ const SECTIONS = [
       'تنظیم، تاریخچه و ارسال مجدد',
     route:
       '/admin/notifications',
-    color: '#FCD34D',
+    color: 'var(--t-warn)',
     soft:
-      'rgba(245,158,11,.12)',
+      'var(--soft-warn)',
   },
 
   {
@@ -223,31 +144,9 @@ const SECTIONS = [
     description:
       'مشاهده و رفع مسدودیت کاربران',
     route: '/admin/blacklist',
-    color: '#FB7185',
+    color: 'var(--t-err)',
     soft:
-      'rgba(239,68,68,.12)',
-  },
-
-  {
-    icon: '🛡',
-    title: 'لاگ فعالیت مدیران',
-    description:
-      'ردیابی اقدامات حساس سامانه',
-    route: '/admin/audit',
-    color: '#FB7185',
-    soft:
-      'rgba(239,68,68,.12)',
-  },
-
-  {
-    icon: '⚙️',
-    title: 'تنظیمات ربات',
-    description:
-      'حالت تعمیر و تنظیمات ثبت‌نام',
-    route: '/admin/settings',
-    color: '#94A3B8',
-    soft:
-      'rgba(148,163,184,.14)',
+      'var(--soft-err)',
   },
 
   {
@@ -256,11 +155,56 @@ const SECTIONS = [
     description:
       'سؤال، منابع، برنامه و نمرات',
     route: '/admin/content',
-    color: '#34D399',
+    color: 'var(--t-ok)',
     soft:
-      'rgba(16,185,129,.12)',
+      'var(--soft-ok)',
   },
+  {
+    icon: '📊',
+    title: 'آمار و تحلیل',
+    description:
+      'رشد، فعالیت و گزارش‌های کلیدی',
+    route: '/admin/analytics',
+    color: 'var(--t-info)',
+    soft:
+      'var(--soft-info)',
+  },
+
+  {
+    icon: '🛡',
+    title: 'مدیریت نقش‌ها',
+    description:
+      'نقش‌ها و مجوزهای RBAC',
+    route: '/admin/roles',
+    color: 'var(--t-pur)',
+    soft:
+      'var(--soft-pur)',
+  },
+
+  {
+    icon: '📜',
+    title: 'گزارش فعالیت‌ها',
+    description:
+      'لاگ حساس ادمین‌ها (Audit)',
+    route: '/admin/audit',
+    color: 'var(--t-warn)',
+    soft:
+      'var(--soft-warn)',
+  },
+
+  {
+    icon: '⚙️',
+    title: 'تنظیمات سیستم',
+    description:
+      'هوش مصنوعی، اعلان و گریندها',
+    route: '/admin/settings',
+    color: 'var(--t-err)',
+    soft:
+      'var(--soft-err)',
+  },
+
 ];
+
 
 
 export default function AdminHome() {
@@ -440,7 +384,7 @@ export default function AdminHome() {
             style={{
               width: 36,
               height: 36,
-              borderRadius: 12,
+              borderRadius: 'var(--r-md)',
               background:
                 'var(--elev)',
               border:
@@ -460,10 +404,10 @@ export default function AdminHome() {
           }
           style={{
             padding: 18,
-            marginBottom: 14,
+            marginBottom: 'var(--sp-4)',
 
             background:
-              'linear-gradient(145deg,rgba(245,158,11,.13),rgba(16,24,39,.95) 55%,rgba(59,130,246,.1))',
+              'linear-gradient(145deg,var(--soft-warn-2),var(--surf-card) 55%,var(--soft-acc))',
           }}
         >
           <div
@@ -479,10 +423,10 @@ export default function AdminHome() {
                 width: 56,
                 height: 56,
                 placeItems: 'center',
-                borderRadius: 18,
+                borderRadius: 'var(--r-lg)',
 
                 background:
-                  'linear-gradient(135deg,#D97706,#F59E0B)',
+                  'linear-gradient(135deg,var(--warn-dim),var(--warn))',
 
                 fontSize: 27,
               }}
@@ -499,7 +443,7 @@ export default function AdminHome() {
                 style={{
                   color:
                     'var(--txm)',
-                  fontSize: 10,
+                  fontSize: 'var(--fs-cap)',
                 }}
               >
                 مرکز فرمان هامزیار
@@ -508,7 +452,7 @@ export default function AdminHome() {
               <b
                 style={{
                   display: 'block',
-                  fontSize: 17,
+                  fontSize: 'var(--fs-xl)',
                   marginTop: 2,
                 }}
               >
@@ -577,7 +521,7 @@ export default function AdminHome() {
                 16,
             }}
           >
-            <Stat
+            <StatTile variant="row"
               icon="👥"
               value={
                 number(
@@ -586,25 +530,25 @@ export default function AdminHome() {
                 )
               }
               label="کاربر فعال"
-              color="#70A7FF"
+              color="var(--t-acc)"
               soft={
-                'rgba(59,130,246,.12)'
+                'var(--soft-acc)'
               }
             />
 
-            <Stat
+            <StatTile variant="row"
               icon="⏳"
               value={
                 pendingUsers
               }
               label="کاربر منتظر"
-              color="#FCD34D"
+              color="var(--t-warn)"
               soft={
-                'rgba(245,158,11,.12)'
+                'var(--soft-warn)'
               }
             />
 
-            <Stat
+            <StatTile variant="row"
               icon="💎"
               value={
                 number(
@@ -614,21 +558,21 @@ export default function AdminHome() {
                 )
               }
               label="مشترک فعال"
-              color="#34D399"
+              color="var(--t-ok)"
               soft={
-                'rgba(16,185,129,.12)'
+                'var(--soft-ok)'
               }
             />
 
-            <Stat
+            <StatTile variant="row"
               icon="💳"
               value={
                 pendingPayments
               }
               label="رسید منتظر"
-              color="#FB7185"
+              color="var(--t-err)"
               soft={
-                'rgba(239,68,68,.12)'
+                'var(--soft-err)'
               }
             />
           </section>
@@ -648,7 +592,7 @@ export default function AdminHome() {
                 15,
 
               borderColor:
-                'rgba(245,158,11,.25)',
+                'var(--bd-warn)',
             }}
           >
             <div className="sec-title">
@@ -739,10 +683,10 @@ export default function AdminHome() {
                   width: 44,
                   height: 44,
                   placeItems: 'center',
-                  borderRadius: 14,
+                  borderRadius: 'var(--r-md)',
                   color: item.color,
                   background: item.soft,
-                  fontSize: 20,
+                  fontSize: 'var(--fs-xl)',
                 }}
               >
                 {item.icon}
@@ -756,7 +700,7 @@ export default function AdminHome() {
                 <b
                   style={{
                     display: 'block',
-                    fontSize: 12.5,
+                    fontSize: 'var(--fs-sm)',
                   }}
                 >
                   {item.title}
@@ -767,7 +711,7 @@ export default function AdminHome() {
                     display: 'block',
                     color:
                       'var(--txm)',
-                    fontSize: 9.5,
+                    fontSize: 'var(--fs-cap)',
                     marginTop: 3,
                   }}
                 >
