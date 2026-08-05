@@ -174,7 +174,7 @@ function PendingScreen({
   onClose,
 }) {
   return (
-    <Screen glow="rgba(245,158,11,.13)">
+    <Screen glow="var(--soft-warn-2)">
       <div
         style={{ textAlign: 'center' }}
       >
@@ -187,10 +187,10 @@ function PendingScreen({
             placeItems: 'center',
             margin: '0 auto',
             background:
-              'rgba(245,158,11,.13)',
+              'var(--soft-warn-2)',
             border:
-              '1px solid rgba(245,158,11,.3)',
-            borderRadius: 23,
+              '1px solid var(--bd-warn)',
+            borderRadius: 'var(--r-xl)',
             fontSize: 35,
           }}
         >
@@ -200,7 +200,7 @@ function PendingScreen({
         <h1
           style={{
             marginTop: 16,
-            fontSize: 18,
+            fontSize: 'var(--fs-xl)',
             fontWeight: 900,
           }}
         >
@@ -211,7 +211,7 @@ function PendingScreen({
           style={{
             marginTop: 8,
             color: 'var(--tx2)',
-            fontSize: 11,
+            fontSize: 'var(--fs-meta)',
             lineHeight: 1.9,
           }}
         >
@@ -236,14 +236,14 @@ function PendingScreen({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: 7,
+            gap: 'var(--sp-2)',
             marginTop: 13,
             padding: '9px 11px',
-            borderRadius: 12,
+            borderRadius: 'var(--r-md)',
             background:
-              'rgba(100,116,139,.08)',
+              'var(--soft-mut)',
             color: 'var(--tx2)',
-            fontSize: 10,
+            fontSize: 'var(--fs-cap)',
           }}
         >
           <Spinner size={13} />
@@ -271,7 +271,7 @@ function BlockedScreen({
   onClose,
 }) {
   return (
-    <Screen glow="rgba(239,68,68,.13)">
+    <Screen glow="var(--soft-err-2)">
       <div
         style={{ textAlign: 'center' }}
       >
@@ -283,10 +283,10 @@ function BlockedScreen({
             placeItems: 'center',
             margin: '0 auto',
             background:
-              'rgba(239,68,68,.13)',
+              'var(--soft-err-2)',
             border:
-              '1px solid rgba(239,68,68,.3)',
-            borderRadius: 23,
+              '1px solid var(--bd-err)',
+            borderRadius: 'var(--r-xl)',
             fontSize: 35,
           }}
         >
@@ -296,7 +296,7 @@ function BlockedScreen({
         <h1
           style={{
             marginTop: 16,
-            fontSize: 18,
+            fontSize: 'var(--fs-xl)',
             fontWeight: 900,
           }}
         >
@@ -307,7 +307,7 @@ function BlockedScreen({
           style={{
             marginTop: 8,
             color: 'var(--tx2)',
-            fontSize: 11,
+            fontSize: 'var(--fs-meta)',
             lineHeight: 1.9,
           }}
         >
@@ -580,12 +580,12 @@ export default function Register() {
 
   if (isLoading) {
     return (
-      <Screen glow="rgba(59,130,246,.13)">
+      <Screen glow="var(--soft-acc-2)">
         <div
           style={{
             display: 'grid',
             placeItems: 'center',
-            gap: 10,
+            gap: 'var(--sp-3)',
             padding: '26px 0',
             textAlign: 'center',
           }}
@@ -595,7 +595,7 @@ export default function Register() {
           <span
             style={{
               color: 'var(--txm)',
-              fontSize: 11,
+              fontSize: 'var(--fs-meta)',
             }}
           >
             در حال آماده‌سازی فرم
@@ -609,7 +609,7 @@ export default function Register() {
 
   if (isError) {
     return (
-      <Screen glow="rgba(34,211,238,.13)">
+      <Screen glow="var(--soft-info)">
         <div
           style={{ textAlign: 'center' }}
         >
@@ -622,7 +622,7 @@ export default function Register() {
           <h1
             style={{
               marginTop: 12,
-              fontSize: 17,
+              fontSize: 'var(--fs-xl)',
               fontWeight: 900,
             }}
           >
@@ -633,7 +633,7 @@ export default function Register() {
             style={{
               marginTop: 8,
               color: 'var(--tx2)',
-              fontSize: 11,
+              fontSize: 'var(--fs-meta)',
             }}
           >
             اینترنت خود را بررسی
@@ -731,7 +731,7 @@ export default function Register() {
 
 
   return (
-    <Screen glow="rgba(59,130,246,.13)">
+    <Screen glow="var(--soft-acc-2)">
       <Steps
         total={steps.length}
         current={stepIndex}
@@ -750,7 +750,7 @@ export default function Register() {
         <h1
           style={{
             marginTop: 9,
-            fontSize: 18,
+            fontSize: 'var(--fs-xl)',
             fontWeight: 900,
           }}
         >
@@ -759,9 +759,9 @@ export default function Register() {
 
         <div
           style={{
-            marginTop: 7,
+            marginTop: 'var(--sp-2)',
             color: 'var(--acc2)',
-            fontSize: 12.5,
+            fontSize: 'var(--fs-sm)',
             fontWeight: 800,
           }}
         >
@@ -770,9 +770,9 @@ export default function Register() {
 
         <p
           style={{
-            marginTop: 4,
+            marginTop: 'var(--sp-1)',
             color: 'var(--txm)',
-            fontSize: 10,
+            fontSize: 'var(--fs-cap)',
           }}
         >
           {stepConfig.hint}
@@ -791,7 +791,7 @@ export default function Register() {
             placeholder="نام و نام خانوادگی…"
             style={{
               textAlign: 'center',
-              fontSize: 13.5,
+              fontSize: 'var(--fs-md)',
             }}
             onChange={(event) => {
               setName(
@@ -881,7 +881,7 @@ export default function Register() {
             placeholder="مثلاً ۴۰۱۲۳۴۵۶۷"
             style={{
               textAlign: 'center',
-              fontSize: 13.5,
+              fontSize: 'var(--fs-md)',
               letterSpacing: 1,
             }}
             onChange={(event) => {
@@ -911,11 +911,11 @@ export default function Register() {
             style={{
               marginTop: 9,
               padding: '7px 10px',
-              borderRadius: 10,
+              borderRadius: 'var(--r-sm)',
               background:
-                'rgba(239,68,68,.1)',
+                'var(--soft-err)',
               color: 'var(--err)',
-              fontSize: 10,
+              fontSize: 'var(--fs-cap)',
               textAlign: 'center',
             }}
           >
@@ -1013,9 +1013,9 @@ export default function Register() {
 
       <div
         style={{
-          marginTop: 14,
+          marginTop: 'var(--sp-4)',
           color: 'var(--txm)',
-          fontSize: 8.5,
+          fontSize: 'var(--fs-cap)',
           textAlign: 'center',
           lineHeight: 1.8,
         }}
