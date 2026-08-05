@@ -167,7 +167,7 @@ export default function ChatHistorySheet({
                     className="skeleton"
                     style={{
                       height: 56,
-                      borderRadius: 13,
+                      borderRadius: 'var(--r-md)',
                     }}
                   />
                 ))
