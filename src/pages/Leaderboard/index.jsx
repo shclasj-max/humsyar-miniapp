@@ -1,3 +1,5 @@
+import { faNum } from '../../lib/format';
+
 import { useState } from 'react';
 
 import { useNavigate } from 'react-router-dom';
@@ -19,11 +21,7 @@ import { haptic } from '../../lib/telegram';
    + ردیف چسبان «من» با Jump هفتگی + رقبا.
    هیچ فرمول رتبه‌بندی در FE نیست. */
 
-const faNum = (value) =>
-  String(value ?? '').replace(
-    /\d/g,
-    (digit) => '۰۱۲۳۴۵۶۷۸۹'[digit]
-  );
+
 
 const RANGES = [
   ['week', 'هفته'],
@@ -62,7 +60,7 @@ function ChipRow({ options, value, onPick }) {
             'tab-btn' +
             (value === key ? ' active' : '')
           }
-          style={{ fontSize: 11 }}
+          style={{ fontSize: 'var(--fs-meta)' }}
           onClick={() => {
             haptic();
             onPick(key);
@@ -85,7 +83,7 @@ function JumpBadge({ jump }) {
       <span
         style={{
           color: 'var(--txm)',
-          fontSize: 9.5,
+          fontSize: 'var(--fs-cap)',
         }}
       >
         ▬ بدون تغییر
@@ -100,7 +98,7 @@ function JumpBadge({ jump }) {
           jump > 0
             ? 'var(--ok)'
             : 'var(--err)',
-        fontSize: 9.5,
+        fontSize: 'var(--fs-cap)',
         fontWeight: 700,
       }}
     >
@@ -179,7 +177,7 @@ export default function Leaderboard() {
             row.rank === 1
               ? 'var(--warn)'
               : 'var(--txm)',
-          fontSize: 13,
+          fontSize: 'var(--fs-md)',
         }}
       >
         {faNum(row.rank)}
@@ -205,7 +203,7 @@ export default function Leaderboard() {
           gap: 2,
         }}
       >
-        <b style={{ fontSize: 12 }}>
+        <b style={{ fontSize: 'var(--fs-sm)' }}>
           {valueLabel(row)}
         </b>
 
@@ -229,16 +227,16 @@ export default function Leaderboard() {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 7,
+                gap: 'var(--sp-2)',
                 color: 'var(--acc)',
-                fontSize: 11,
+                fontSize: 'var(--fs-meta)',
               }}
             >
               🗓 {data.season.label}
               <span
                 style={{
                   color: 'var(--txm)',
-                  fontSize: 9,
+                  fontSize: 'var(--fs-cap)',
                 }}
               >
                 — All-Time هرگز ریست نمی‌شود
@@ -291,7 +289,7 @@ export default function Leaderboard() {
           >
             <b
               style={{
-                fontSize: 15,
+                fontSize: 'var(--fs-lg)',
                 color: 'var(--acc)',
               }}
             >
@@ -314,7 +312,7 @@ export default function Leaderboard() {
                 gap: 2,
               }}
             >
-              <b style={{ fontSize: 12.5 }}>
+              <b style={{ fontSize: 'var(--fs-sm)' }}>
                 {valueLabel(me)}
               </b>
 
@@ -329,9 +327,9 @@ export default function Leaderboard() {
           <div
             style={{
               display: 'flex',
-              gap: 7,
+              gap: 'var(--sp-2)',
               color: 'var(--txm)',
-              fontSize: 9,
+              fontSize: 'var(--fs-cap)',
               justifyContent: 'center',
               flexWrap: 'wrap',
             }}
@@ -362,7 +360,7 @@ export default function Leaderboard() {
               className="card"
               style={{
                 color: 'var(--txm)',
-                fontSize: 11,
+                fontSize: 'var(--fs-meta)',
                 textAlign: 'center',
               }}
             >
@@ -374,7 +372,7 @@ export default function Leaderboard() {
         <div
           style={{
             display: 'grid',
-            gap: 7,
+            gap: 'var(--sp-2)',
           }}
         >
           {rows.map(renderRow)}
@@ -383,7 +381,7 @@ export default function Leaderboard() {
         <div
           style={{
             color: 'var(--txm)',
-            fontSize: 9,
+            fontSize: 'var(--fs-cap)',
             textAlign: 'center',
           }}
         >
