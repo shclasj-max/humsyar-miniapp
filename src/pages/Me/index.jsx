@@ -402,8 +402,11 @@ export default function Me() {
                     fontSize: 23,
                   }}
                 >
-                  {user.name?.[0] ||
-                    'ه'}
+                  {(
+                    user
+                      .display_name ||
+                    user.name
+                  )?.[0] || 'ه'}
                 </div>
 
                 <div
@@ -430,9 +433,32 @@ export default function Me() {
                         'nowrap',
                     }}
                   >
-                    {user.name ||
+                    {user
+                      .display_name ||
+                      user.name ||
                       'کاربر هامزیار'}
                   </h2>
+
+                  {/* 🏷 Identity v1 —
+                      نام واقعی زیر لقب */}
+                  {user.nickname && (
+                    <div
+                      style={{
+                        color:
+                          'var(--txm)',
+
+                        fontSize:
+                          9.5,
+
+                        marginTop:
+                          2,
+                      }}
+                    >
+                      نام واقعی:{' '}
+                      {user.name ||
+                        '—'}
+                    </div>
+                  )}
 
                   <div
                     style={{
