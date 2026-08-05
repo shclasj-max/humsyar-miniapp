@@ -245,11 +245,10 @@ export default function GlobalSearch() {
             padding:
               18,
 
-            marginBottom:
-              14,
+            marginBottom: 'var(--sp-4)',
 
             background:
-              'linear-gradient(145deg,rgba(34,211,238,.12),rgba(16,24,39,.95) 55%,rgba(59,130,246,.1))',
+              'linear-gradient(145deg,var(--soft-info),var(--surf-card) 55%,var(--soft-acc))',
           }}
         >
           <div
@@ -278,11 +277,10 @@ export default function GlobalSearch() {
                 placeItems:
                   'center',
 
-                borderRadius:
-                  16,
+                borderRadius: 'var(--r-lg)',
 
                 background:
-                  'linear-gradient(135deg,#0891B2,#3B82F6)',
+                  'linear-gradient(135deg,var(--info-dim),var(--acc))',
 
                 fontSize:
                   25,
@@ -294,8 +292,7 @@ export default function GlobalSearch() {
             <div>
               <b
                 style={{
-                  fontSize:
-                    16.5,
+                  fontSize: 'var(--fs-lg)',
                 }}
               >
                 همه‌چیز را یکجا پیدا کن
@@ -306,8 +303,7 @@ export default function GlobalSearch() {
                   color:
                     'var(--txm)',
 
-                  fontSize:
-                    10,
+                  fontSize: 'var(--fs-cap)',
 
                   marginTop:
                     3,
@@ -322,8 +318,7 @@ export default function GlobalSearch() {
 
           <div
             style={{
-              marginTop:
-                14,
+              marginTop: 'var(--sp-4)',
             }}
           >
             <SearchField
@@ -377,8 +372,7 @@ export default function GlobalSearch() {
                   key={label}
                   className="card"
                   style={{
-                    padding:
-                      14,
+                    padding: 'var(--sp-4)',
 
                     textAlign:
                       'center',
@@ -398,8 +392,7 @@ export default function GlobalSearch() {
                       color:
                         'var(--txm)',
 
-                      fontSize:
-                        9.5,
+                      fontSize: 'var(--fs-cap)',
 
                       marginTop:
                         5,
@@ -449,7 +442,7 @@ export default function GlobalSearch() {
                   style={{
                     color:
                       type === 'all'
-                        ? '#fff'
+                        ? 'var(--t-white)'
                         : 'var(--tx2)',
 
                     background:
@@ -473,7 +466,7 @@ export default function GlobalSearch() {
                       style={{
                         color:
                           type === key
-                            ? '#fff'
+                            ? 'var(--t-white)'
                             : 'var(--tx2)',
 
                         background:
@@ -579,11 +572,10 @@ export default function GlobalSearch() {
                             placeItems:
                               'center',
 
-                            borderRadius:
-                              14,
+                            borderRadius: 'var(--r-md)',
 
                             background:
-                              'rgba(100,116,139,.1)',
+                              'var(--soft-mut)',
 
                             fontSize:
                               21,
@@ -610,8 +602,7 @@ export default function GlobalSearch() {
                               overflow:
                                 'hidden',
 
-                              fontSize:
-                                12,
+                              fontSize: 'var(--fs-sm)',
 
                               lineHeight:
                                 1.7,
@@ -639,8 +630,7 @@ export default function GlobalSearch() {
                                 color:
                                   'var(--txm)',
 
-                                fontSize:
-                                  9.5,
+                                fontSize: 'var(--fs-cap)',
 
                                 marginTop:
                                   3,
