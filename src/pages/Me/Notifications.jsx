@@ -28,32 +28,32 @@ import {
 const TONES = {
   /* 🧠 موج N3 — آیکون/تُن هر دسته‌ی کاتالوگ
      (منابع وب کمک‌رنگ سلفیِ خودِ label است) */
-  resources: ['📚', '#34D399', 'rgba(16,185,129,.12)'],
-  references: ['📖', '#C4B5FD', 'rgba(139,92,246,.13)'],
-  basic_sci: ['🩺', '#22D3EE', 'rgba(34,211,238,.12)'],
-  qbank: ['❓', '#C4B5FD', 'rgba(139,92,246,.13)'],
-  schedule: ['📅', '#70A7FF', 'rgba(59,130,246,.12)'],
-  exams: ['📝', '#FB7185', 'rgba(239,68,68,.12)'],
-  grades: ['📊', '#34D399', 'rgba(16,185,129,.12)'],
-  tickets: ['🎫', '#34D399', 'rgba(16,185,129,.12)'],
-  subscription: ['💳', '#FCD34D', 'rgba(245,158,11,.12)'],
-  discounts: ['🎁', '#FCD34D', 'rgba(245,158,11,.12)'],
-  ai: ['🤖', '#22D3EE', 'rgba(34,211,238,.12)'],
-  announcement: ['📢', '#70A7FF', 'rgba(59,130,246,.12)'],
-  polls: ['🗳️', '#FCD34D', 'rgba(245,158,11,.12)'],
-  gamification: ['🎮', '#C4B5FD', 'rgba(139,92,246,.13)'],
-  profile: ['👤', '#34D399', 'rgba(16,185,129,.12)'],
-  system: ['⚙️', '#94A3B8', 'rgba(148,163,184,.12)'],
+  resources: ['📚', 'var(--t-ok)', 'var(--soft-ok)'],
+  references: ['📖', 'var(--t-pur)', 'var(--soft-pur)'],
+  basic_sci: ['🩺', 'var(--t-info)', 'var(--soft-info)'],
+  qbank: ['❓', 'var(--t-pur)', 'var(--soft-pur)'],
+  schedule: ['📅', 'var(--t-acc)', 'var(--soft-acc)'],
+  exams: ['📝', 'var(--t-err)', 'var(--soft-err)'],
+  grades: ['📊', 'var(--t-ok)', 'var(--soft-ok)'],
+  tickets: ['🎫', 'var(--t-ok)', 'var(--soft-ok)'],
+  subscription: ['💳', 'var(--t-warn)', 'var(--soft-warn)'],
+  discounts: ['🎁', 'var(--t-warn)', 'var(--soft-warn)'],
+  ai: ['🤖', 'var(--t-info)', 'var(--soft-info)'],
+  announcement: ['📢', 'var(--t-acc)', 'var(--soft-acc)'],
+  polls: ['🗳️', 'var(--t-warn)', 'var(--soft-warn)'],
+  gamification: ['🎮', 'var(--t-pur)', 'var(--soft-pur)'],
+  profile: ['👤', 'var(--t-ok)', 'var(--soft-ok)'],
+  system: ['⚙️', 'var(--txm)', 'var(--bd)'],
 
   /* کلیدهای قدیمی (اگر سرور کاتالوگ کهنه بدهد) */
-  new_resources: ['📚', '#34D399', 'rgba(16,185,129,.12)'],
-  exam: ['📝', '#FB7185', 'rgba(239,68,68,.12)'],
-  makeup: ['🔄', '#FCD34D', 'rgba(245,158,11,.12)'],
-  daily_question: ['🧪', '#C4B5FD', 'rgba(139,92,246,.13)'],
-  edu_message: ['🎓', '#22D3EE', 'rgba(34,211,238,.12)'],
-  general: ['📢', '#70A7FF', 'rgba(59,130,246,.12)'],
-  grade_release: ['📊', '#34D399', 'rgba(16,185,129,.12)'],
-  sub_expiry: ['💳', '#FCD34D', 'rgba(245,158,11,.12)'],
+  new_resources: ['📚', 'var(--t-ok)', 'var(--soft-ok)'],
+  exam: ['📝', 'var(--t-err)', 'var(--soft-err)'],
+  makeup: ['🔄', 'var(--t-warn)', 'var(--soft-warn)'],
+  daily_question: ['🧪', 'var(--t-pur)', 'var(--soft-pur)'],
+  edu_message: ['🎓', 'var(--t-info)', 'var(--soft-info)'],
+  general: ['📢', 'var(--t-acc)', 'var(--soft-acc)'],
+  grade_release: ['📊', 'var(--t-ok)', 'var(--soft-ok)'],
+  sub_expiry: ['💳', 'var(--t-warn)', 'var(--soft-warn)'],
 };
 
 
@@ -205,8 +205,7 @@ export function Notifications() {
             'card card-glow hero-card'
           }
           style={{
-            marginBottom:
-              14,
+            marginBottom: 'var(--sp-4)',
           }}
         >
           <div
@@ -234,8 +233,7 @@ export function Notifications() {
                 placeItems:
                   'center',
 
-                borderRadius:
-                  16,
+                borderRadius: 'var(--r-lg)',
 
                 background:
                   'var(--grad-brand)',
@@ -260,8 +258,7 @@ export function Notifications() {
                   color:
                     'var(--txm)',
 
-                  fontSize:
-                    10.5,
+                  fontSize: 'var(--fs-cap)',
                 }}
               >
                 مرکز اعلان هامزیار
@@ -269,8 +266,7 @@ export function Notifications() {
 
               <div
                 style={{
-                  fontSize:
-                    16.5,
+                  fontSize: 'var(--fs-lg)',
 
                   fontWeight:
                     900,
@@ -292,8 +288,7 @@ export function Notifications() {
                   color:
                     'var(--tx2)',
 
-                  fontSize:
-                    10,
+                  fontSize: 'var(--fs-cap)',
 
                   marginTop:
                     3,
@@ -325,14 +320,13 @@ export function Notifications() {
 
                 background:
                   allEnabled
-                    ? 'rgba(16,185,129,.12)'
-                    : 'rgba(245,158,11,.12)',
+                    ? 'var(--soft-ok)'
+                    : 'var(--soft-warn)',
 
                 borderRadius:
                   '50%',
 
-                fontSize:
-                  12,
+                fontSize: 'var(--fs-sm)',
 
                 fontWeight:
                   900,
@@ -360,8 +354,7 @@ export function Notifications() {
             gap:
               8,
 
-            marginBottom:
-              14,
+            marginBottom: 'var(--sp-4)',
           }}
         >
           <button
@@ -459,9 +452,9 @@ export function Notifications() {
                   TONES[item.key] || [
                     '🔔',
 
-                    '#70A7FF',
+                    'var(--t-acc)',
 
-                    'rgba(59,130,246,.12)',
+                    'var(--soft-acc)',
                   ]
                 );
 
@@ -511,11 +504,9 @@ export function Notifications() {
                         background:
                           soft,
 
-                        borderRadius:
-                          13,
+                        borderRadius: 'var(--r-md)',
 
-                        fontSize:
-                          20,
+                        fontSize: 'var(--fs-xl)',
                       }}
                     >
                       {icon}
@@ -535,8 +526,7 @@ export function Notifications() {
                           display:
                             'block',
 
-                          fontSize:
-                            12.5,
+                          fontSize: 'var(--fs-sm)',
                         }}
                       >
                         {item.label ||
@@ -551,8 +541,7 @@ export function Notifications() {
                           color:
                             'var(--txm)',
 
-                          fontSize:
-                            9.5,
+                          fontSize: 'var(--fs-cap)',
 
                           marginTop:
                             3,
@@ -626,8 +615,7 @@ export function Notifications() {
               justifyContent:
                 'center',
 
-              gap:
-                7,
+              gap: 'var(--sp-2)',
 
               marginTop:
                 12,
@@ -635,8 +623,7 @@ export function Notifications() {
               color:
                 'var(--txm)',
 
-              fontSize:
-                10,
+              fontSize: 'var(--fs-cap)',
             }}
           >
             <Spinner size={14} />
