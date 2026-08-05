@@ -233,11 +233,11 @@ export default function AiHistory() {
       />
 
       <main
-        className="page"
+        className="page fade-up"
         style={{
           display: 'flex',
           flexDirection: 'column',
-          gap: 10,
+          gap: 'var(--sp-3)',
           paddingInline: 12,
         }}
       >
@@ -277,7 +277,7 @@ export default function AiHistory() {
                     className="skeleton"
                     style={{
                       height: 62,
-                      borderRadius: 13,
+                      borderRadius: 'var(--r-md)',
                     }}
                   />
                 ))
