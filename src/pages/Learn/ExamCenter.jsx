@@ -771,8 +771,7 @@ export default function ExamCenter() {
                 alignItems:
                   'center',
 
-                gap:
-                  10,
+                gap: 'var(--sp-3)',
               }}
             >
               <span className="badge b-acc">
@@ -855,8 +854,8 @@ export default function ExamCenter() {
                   style={{
                     borderColor:
                       answer.is_correct
-                        ? 'rgba(16,185,129,.3)'
-                        : 'rgba(239,68,68,.3)',
+                        ? 'var(--bd-ok)'
+                        : 'var(--bd-err)',
                   }}
                 >
                   <div
@@ -866,8 +865,7 @@ export default function ExamCenter() {
                           ? 'var(--ok)'
                           : 'var(--err)',
 
-                      fontSize:
-                        14,
+                      fontSize: 'var(--fs-lg)',
 
                       fontWeight:
                         900,
@@ -906,11 +904,11 @@ export default function ExamCenter() {
                           alignItems:
                             'center',
                           gap: 6,
-                          marginTop: 7,
+                          marginTop: 'var(--sp-2)',
 
                           color:
                             'var(--tx2)',
-                          fontSize: 10.5,
+                          fontSize: 'var(--fs-cap)',
                           fontWeight: 700,
                         }}
                       >
@@ -946,8 +944,7 @@ export default function ExamCenter() {
                         color:
                           'var(--tx2)',
 
-                        fontSize:
-                          11,
+                        fontSize: 'var(--fs-meta)',
 
                         lineHeight:
                           1.9,
@@ -1076,7 +1073,7 @@ export default function ExamCenter() {
             <h2
               style={{
                 margin: '8px 0 4px',
-                fontSize: 17,
+                fontSize: 'var(--fs-xl)',
               }}
             >
               {mode === 'ready'
@@ -1095,7 +1092,7 @@ export default function ExamCenter() {
                 <p
                   style={{
                     color: 'var(--txm)',
-                    fontSize: 11.5,
+                    fontSize: 'var(--fs-meta)',
                     lineHeight: 2,
                   }}
                 >
@@ -1131,7 +1128,7 @@ export default function ExamCenter() {
               <p
                 style={{
                   color: 'var(--txm)',
-                  fontSize: 11.5,
+                  fontSize: 'var(--fs-meta)',
                   lineHeight: 2,
                 }}
               >
@@ -1148,7 +1145,7 @@ export default function ExamCenter() {
               <p
                 style={{
                   color: 'var(--txm)',
-                  fontSize: 11.5,
+                  fontSize: 'var(--fs-meta)',
                   lineHeight: 2,
                 }}
               >
@@ -1168,7 +1165,7 @@ export default function ExamCenter() {
               className={
                 'btn btn-g btn-full'
               }
-              style={{ marginTop: 10 }}
+              style={{ marginTop: 'var(--sp-3)' }}
               onClick={() =>
                 setView('setup')
               }
@@ -1234,7 +1231,7 @@ export default function ExamCenter() {
 
             <h3
               style={{
-                fontSize: 14,
+                fontSize: 'var(--fs-lg)',
                 margin: '6px 0',
               }}
             >
@@ -1249,7 +1246,7 @@ export default function ExamCenter() {
             <p
               style={{
                 color: 'var(--txm)',
-                fontSize: 11,
+                fontSize: 'var(--fs-meta)',
                 lineHeight: 2,
               }}
             >
@@ -1370,8 +1367,7 @@ export default function ExamCenter() {
                 color:
                   'var(--txm)',
 
-                fontSize:
-                  10.5,
+                fontSize: 'var(--fs-cap)',
               }}
             >
               نتیجه نهایی آزمون
@@ -1390,8 +1386,7 @@ export default function ExamCenter() {
                     color:
                       'var(--ok)',
 
-                    fontSize:
-                      20,
+                    fontSize: 'var(--fs-xl)',
                   }}
                 >
                   {result?.correct ||
@@ -1403,8 +1398,7 @@ export default function ExamCenter() {
                     color:
                       'var(--txm)',
 
-                    fontSize:
-                      9,
+                    fontSize: 'var(--fs-cap)',
                   }}
                 >
                   صحیح
@@ -1417,8 +1411,7 @@ export default function ExamCenter() {
                     color:
                       'var(--err)',
 
-                    fontSize:
-                      20,
+                    fontSize: 'var(--fs-xl)',
                   }}
                 >
                   {Math.max(
@@ -1442,8 +1435,7 @@ export default function ExamCenter() {
                     color:
                       'var(--txm)',
 
-                    fontSize:
-                      9,
+                    fontSize: 'var(--fs-cap)',
                   }}
                 >
                   اشتباه
@@ -1507,8 +1499,7 @@ export default function ExamCenter() {
               'btn btn-p btn-full'
             }
             style={{
-              marginBottom:
-                14,
+              marginBottom: 'var(--sp-4)',
             }}
             onClick={() =>
               setView('setup')
@@ -1601,14 +1592,12 @@ export default function ExamCenter() {
                             placeItems:
                               'center',
 
-                            borderRadius:
-                              14,
+                            borderRadius: 'var(--r-md)',
 
                             background:
                               'var(--acc-soft)',
 
-                            fontSize:
-                              20,
+                            fontSize: 'var(--fs-xl)',
                           }}
                         >
                           {icon}
@@ -1622,8 +1611,7 @@ export default function ExamCenter() {
                         >
                           <b
                             style={{
-                              fontSize:
-                                12.5,
+                              fontSize: 'var(--fs-sm)',
                             }}
                           >
                             {item.lesson ||
@@ -1635,8 +1623,7 @@ export default function ExamCenter() {
                               color:
                                 'var(--txm)',
 
-                              fontSize:
-                                9.5,
+                              fontSize: 'var(--fs-cap)',
 
                               marginTop:
                                 3,
@@ -1674,8 +1661,7 @@ export default function ExamCenter() {
                             'btn btn-p btn-full'
                           }
                           style={{
-                            marginTop:
-                              10,
+                            marginTop: 'var(--sp-3)',
                           }}
                           onClick={() =>
                             resume(item)
@@ -1712,8 +1698,7 @@ export default function ExamCenter() {
             'hero-card hero-card--purple'
           }
           style={{
-            marginBottom:
-              14,
+            marginBottom: 'var(--sp-4)',
           }}
         >
           <div
@@ -1746,7 +1731,7 @@ export default function ExamCenter() {
                   17,
 
                 background:
-                  'linear-gradient(135deg,#7C3AED,#3B82F6)',
+                  'linear-gradient(135deg,var(--pur-dim),var(--acc))',
 
                 fontSize:
                   26,
@@ -1758,8 +1743,7 @@ export default function ExamCenter() {
             <div>
               <b
                 style={{
-                  fontSize:
-                    17,
+                  fontSize: 'var(--fs-xl)',
                 }}
               >
                 آزمون خودت رو بساز
@@ -1770,8 +1754,7 @@ export default function ExamCenter() {
                   color:
                     'var(--txm)',
 
-                  fontSize:
-                    10,
+                  fontSize: 'var(--fs-cap)',
 
                   lineHeight:
                     1.6,
@@ -1793,8 +1776,7 @@ export default function ExamCenter() {
             'btn btn-dark btn-full'
           }
           style={{
-            marginBottom:
-              14,
+            marginBottom: 'var(--sp-4)',
           }}
           onClick={() =>
             setView('history')
@@ -1810,8 +1792,7 @@ export default function ExamCenter() {
             display:
               'grid',
 
-            gap:
-              10,
+            gap: 'var(--sp-3)',
           }}
         >
           <label className="fld-label">
@@ -1824,7 +1805,7 @@ export default function ExamCenter() {
               style={{
                 width: '100%',
                 height: 42,
-                borderRadius: 12,
+                borderRadius: 'var(--r-md)',
               }}
             />
           ) : (
