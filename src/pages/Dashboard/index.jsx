@@ -813,8 +813,11 @@ export default function Dashboard() {
                     fontSize: 21,
                   }}
                 >
-                  {user.name?.[0] ||
-                    'ه'}
+                  {(
+                    user
+                      .display_name ||
+                    user.name
+                  )?.[0] || 'ه'}
                 </div>
 
                 <div
@@ -846,7 +849,9 @@ export default function Dashboard() {
                         'nowrap',
                     }}
                   >
-                    {user.name ||
+                    {user
+                      .display_name ||
+                      user.name ||
                       'کاربر هامزیار'}
                   </div>
 
