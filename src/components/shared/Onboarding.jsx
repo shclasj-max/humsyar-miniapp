@@ -60,10 +60,10 @@ const SLIDES = [
       'دستیار کامل تو برای مسیر دانشجویی پزشکی؛\nسؤال، جزوه، برنامه کلاسی، نمره و پشتیبانی — همه توی یک‌جا.',
 
     tint:
-      'rgba(59,130,246,.16)',
+      'var(--soft-acc-2)',
 
     gradient:
-      'linear-gradient(135deg,#1D4ED8,#3B82F6)',
+      'linear-gradient(135deg,var(--acc-dim),var(--acc))',
   },
 
   {
@@ -74,10 +74,10 @@ const SLIDES = [
       'هر مبحثی رو ساده بخواه، از متن جزوه‌هات سؤال بساز\nیا عکس پاورپوینت بفرستی تا برات توضیحش بده.',
 
     tint:
-      'rgba(139,92,246,.17)',
+      'var(--soft-pur)',
 
     gradient:
-      'linear-gradient(135deg,#7C3AED,#A78BFA)',
+      'linear-gradient(135deg,var(--pur-dim),var(--t-pur))',
   },
 
   {
@@ -88,10 +88,10 @@ const SLIDES = [
       'از نقاط ضعفت شروع کن؛ هر پاسخ غلط به «ضعف‌ها» اضافه می‌شه\nتا مرور بعدی دقیقاً سراغ همون‌ها بری.',
 
     tint:
-      'rgba(16,185,129,.16)',
+      'var(--soft-ok)',
 
     gradient:
-      'linear-gradient(135deg,#059669,#34D399)',
+      'linear-gradient(135deg,var(--ok-dim),var(--t-ok))',
   },
 
   {
@@ -102,10 +102,10 @@ const SLIDES = [
       'برنامه هفته، امتحانهای پیش‌رو و نمره‌هات با یادآوری زنده؛\nو اگر جایی گیر کردی، پشتیبانی فقط یک تیکت فاصله‌ست.',
 
     tint:
-      'rgba(245,158,11,.16)',
+      'var(--soft-warn)',
 
     gradient:
-      'linear-gradient(135deg,#D97706,#FBBF24)',
+      'linear-gradient(135deg,var(--warn-dim),var(--t-warn))',
   },
 ];
 
