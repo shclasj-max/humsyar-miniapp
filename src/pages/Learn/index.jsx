@@ -33,10 +33,10 @@ const QUICK_LINKS = [
       '/learn/questions?mode=weak',
 
     color:
-      '#FCD34D',
+      'var(--t-warn)',
 
     soft:
-      'rgba(245,158,11,.12)',
+      'var(--soft-warn)',
   },
 
   {
@@ -47,10 +47,10 @@ const QUICK_LINKS = [
       '/learn/exams',
 
     color:
-      '#70A7FF',
+      'var(--t-acc)',
 
     soft:
-      'rgba(59,130,246,.12)',
+      'var(--soft-acc)',
   },
 
   {
@@ -61,10 +61,10 @@ const QUICK_LINKS = [
       '/learn/questions?mode=hard',
 
     color:
-      '#FB7185',
+      'var(--t-err)',
 
     soft:
-      'rgba(239,68,68,.12)',
+      'var(--soft-err)',
   },
 
   {
@@ -75,10 +75,10 @@ const QUICK_LINKS = [
       '/learn/questions?mode=design',
 
     color:
-      '#C4B5FD',
+      'var(--t-pur)',
 
     soft:
-      'rgba(139,92,246,.13)',
+      'var(--soft-pur)',
   },
 ];
 
@@ -100,10 +100,10 @@ const LIBRARY = [
       '/learn/resources',
 
     soft:
-      'rgba(16,185,129,.12)',
+      'var(--soft-ok)',
 
     color:
-      '#34D399',
+      'var(--t-ok)',
   },
 
   {
@@ -122,10 +122,10 @@ const LIBRARY = [
       '/learn/references',
 
     soft:
-      'rgba(59,130,246,.12)',
+      'var(--soft-acc)',
 
     color:
-      '#70A7FF',
+      'var(--t-acc)',
   },
 
   {
@@ -144,10 +144,10 @@ const LIBRARY = [
       '/learn/question-history',
 
     soft:
-      'rgba(245,158,11,.12)',
+      'var(--soft-warn)',
 
     color:
-      '#FCD34D',
+      'var(--t-warn)',
   },
 
   {
@@ -166,10 +166,10 @@ const LIBRARY = [
       '/learn/my-questions',
 
     soft:
-      'rgba(139,92,246,.13)',
+      'var(--soft-pur)',
 
     color:
-      '#C4B5FD',
+      'var(--t-pur)',
   },
 ];
 
@@ -311,7 +311,7 @@ export default function Learn() {
                 style={{
                   color:
                     'var(--txm)',
-                  fontSize: 10.5,
+                  fontSize: 'var(--fs-cap)',
                 }}
               >
                 مرکز یادگیری هامزیار
@@ -319,7 +319,7 @@ export default function Learn() {
 
               <div
                 style={{
-                  fontSize: 17,
+                  fontSize: 'var(--fs-xl)',
                   fontWeight: 900,
                   marginTop: 2,
                 }}
@@ -332,8 +332,7 @@ export default function Learn() {
                   color:
                     'var(--tx2)',
 
-                  fontSize:
-                    10.5,
+                  fontSize: 'var(--fs-cap)',
 
                   marginTop:
                     3,
@@ -357,8 +356,7 @@ export default function Learn() {
                     color:
                       'var(--acc2)',
 
-                    fontSize:
-                      19,
+                    fontSize: 'var(--fs-xl)',
 
                     fontWeight:
                       900,
@@ -372,8 +370,7 @@ export default function Learn() {
                     color:
                       'var(--txm)',
 
-                    fontSize:
-                      8.5,
+                    fontSize: 'var(--fs-cap)',
                   }}
                 >
                   عملکرد کل
@@ -395,7 +392,7 @@ export default function Learn() {
             gridTemplateColumns:
               'repeat(4,minmax(0,1fr))',
 
-            gap: 7,
+            gap: 'var(--sp-2)',
 
             marginBottom:
               18,
@@ -443,14 +440,12 @@ export default function Learn() {
                     margin:
                       '0 auto 6px',
 
-                    borderRadius:
-                      12,
+                    borderRadius: 'var(--r-md)',
 
                     background:
                       item.soft,
 
-                    fontSize:
-                      19,
+                    fontSize: 'var(--fs-xl)',
                   }}
                 >
                   {item.icon}
@@ -467,8 +462,7 @@ export default function Learn() {
                     color:
                       item.color,
 
-                    fontSize:
-                      9.2,
+                    fontSize: 'var(--fs-cap)',
 
                     fontWeight:
                       800,
@@ -574,13 +568,12 @@ export default function Learn() {
                       alignItems:
                         'center',
 
-                      gap: 7,
+                      gap: 'var(--sp-2)',
                     }}
                   >
                     <b
                       style={{
-                        fontSize:
-                          13.5,
+                        fontSize: 'var(--fs-md)',
                       }}
                     >
                       {item.title}
@@ -591,8 +584,7 @@ export default function Learn() {
                         color:
                           item.color,
 
-                        fontSize:
-                          8.5,
+                        fontSize: 'var(--fs-cap)',
                       }}
                     >
                       {item.meta}
@@ -607,8 +599,7 @@ export default function Learn() {
                       color:
                         'var(--txm)',
 
-                      fontSize:
-                        10.5,
+                      fontSize: 'var(--fs-cap)',
 
                       marginTop:
                         3,
@@ -662,10 +653,10 @@ export default function Learn() {
             cursor: 'pointer',
 
             background:
-              'linear-gradient(145deg,rgba(139,92,246,.13),rgba(16,24,39,.95))',
+              'linear-gradient(145deg,var(--soft-pur),var(--surf-card))',
 
             borderColor:
-              'rgba(139,92,246,.25)',
+              'var(--bd-pur)',
           }}
         >
           <div
@@ -686,11 +677,10 @@ export default function Learn() {
                 placeItems:
                   'center',
 
-                borderRadius:
-                  16,
+                borderRadius: 'var(--r-lg)',
 
                 background:
-                  'rgba(139,92,246,.15)',
+                  'var(--soft-pur)',
 
                 fontSize:
                   25,
@@ -709,8 +699,7 @@ export default function Learn() {
                   fontWeight:
                     900,
 
-                  fontSize:
-                    14.5,
+                  fontSize: 'var(--fs-lg)',
                 }}
               >
                 بانک سؤال و تمرین
@@ -721,8 +710,7 @@ export default function Learn() {
                   color:
                     'var(--txm)',
 
-                  fontSize:
-                    10.5,
+                  fontSize: 'var(--fs-cap)',
 
                   lineHeight:
                     1.7,
@@ -786,14 +774,12 @@ export default function Learn() {
                           justifyContent:
                             'space-between',
 
-                          marginBottom:
-                            7,
+                          marginBottom: 'var(--sp-2)',
                         }}
                       >
                         <span
                           style={{
-                            fontSize:
-                              12,
+                            fontSize: 'var(--fs-sm)',
 
                             fontWeight:
                               700,
@@ -813,8 +799,7 @@ export default function Learn() {
                                   ? 'var(--warn)'
                                   : 'var(--err)',
 
-                            fontSize:
-                              10.5,
+                            fontSize: 'var(--fs-cap)',
 
                             fontWeight:
                               800,
@@ -839,11 +824,9 @@ export default function Learn() {
                           color:
                             'var(--txm)',
 
-                          fontSize:
-                            8.5,
+                          fontSize: 'var(--fs-cap)',
 
-                          marginTop:
-                            4,
+                          marginTop: 'var(--sp-1)',
                         }}
                       >
                         {Number(
