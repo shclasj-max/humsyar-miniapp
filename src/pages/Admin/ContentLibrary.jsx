@@ -1,3 +1,7 @@
+import EmptyState from '../../components/shared/EmptyState';
+
+import { number, errorText } from '../../lib/format';
+
 import { confirmAction } from '../../lib/confirm';
 import { useState } from 'react';
 
@@ -28,35 +32,13 @@ import {
 } from '../../stores/uiStore';
 
 
-const errorText = (
-  error,
-  fallback
-) => {
-  const detail =
-    error?.response?.data?.detail;
-
-  return typeof detail === 'string'
-    ? detail
-    : fallback;
-};
 
 
-const number = (value) =>
-  Math.max(
-    0,
-    Number(value) || 0
-  );
 
 
-function Empty({
-  children,
-}) {
-  return (
-    <div className="empty card">
-      {children}
-    </div>
-  );
-}
+
+
+
 
 
 function DeleteButton({
@@ -495,7 +477,7 @@ export function BasicScienceAdmin() {
                       style={{
                         color:
                           term === item
-                            ? '#fff'
+                            ? 'var(--t-white)'
                             : 'var(--tx2)',
 
                         background:
@@ -576,10 +558,10 @@ export function BasicScienceAdmin() {
               <LibraryTilesSkeleton />
             ) : lessons.length ===
               0 ? (
-              <Empty>
+              <EmptyState>
                 درسی در این ترم ثبت نشده
                 است.
-              </Empty>
+              </EmptyState>
             ) : (
               <section
                 style={{
@@ -604,8 +586,7 @@ export function BasicScienceAdmin() {
                           alignItems:
                             'center',
 
-                          gap:
-                            10,
+                          gap: 'var(--sp-3)',
                         }}
                       >
                         <span
@@ -622,14 +603,12 @@ export function BasicScienceAdmin() {
                             placeItems:
                               'center',
 
-                            borderRadius:
-                              14,
+                            borderRadius: 'var(--r-md)',
 
                             background:
-                              'rgba(16,185,129,.12)',
+                              'var(--soft-ok)',
 
-                            fontSize:
-                              20,
+                            fontSize: 'var(--fs-xl)',
                           }}
                         >
                           📗
@@ -674,8 +653,7 @@ export function BasicScienceAdmin() {
                               color:
                                 'var(--txm)',
 
-                              fontSize:
-                                9,
+                              fontSize: 'var(--fs-cap)',
 
                               marginTop:
                                 3,
@@ -822,9 +800,9 @@ export function BasicScienceAdmin() {
               <LibraryRowsSkeleton />
             ) : sessions.length ===
               0 ? (
-              <Empty>
+              <EmptyState>
                 جلسه‌ای ثبت نشده است.
-              </Empty>
+              </EmptyState>
             ) : (
               <section
                 style={{
@@ -849,8 +827,7 @@ export function BasicScienceAdmin() {
                           alignItems:
                             'center',
 
-                          gap:
-                            10,
+                          gap: 'var(--sp-3)',
                         }}
                       >
                         <span
@@ -867,8 +844,7 @@ export function BasicScienceAdmin() {
                             placeItems:
                               'center',
 
-                            borderRadius:
-                              13,
+                            borderRadius: 'var(--r-md)',
 
                             background:
                               'var(--acc-soft)',
@@ -922,8 +898,7 @@ export function BasicScienceAdmin() {
                               color:
                                 'var(--txm)',
 
-                              fontSize:
-                                9,
+                              fontSize: 'var(--fs-cap)',
                             }}
                           >
                             {item.teacher ||
@@ -1094,9 +1069,9 @@ export function BasicScienceAdmin() {
               <LibraryRowsSkeleton />
             ) : content.length ===
               0 ? (
-              <Empty>
+              <EmptyState>
                 محتوایی ثبت نشده است.
-              </Empty>
+              </EmptyState>
             ) : (
               <section
                 style={{
@@ -1121,8 +1096,7 @@ export function BasicScienceAdmin() {
                           alignItems:
                             'center',
 
-                          gap:
-                            10,
+                          gap: 'var(--sp-3)',
                         }}
                       >
                         <span
@@ -1139,14 +1113,12 @@ export function BasicScienceAdmin() {
                             placeItems:
                               'center',
 
-                            borderRadius:
-                              14,
+                            borderRadius: 'var(--r-md)',
 
                             background:
-                              'rgba(139,92,246,.13)',
+                              'var(--soft-pur)',
 
-                            fontSize:
-                              20,
+                            fontSize: 'var(--fs-xl)',
                           }}
                         >
                           {typeIcon[
@@ -1170,8 +1142,7 @@ export function BasicScienceAdmin() {
                               color:
                                 'var(--txm)',
 
-                              fontSize:
-                                9,
+                              fontSize: 'var(--fs-cap)',
 
                               marginTop:
                                 3,
@@ -1627,8 +1598,7 @@ export function ReferencesAdmin() {
                 display:
                   'flex',
 
-                gap:
-                  7,
+                gap: 'var(--sp-2)',
               }}
             >
               <input
@@ -1694,8 +1664,7 @@ export function ReferencesAdmin() {
                       alignItems:
                         'center',
 
-                      gap:
-                        10,
+                      gap: 'var(--sp-3)',
                     }}
                   >
                     <span
@@ -1788,8 +1757,7 @@ export function ReferencesAdmin() {
                       alignItems:
                         'center',
 
-                      gap:
-                        10,
+                      gap: 'var(--sp-3)',
                     }}
                   >
                     <span
@@ -1855,9 +1823,9 @@ export function ReferencesAdmin() {
                 </article>
               ))
             ) : (
-              <Empty>
+              <EmptyState>
                 کتابی ثبت نشده است.
-              </Empty>
+              </EmptyState>
             )}
           </section>
         ) : (
@@ -1884,8 +1852,7 @@ export function ReferencesAdmin() {
                       alignItems:
                         'center',
 
-                      gap:
-                        10,
+                      gap: 'var(--sp-3)',
                     }}
                   >
                     <span
@@ -1915,8 +1882,7 @@ export function ReferencesAdmin() {
                           color:
                             'var(--txm)',
 
-                          fontSize:
-                            9,
+                          fontSize: 'var(--fs-cap)',
                         }}
                       >
                         {item.description}
@@ -1958,9 +1924,9 @@ export function ReferencesAdmin() {
                 </article>
               ))
             ) : (
-              <Empty>
+              <EmptyState>
                 فایلی ثبت نشده است.
-              </Empty>
+              </EmptyState>
             )}
           </section>
         )}
@@ -2210,7 +2176,7 @@ export function QbankAdmin() {
         {isLoading ? (
           <LibraryRowsSkeleton />
         ) : isError ? (
-          <Empty>
+          <EmptyState>
             دریافت فایل‌ها انجام نشد.
 
             <button
@@ -2225,11 +2191,11 @@ export function QbankAdmin() {
             >
               تلاش دوباره
             </button>
-          </Empty>
+          </EmptyState>
         ) : files.length === 0 ? (
-          <Empty>
+          <EmptyState>
             فایلی ثبت نشده است.
-          </Empty>
+          </EmptyState>
         ) : (
           <section
             style={{
@@ -2253,8 +2219,7 @@ export function QbankAdmin() {
                     alignItems:
                       'center',
 
-                    gap:
-                      10,
+                    gap: 'var(--sp-3)',
                   }}
                 >
                   <span
@@ -2291,8 +2256,7 @@ export function QbankAdmin() {
                         color:
                           'var(--txm)',
 
-                        fontSize:
-                          9,
+                        fontSize: 'var(--fs-cap)',
 
                         marginTop:
                           3,
@@ -2524,8 +2488,7 @@ export function ContentReportsAdmin() {
                 color:
                   'var(--warn)',
 
-                fontSize:
-                  20,
+                fontSize: 'var(--fs-xl)',
               }}
             >
               {number(
@@ -2538,8 +2501,7 @@ export function ContentReportsAdmin() {
                 color:
                   'var(--txm)',
 
-                fontSize:
-                  9,
+                fontSize: 'var(--fs-cap)',
               }}
             >
               جدید
@@ -2558,8 +2520,7 @@ export function ContentReportsAdmin() {
                 color:
                   'var(--acc2)',
 
-                fontSize:
-                  20,
+                fontSize: 'var(--fs-xl)',
               }}
             >
               {number(
@@ -2572,8 +2533,7 @@ export function ContentReportsAdmin() {
                 color:
                   'var(--txm)',
 
-                fontSize:
-                  9,
+                fontSize: 'var(--fs-cap)',
               }}
             >
               در بررسی
@@ -2597,7 +2557,7 @@ export function ContentReportsAdmin() {
                 style={{
                   color:
                     status === key
-                      ? '#fff'
+                      ? 'var(--t-white)'
                       : 'var(--tx2)',
 
                   background:
@@ -2620,7 +2580,7 @@ export function ContentReportsAdmin() {
         {isLoading ? (
           <LibraryRowsSkeleton />
         ) : isError ? (
-          <Empty>
+          <EmptyState>
             دریافت گزارش‌ها انجام نشد.
 
             <button
@@ -2635,11 +2595,11 @@ export function ContentReportsAdmin() {
             >
               تلاش دوباره
             </button>
-          </Empty>
+          </EmptyState>
         ) : reports.length === 0 ? (
-          <Empty>
+          <EmptyState>
             گزارشی در این وضعیت نیست.
-          </Empty>
+          </EmptyState>
         ) : (
           <section
             style={{
@@ -2691,8 +2651,7 @@ export function ContentReportsAdmin() {
                         color:
                           'var(--txm)',
 
-                        fontSize:
-                          9,
+                        fontSize: 'var(--fs-cap)',
 
                         marginTop:
                           3,
@@ -2727,13 +2686,11 @@ export function ContentReportsAdmin() {
                         '8px 9px',
 
                       background:
-                        'rgba(100,116,139,.08)',
+                        'var(--soft-mut)',
 
-                      borderRadius:
-                        10,
+                      borderRadius: 'var(--r-sm)',
 
-                      fontSize:
-                        10,
+                      fontSize: 'var(--fs-cap)',
                     }}
                   >
                     {item.note}
