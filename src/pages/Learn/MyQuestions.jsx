@@ -270,7 +270,7 @@ export default function MyQuestions() {
               /* موج ۳.۱۰ — سینک با دستورِ
                  hero-card--purple */
               background:
-                'linear-gradient(145deg,rgba(139,92,246,.15),rgba(16,24,39,.95) 55%,rgba(59,130,246,.09))',
+                'linear-gradient(145deg,var(--soft-pur),var(--surf-card) 55%,var(--soft-acc))',
             }}
           >
             <div
@@ -299,11 +299,10 @@ export default function MyQuestions() {
                   placeItems:
                     'center',
 
-                  borderRadius:
-                    14,
+                  borderRadius: 'var(--r-md)',
 
                   background:
-                    'rgba(139,92,246,.15)',
+                    'var(--soft-pur)',
 
                   fontSize:
                     22,
@@ -322,8 +321,7 @@ export default function MyQuestions() {
                     color:
                       'var(--txm)',
 
-                    fontSize:
-                      9.5,
+                    fontSize: 'var(--fs-cap)',
 
                     marginTop:
                       3,
@@ -343,8 +341,7 @@ export default function MyQuestions() {
               display:
                 'grid',
 
-              gap:
-                10,
+              gap: 'var(--sp-3)',
             }}
           >
             <div className="grid2">
@@ -407,8 +404,7 @@ export default function MyQuestions() {
                 color:
                   'var(--txm)',
 
-                fontSize:
-                  9.5,
+                fontSize: 'var(--fs-cap)',
               }}
             >
               گزینه‌ها
@@ -425,8 +421,7 @@ export default function MyQuestions() {
                     display:
                       'flex',
 
-                    gap:
-                      7,
+                    gap: 'var(--sp-2)',
                   }}
                 >
                   <button
@@ -455,7 +450,7 @@ export default function MyQuestions() {
                       border:
                         editing.correct ===
                         index
-                          ? '1px solid rgba(16,185,129,.3)'
+                          ? '1px solid var(--bd-ok)'
                           : '1px solid var(--bd)',
 
                       cursor:
@@ -591,13 +586,12 @@ export default function MyQuestions() {
             padding:
               17,
 
-            marginBottom:
-              14,
+            marginBottom: 'var(--sp-4)',
 
             /* موج ۳.۱۰ — سینک با دستورِ
                hero-card--purple */
             background:
-              'linear-gradient(145deg,rgba(139,92,246,.15),rgba(16,24,39,.95) 55%,rgba(59,130,246,.09))',
+              'linear-gradient(145deg,var(--soft-pur),var(--surf-card) 55%,var(--soft-acc))',
           }}
         >
           <div
@@ -626,11 +620,10 @@ export default function MyQuestions() {
                 placeItems:
                   'center',
 
-                borderRadius:
-                  16,
+                borderRadius: 'var(--r-lg)',
 
                 background:
-                  'linear-gradient(135deg,#7C3AED,#3B82F6)',
+                  'linear-gradient(135deg,var(--pur-dim),var(--acc))',
 
                 fontSize:
                   25,
@@ -650,8 +643,7 @@ export default function MyQuestions() {
                   color:
                     'var(--txm)',
 
-                  fontSize:
-                    10,
+                  fontSize: 'var(--fs-cap)',
                 }}
               >
                 مشارکت علمی شما
@@ -662,8 +654,7 @@ export default function MyQuestions() {
                   display:
                     'block',
 
-                  fontSize:
-                    16.5,
+                  fontSize: 'var(--fs-lg)',
 
                   marginTop:
                     2,
@@ -802,8 +793,7 @@ export default function MyQuestions() {
 
                   <div
                     style={{
-                      fontSize:
-                        12,
+                      fontSize: 'var(--fs-sm)',
 
                       fontWeight:
                         650,
@@ -821,8 +811,7 @@ export default function MyQuestions() {
                         color:
                           'var(--txm)',
 
-                        fontSize:
-                          8.5,
+                        fontSize: 'var(--fs-cap)',
 
                         marginTop:
                           6,
@@ -838,11 +827,9 @@ export default function MyQuestions() {
                         display:
                           'flex',
 
-                        gap:
-                          7,
+                        gap: 'var(--sp-2)',
 
-                        marginTop:
-                          10,
+                        marginTop: 'var(--sp-3)',
                       }}
                     >
                       <button
