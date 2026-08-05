@@ -1,3 +1,5 @@
+import { number } from '../../lib/format';
+
 import {
   useMemo,
   useState,
@@ -38,15 +40,14 @@ const ACTION_FA = {
 
 const RANGE_OPTIONS = [7, 14, 30];
 
-const number = (value) =>
-  Math.max(0, Number(value) || 0);
+
 
 
 /* ═══════════ نمودار میله‌ای SVG ═══════════ */
 
 function BarChart({
   data,
-  color = '#3B82F6',
+  color = 'var(--acc)',
   height = 118,
   formatLabel,
 }) {
@@ -365,7 +366,7 @@ export default function Analytics() {
             style={{
               width: 36,
               height: 36,
-              borderRadius: 12,
+              borderRadius: 'var(--r-md)',
               background:
                 'var(--elev)',
               border:
@@ -430,8 +431,8 @@ export default function Analytics() {
                   kpis.active_users
                 )}
                 label={`کاربر فعال در ${days} روز`}
-                color="#70A7FF"
-                soft="rgba(59,130,246,.12)"
+                color="var(--t-acc)"
+                soft="var(--soft-acc)"
               />
 
               <Kpi
@@ -440,8 +441,8 @@ export default function Analytics() {
                   kpis.new_users
                 )}
                 label={`عضویت جدید در ${days} روز`}
-                color="#34D399"
-                soft="rgba(16,185,129,.12)"
+                color="var(--t-ok)"
+                soft="var(--soft-ok)"
               />
 
               <Kpi
@@ -450,8 +451,8 @@ export default function Analytics() {
                   kpis.total_actions
                 )}
                 label="کل فعالیت ثبت‌شده"
-                color="#C4B5FD"
-                soft="rgba(139,92,246,.13)"
+                color="var(--t-pur)"
+                soft="var(--soft-pur)"
               />
 
               <Kpi
@@ -460,8 +461,8 @@ export default function Analytics() {
                   kpis.new_tickets
                 )}
                 label={`تیکت جدید در ${days} روز`}
-                color="#FCD34D"
-                soft="rgba(245,158,11,.12)"
+                color="var(--t-warn)"
+                soft="var(--soft-warn)"
               />
             </section>
 
@@ -489,7 +490,7 @@ export default function Analytics() {
 
               <BarChart
                 data={usersSeries}
-                color="#10B981"
+                color="var(--ok)"
                 formatLabel={dayLabel}
               />
             </section>
@@ -513,7 +514,7 @@ export default function Analytics() {
 
               <BarChart
                 data={activitySeries}
-                color="#3B82F6"
+                color="var(--acc)"
                 formatLabel={dayLabel}
               />
             </section>
@@ -542,7 +543,7 @@ export default function Analytics() {
 
               <BarChart
                 data={ticketsSeries}
-                color="#F59E0B"
+                color="var(--warn)"
                 formatLabel={dayLabel}
               />
             </section>
@@ -647,7 +648,7 @@ export default function Analytics() {
                           )}%`,
 
                           background:
-                            'linear-gradient(90deg,#8B5CF6,#22D3EE)',
+                            'linear-gradient(90deg,var(--pur),var(--t-info))',
                         }}
                       />
                     </span>
