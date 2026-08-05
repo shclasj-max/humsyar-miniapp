@@ -1,3 +1,5 @@
+import { faNum } from '../../lib/format';
+
 import { useState } from 'react';
 
 import { useNavigate } from 'react-router-dom';
@@ -26,11 +28,7 @@ import {
    رنگ/XP از پیلود بک‌اند است — هیچ مقداری
    اینجا هاردکد نمی‌شود. */
 
-const faNum = (value) =>
-  String(value ?? '').replace(
-    /\d/g,
-    (digit) => '۰۱۲۳۴۵۶۷۸۹'[digit]
-  );
+
 
 const KIND_TITLES = {
   lifetime: 'لحظه‌ای‌ها',
@@ -89,7 +87,7 @@ function BadgeTile({
       onClick={onTogglePin}
       style={{
         display: 'grid',
-        gap: 4,
+        gap: 'var(--sp-1)',
         textAlign: 'right',
         border: pinned
           ? '1.5px solid var(--acc)'
@@ -105,7 +103,7 @@ function BadgeTile({
             position: 'absolute',
             top: 6,
             left: 8,
-            fontSize: 10,
+            fontSize: 'var(--fs-cap)',
           }}
         >
           📌
@@ -125,7 +123,7 @@ function BadgeTile({
 
         <b
           style={{
-            fontSize: 11.5,
+            fontSize: 'var(--fs-meta)',
             flex: 1,
           }}
         >
@@ -138,7 +136,7 @@ function BadgeTile({
       <div
         style={{
           color: 'var(--txm)',
-          fontSize: 9.5,
+          fontSize: 'var(--fs-cap)',
           lineHeight: 1.6,
         }}
       >
@@ -333,7 +331,7 @@ export default function Badges() {
                 className="card"
                 style={{
                   color: 'var(--txm)',
-                  fontSize: 10.5,
+                  fontSize: 'var(--fs-cap)',
                   lineHeight: 1.8,
                 }}
               >
@@ -365,7 +363,7 @@ export default function Badges() {
                       className="card"
                       style={{
                         display: 'grid',
-                        gap: 7,
+                        gap: 'var(--sp-2)',
                       }}
                     >
                       <div
@@ -374,12 +372,12 @@ export default function Badges() {
                             'flex',
                           alignItems:
                             'center',
-                          gap: 7,
+                          gap: 'var(--sp-2)',
                         }}
                       >
                         <span
                           style={{
-                            fontSize: 20,
+                            fontSize: 'var(--fs-xl)',
                           }}
                         >
                           {badge.icon}
@@ -387,7 +385,7 @@ export default function Badges() {
 
                         <b
                           style={{
-                            fontSize: 12,
+                            fontSize: 'var(--fs-sm)',
                             flex: 1,
                           }}
                         >
@@ -398,7 +396,7 @@ export default function Badges() {
                           style={{
                             color:
                               badge.color,
-                            fontSize: 10,
+                            fontSize: 'var(--fs-cap)',
                           }}
                         >
                           پله{' '}
@@ -417,7 +415,7 @@ export default function Badges() {
                         style={{
                           display:
                             'flex',
-                          gap: 4,
+                          gap: 'var(--sp-1)',
                         }}
                       >
                         {(
@@ -451,7 +449,7 @@ export default function Badges() {
                         style={{
                           color:
                             'var(--txm)',
-                          fontSize: 9.5,
+                          fontSize: 'var(--fs-cap)',
                         }}
                       >
                         {badge.next_target
@@ -493,7 +491,7 @@ export default function Badges() {
                         style={{
                           color:
                             'var(--txm)',
-                          fontSize: 9,
+                          fontSize: 'var(--fs-cap)',
                         }}
                       >
                         (
@@ -548,7 +546,7 @@ export default function Badges() {
                                   style={{
                                     color:
                                       'var(--acc)',
-                                    fontSize: 9,
+                                    fontSize: 'var(--fs-cap)',
                                   }}
                                 >
                                   ×
@@ -577,7 +575,7 @@ export default function Badges() {
               <div
                 style={{
                   display: 'grid',
-                  gap: 7,
+                  gap: 'var(--sp-2)',
                 }}
               >
                 {globals.map((g) => (
@@ -598,7 +596,7 @@ export default function Badges() {
                   >
                     <span
                       style={{
-                        fontSize: 19,
+                        fontSize: 'var(--fs-xl)',
                       }}
                     >
                       {g.icon}
@@ -609,7 +607,7 @@ export default function Badges() {
                     >
                       <b
                         style={{
-                          fontSize: 11.5,
+                          fontSize: 'var(--fs-meta)',
                         }}
                       >
                         {g.title}
@@ -619,7 +617,7 @@ export default function Badges() {
                         style={{
                           color:
                             'var(--txm)',
-                          fontSize: 9,
+                          fontSize: 'var(--fs-cap)',
                         }}
                       >
                         {g.claimed
@@ -637,7 +635,7 @@ export default function Badges() {
             <div
               style={{
                 color: 'var(--txm)',
-                fontSize: 9,
+                fontSize: 'var(--fs-cap)',
                 textAlign: 'center',
               }}
             >
@@ -660,7 +658,7 @@ export default function Badges() {
                 className="card"
                 style={{
                   color: 'var(--txm)',
-                  fontSize: 11,
+                  fontSize: 'var(--fs-meta)',
                 }}
               >
                 هنوز رویدادی ثبت نشده — اولین
@@ -679,7 +677,7 @@ export default function Badges() {
               >
                 <b
                   style={{
-                    fontSize: 11.5,
+                    fontSize: 'var(--fs-meta)',
                   }}
                 >
                   {row.title}
@@ -690,7 +688,7 @@ export default function Badges() {
                     style={{
                       color:
                         'var(--tx2)',
-                      fontSize: 10,
+                      fontSize: 'var(--fs-cap)',
                     }}
                   >
                     {row.detail.rank}
@@ -700,7 +698,7 @@ export default function Badges() {
                 <span
                   style={{
                     color: 'var(--txm)',
-                    fontSize: 9,
+                    fontSize: 'var(--fs-cap)',
                   }}
                 >
                   {row.at_jalali}
