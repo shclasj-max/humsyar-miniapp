@@ -1,3 +1,7 @@
+import Switch from '../../components/shared/Switch';
+
+import { faNum, faDate } from '../../lib/format';
+
 import {
   useMemo,
   useState,
@@ -36,62 +40,9 @@ import {
 const ROLES_KEY = ['rbac-roles'];
 const PERMS_KEY = ['rbac-perms'];
 
-const faNum = (value) =>
-  String(value ?? '').replace(
-    /\d/g,
-    (digit) => '۰۱۲۳۴۵۶۷۸۹'[digit],
-  );
-
-const faDate = (iso) => {
-  if (!iso) return '—';
-  const time = new Date(iso).getTime();
-  if (Number.isNaN(time)) return '—';
-  return new Date(iso).toLocaleDateString('fa-IR');
-};
-
 
 /* 🎛 سوییچ کوچک — بدون وابستگی به کلاس‌های خاص
    تا روی هر دیتایی قابل استفاده باشد */
-function MiniSwitch({ on, onToggle, color, disabled }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={on}
-      disabled={disabled}
-      onClick={onToggle}
-      style={{
-        width: 32,
-        height: 18,
-        borderRadius: 99,
-        border: '1px solid var(--line)',
-        background: on
-          ? color || 'rgba(52,211,153,.35)'
-          : 'rgba(255,255,255,.06)',
-        position: 'relative',
-        flexShrink: 0,
-        cursor: disabled ? 'default' : 'pointer',
-        opacity: disabled ? 0.45 : 1,
-        transition: 'background .15s ease',
-      }}
-    >
-      <span
-        style={{
-          position: 'absolute',
-          top: 2,
-          insetInlineStart: on ? 15 : 2,
-          width: 12,
-          height: 12,
-          borderRadius: '50%',
-          background: on ? '#E8F0FF' : '#7A8DB0',
-          transition: 'inset-inline-start .15s ease',
-        }}
-      />
-    </button>
-  );
-}
-
-
 export function AdminRoles() {
   const toast = useUIStore((state) => state.toast);
   const queryClient = useQueryClient();
@@ -208,7 +159,7 @@ export function AdminRoles() {
           label: '',
           desc: '',
           icon: '🛡',
-          color: '#70A7FF',
+          color: 'var(--t-acc)',
           priority: 90,
           perms: new Set(),
           system: false,
@@ -285,7 +236,7 @@ export function AdminRoles() {
       ...(draft.icon.trim()
         ? { icon: draft.icon.trim() }
         : {}),
-      color: draft.color.trim() || '#70A7FF',
+      color: draft.color.trim() || 'var(--t-acc)',
       priority: Number(draft.priority) || 90,
       perms: [...draft.perms],
     };
@@ -314,11 +265,11 @@ export function AdminRoles() {
         />
 
         <main
-          className="page"
+          className="page fade-up"
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: 10,
+            gap: 'var(--sp-3)',
             paddingInline: 12,
           }}
         >
@@ -335,7 +286,7 @@ export function AdminRoles() {
             <div style={{ display: 'flex', gap: 8 }}>
               <input
                 className="input"
-                style={{ flex: 1, minHeight: 36, fontSize: 12 }}
+                style={{ flex: 1, minHeight: 36, fontSize: 'var(--fs-sm)' }}
                 placeholder="نام نقش (مثل ناظم شب)"
                 value={draft.label}
                 maxLength={60}
@@ -346,7 +297,7 @@ export function AdminRoles() {
               />
               <input
                 className="input"
-                style={{ width: 52, minHeight: 36, fontSize: 15, textAlign: 'center' }}
+                style={{ width: 52, minHeight: 36, fontSize: 'var(--fs-lg)', textAlign: 'center' }}
                 value={draft.icon}
                 maxLength={2}
                 onChange={(event) =>
@@ -358,7 +309,7 @@ export function AdminRoles() {
 
             <input
               className="input"
-              style={{ minHeight: 34, fontSize: 11 }}
+              style={{ minHeight: 34, fontSize: 'var(--fs-meta)' }}
               placeholder="توضیح کوتاه (اختیاری)"
               value={draft.desc}
               maxLength={200}
@@ -372,7 +323,7 @@ export function AdminRoles() {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 10,
+                gap: 'var(--sp-3)',
                 flexWrap: 'wrap',
               }}
             >
@@ -381,7 +332,7 @@ export function AdminRoles() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: 6,
-                  fontSize: 10.5,
+                  fontSize: 'var(--fs-cap)',
                   color: 'var(--tx2)',
                 }}
               >
@@ -408,7 +359,7 @@ export function AdminRoles() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: 6,
-                  fontSize: 10.5,
+                  fontSize: 'var(--fs-cap)',
                   color: 'var(--tx2)',
                 }}
               >
@@ -416,7 +367,7 @@ export function AdminRoles() {
                 <input
                   type="number"
                   className="input"
-                  style={{ width: 64, minHeight: 30, fontSize: 11 }}
+                  style={{ width: 64, minHeight: 30, fontSize: 'var(--fs-meta)' }}
                   min={1}
                   max={999}
                   value={draft.priority}
@@ -457,7 +408,7 @@ export function AdminRoles() {
                   flex: 1,
                   minWidth: 120,
                   minHeight: 32,
-                  fontSize: 11,
+                  fontSize: 'var(--fs-meta)',
                 }}
                 placeholder="جست‌وجو در مجوزها…"
                 value={search}
@@ -467,7 +418,7 @@ export function AdminRoles() {
               <button
                 type="button"
                 className="tab-btn"
-                style={{ fontSize: 9.5, minHeight: 28 }}
+                style={{ fontSize: 'var(--fs-cap)', minHeight: 28 }}
                 onClick={() => setAllPerms(true)}
               >
                 همه روشن
@@ -475,7 +426,7 @@ export function AdminRoles() {
               <button
                 type="button"
                 className="tab-btn"
-                style={{ fontSize: 9.5, minHeight: 28 }}
+                style={{ fontSize: 'var(--fs-cap)', minHeight: 28 }}
                 onClick={() => setAllPerms(false)}
               >
                 همه خاموش
@@ -483,7 +434,7 @@ export function AdminRoles() {
               <button
                 type="button"
                 className="tab-btn"
-                style={{ fontSize: 9.5, minHeight: 28 }}
+                style={{ fontSize: 'var(--fs-cap)', minHeight: 28 }}
                 onClick={() =>
                   setOpenCats(
                     new Set(categories.map((c) => c.key)),
@@ -495,7 +446,7 @@ export function AdminRoles() {
               <button
                 type="button"
                 className="tab-btn"
-                style={{ fontSize: 9.5, minHeight: 28 }}
+                style={{ fontSize: 'var(--fs-cap)', minHeight: 28 }}
                 onClick={() => setOpenCats(new Set())}
               >
                 جمع کردن همه
@@ -526,11 +477,11 @@ export function AdminRoles() {
                     all: 'unset',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 7,
+                    gap: 'var(--sp-2)',
                     width: '100%',
                     padding: '10px 2px 6px',
                     cursor: 'pointer',
-                    fontSize: 11,
+                    fontSize: 'var(--fs-meta)',
                     fontWeight: 700,
                   }}
                   aria-expanded={openCats.has(cat.key)}
@@ -540,7 +491,7 @@ export function AdminRoles() {
                   </span>
                   <span
                     className="badge b-gray"
-                    style={{ fontSize: 8.5 }}
+                    style={{ fontSize: 'var(--fs-cap)' }}
                   >
                     {faNum(
                       allPerms.filter(
@@ -556,7 +507,7 @@ export function AdminRoles() {
                       ).length,
                     )}
                   </span>
-                  <span style={{ marginInlineStart: 'auto', fontSize: 10, color: 'var(--txm)' }}>
+                  <span style={{ marginInlineStart: 'auto', fontSize: 'var(--fs-cap)', color: 'var(--txm)' }}>
                     {openCats.has(cat.key) ? '▲' : '▼'}
                   </span>
                 </button>
@@ -578,7 +529,7 @@ export function AdminRoles() {
                       <button
                         type="button"
                         className="tab-btn"
-                        style={{ fontSize: 8.5, minHeight: 24, padding: '2px 7px' }}
+                        style={{ fontSize: 'var(--fs-cap)', minHeight: 24, padding: '2px 7px' }}
                         onClick={() => setCatPerms(cat.key, true)}
                       >
                         همهٔ این دسته روشن
@@ -586,7 +537,7 @@ export function AdminRoles() {
                       <button
                         type="button"
                         className="tab-btn"
-                        style={{ fontSize: 8.5, minHeight: 24, padding: '2px 7px' }}
+                        style={{ fontSize: 'var(--fs-cap)', minHeight: 24, padding: '2px 7px' }}
                         onClick={() => setCatPerms(cat.key, false)}
                       >
                         همه خاموش
@@ -605,12 +556,12 @@ export function AdminRoles() {
                         }}
                       >
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 10.5 }}>
+                          <div style={{ fontSize: 'var(--fs-cap)' }}>
                             {perm.label}
                           </div>
                           <div
                             style={{
-                              fontSize: 8.5,
+                              fontSize: 'var(--fs-cap)',
                               color: 'var(--txm)',
                               direction: 'ltr',
                               textAlign: 'left',
@@ -619,7 +570,7 @@ export function AdminRoles() {
                             {perm.key}
                           </div>
                         </div>
-                        <MiniSwitch
+                        <Switch
                           on={draft.perms.has(perm.key)}
                           onToggle={() => togglePerm(perm.key)}
                           color={`${draft.color}55`}
@@ -682,7 +633,7 @@ export function AdminRoles() {
           <button
             type="button"
             className="btn btn-d"
-            style={{ minHeight: 32, padding: '5px 10px', fontSize: 10.5 }}
+            style={{ minHeight: 32, padding: '5px 10px', fontSize: 'var(--fs-cap)' }}
             onClick={() => startEdit()}
           >
             + نقش جدید
@@ -691,11 +642,11 @@ export function AdminRoles() {
       />
 
       <main
-        className="page"
+        className="page fade-up"
         style={{
           display: 'flex',
           flexDirection: 'column',
-          gap: 10,
+          gap: 'var(--sp-3)',
           paddingInline: 12,
         }}
       >
@@ -704,7 +655,7 @@ export function AdminRoles() {
             <div
               key={key}
               className="skeleton"
-              style={{ height: 86, borderRadius: 14 }}
+              style={{ height: 86, borderRadius: 'var(--r-md)' }}
             />
           ))}
 
@@ -735,19 +686,19 @@ export function AdminRoles() {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 10,
+                gap: 'var(--sp-3)',
               }}
             >
               <div
                 style={{
                   width: 38,
                   height: 38,
-                  borderRadius: 13,
+                  borderRadius: 'var(--r-md)',
                   background: `${role.color}22`,
                   color: role.color,
                   display: 'grid',
                   placeItems: 'center',
-                  fontSize: 17,
+                  fontSize: 'var(--fs-xl)',
                   flexShrink: 0,
                 }}
               >
@@ -763,23 +714,23 @@ export function AdminRoles() {
                     flexWrap: 'wrap',
                   }}
                 >
-                  <b style={{ fontSize: 12 }}>{role.label}</b>
+                  <b style={{ fontSize: 'var(--fs-sm)' }}>{role.label}</b>
                   {role.system ? (
-                    <span className="badge b-pur" style={{ fontSize: 8 }}>
+                    <span className="badge b-pur" style={{ fontSize: 'var(--fs-cap)' }}>
                       🔒 سیستمی
                     </span>
                   ) : (
-                    <span className="badge b-grn" style={{ fontSize: 8 }}>
+                    <span className="badge b-grn" style={{ fontSize: 'var(--fs-cap)' }}>
                       ✨ دلخواه
                     </span>
                   )}
                   {!role.active && (
-                    <span className="badge b-red" style={{ fontSize: 8 }}>
+                    <span className="badge b-red" style={{ fontSize: 'var(--fs-cap)' }}>
                       خاموش
                     </span>
                   )}
                   {!role.visible && (
-                    <span className="badge b-gray" style={{ fontSize: 8 }}>
+                    <span className="badge b-gray" style={{ fontSize: 'var(--fs-cap)' }}>
                       مخفی
                     </span>
                   )}
@@ -789,7 +740,7 @@ export function AdminRoles() {
                   <div
                     style={{
                       color: 'var(--tx2)',
-                      fontSize: 9.5,
+                      fontSize: 'var(--fs-cap)',
                       marginTop: 2,
                     }}
                   >
@@ -800,8 +751,8 @@ export function AdminRoles() {
                 <div
                   style={{
                     color: 'var(--txm)',
-                    fontSize: 8.5,
-                    marginTop: 4,
+                    fontSize: 'var(--fs-cap)',
+                    marginTop: 'var(--sp-1)',
                     display: 'flex',
                     gap: 8,
                     flexWrap: 'wrap',
@@ -825,7 +776,7 @@ export function AdminRoles() {
                 <button
                   type="button"
                   className="btn btn-dark"
-                  style={{ minHeight: 30, fontSize: 11, padding: '4px 9px' }}
+                  style={{ minHeight: 30, fontSize: 'var(--fs-meta)', padding: '4px 9px' }}
                   onClick={() => startEdit(role)}
                 >
                   ✏️
@@ -835,7 +786,7 @@ export function AdminRoles() {
                   className="btn btn-dark"
                   style={{
                     minHeight: 30,
-                    fontSize: 11,
+                    fontSize: 'var(--fs-meta)',
                     padding: '4px 9px',
                     opacity:
                       role.system || role.users_count > 0 ? 0.35 : 1,
