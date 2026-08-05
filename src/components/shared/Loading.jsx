@@ -29,7 +29,7 @@ export function Spinner({
           0,
 
         border:
-          `${borderSize}px solid rgba(148,163,184,.18)`,
+          `${borderSize}px solid var(--bd)`,
 
         borderTopColor:
           color,
@@ -96,7 +96,7 @@ export function LoadingScreen() {
             '50%',
 
           background:
-            'rgba(59,130,246,.12)',
+            'var(--soft-acc)',
 
           filter:
             'blur(45px)',
@@ -146,10 +146,9 @@ export function LoadingScreen() {
               'var(--grad-brand)',
 
             border:
-              '1px solid rgba(255,255,255,.12)',
+              '1px solid var(--bd)',
 
-            borderRadius:
-              24,
+            borderRadius: 'var(--r-xl)',
 
             boxShadow:
               'var(--shd-glow)',
@@ -164,8 +163,7 @@ export function LoadingScreen() {
         <div>
           <div
             style={{
-              fontSize:
-                20,
+              fontSize: 'var(--fs-xl)',
 
               fontWeight:
                 900,
@@ -182,8 +180,7 @@ export function LoadingScreen() {
               color:
                 'var(--txm)',
 
-              fontSize:
-                10.5,
+              fontSize: 'var(--fs-cap)',
 
               marginTop:
                 3,
@@ -200,8 +197,7 @@ export function LoadingScreen() {
             color:
               'var(--txm)',
 
-            fontSize:
-              9.5,
+            fontSize: 'var(--fs-cap)',
           }}
         >
           در حال آماده‌سازی اطلاعات...
@@ -334,7 +330,7 @@ export function GradesSkeleton() {
             />
 
             <div
-              style={{ marginTop: 7 }}
+              style={{ marginTop: 'var(--sp-2)' }}
             >
               <SkeletonLine
                 width={70}
@@ -343,7 +339,7 @@ export function GradesSkeleton() {
             </div>
 
             <div
-              style={{ marginTop: 7 }}
+              style={{ marginTop: 'var(--sp-2)' }}
             >
               <SkeletonLine
                 width={150}
@@ -398,7 +394,7 @@ export function GradesSkeleton() {
       {/* تیتر بخش جزئیات */}
       <div
         className="sec-title"
-        style={{ marginTop: 4 }}
+        style={{ marginTop: 'var(--sp-1)' }}
       >
         <SkeletonLine
           width={100}
@@ -433,7 +429,7 @@ export function GradesSkeleton() {
                   width: 54,
                   height: 54,
                   flexShrink: 0,
-                  borderRadius: 16,
+                  borderRadius: 'var(--r-lg)',
                 }}
               />
 
