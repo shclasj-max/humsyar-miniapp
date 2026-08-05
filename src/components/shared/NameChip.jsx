@@ -34,7 +34,7 @@ export default function NameChip({
         <span
           style={{
             color: 'var(--txm)',
-            fontSize: 9,
+            fontSize: 'var(--fs-cap)',
           }}
         >
           {roman}
