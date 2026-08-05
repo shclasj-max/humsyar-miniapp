@@ -1,3 +1,5 @@
+import { number, errorText } from '../../lib/format';
+
 import { confirmAction } from '../../lib/confirm';
 import {
   useEffect,
@@ -30,24 +32,10 @@ import {
 } from '../../stores/uiStore';
 
 
-const number = (value) =>
-  Math.max(
-    0,
-    Number(value) || 0
-  );
 
 
-const errorText = (
-  error,
-  fallback
-) => {
-  const detail =
-    error?.response?.data?.detail;
 
-  return typeof detail === 'string'
-    ? detail
-    : fallback;
-};
+
 
 
 const TABS = [
@@ -380,7 +368,7 @@ export default function AiAdmin() {
               13,
 
             background:
-              'linear-gradient(145deg,rgba(139,92,246,.15),rgba(16,24,39,.95))',
+              'linear-gradient(145deg,var(--soft-pur),var(--surf-card))',
           }}
         >
           <span
@@ -407,8 +395,7 @@ export default function AiAdmin() {
                 color:
                   'var(--txm)',
 
-                fontSize:
-                  9,
+                fontSize: 'var(--fs-cap)',
 
                 marginTop:
                   3,
@@ -456,7 +443,7 @@ export default function AiAdmin() {
                 style={{
                   color:
                     tab === key
-                      ? '#fff'
+                      ? 'var(--t-white)'
                       : 'var(--tx2)',
 
                   background:
@@ -503,8 +490,7 @@ export default function AiAdmin() {
                       color:
                         'var(--txm)',
 
-                      fontSize:
-                        9,
+                      fontSize: 'var(--fs-cap)',
                     }}
                   >
                     دسترسی کاربران به
@@ -696,8 +682,7 @@ export default function AiAdmin() {
                 gap:
                   8,
 
-                marginTop:
-                  10,
+                marginTop: 'var(--sp-3)',
               }}
             >
               <button
@@ -793,8 +778,7 @@ export default function AiAdmin() {
                       color:
                         'var(--acc2)',
 
-                      fontSize:
-                        20,
+                      fontSize: 'var(--fs-xl)',
                     }}
                   >
                     {number(value)}
@@ -805,8 +789,7 @@ export default function AiAdmin() {
                       color:
                         'var(--txm)',
 
-                      fontSize:
-                        9,
+                      fontSize: 'var(--fs-cap)',
 
                       marginTop:
                         3,
@@ -914,8 +897,7 @@ export default function AiAdmin() {
                           color:
                             'var(--txm)',
 
-                          fontSize:
-                            9,
+                          fontSize: 'var(--fs-cap)',
 
                           marginTop:
                             3,
@@ -1056,8 +1038,7 @@ export default function AiAdmin() {
                       color:
                         'var(--txm)',
 
-                      fontSize:
-                        9,
+                      fontSize: 'var(--fs-cap)',
 
                       marginTop:
                         2,
@@ -1071,8 +1052,7 @@ export default function AiAdmin() {
                       marginTop:
                         8,
 
-                      fontSize:
-                        10.5,
+                      fontSize: 'var(--fs-cap)',
 
                       lineHeight:
                         1.7,
@@ -1089,14 +1069,12 @@ export default function AiAdmin() {
 
                   <div
                     style={{
-                      marginTop:
-                        7,
+                      marginTop: 'var(--sp-2)',
 
                       color:
                         'var(--tx2)',
 
-                      fontSize:
-                        10,
+                      fontSize: 'var(--fs-cap)',
 
                       lineHeight:
                         1.7,
