@@ -9,6 +9,8 @@ import {
 import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 
+import PrestigeHero from '../../components/shared/PrestigeHero';
+
 import {
   Spinner,
 } from '../../components/shared/Loading';
@@ -58,6 +60,82 @@ const errorText = (
     ? detail
     : fallback;
 };
+
+
+// تاریخ شمسی کوتاه برای
+// پیام Cooldown لقب
+const faDate = (iso) => {
+  if (!iso) {
+    return '';
+  }
+
+  try {
+    return new Date(
+      iso
+    ).toLocaleDateString('fa-IR');
+  } catch {
+    return '';
+  }
+};
+
+
+// سوییچ کوچک — همان الگوی
+// MiniSwitch در Roles.jsx
+function MiniSwitch({
+  on,
+  onToggle,
+  color,
+  disabled,
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      disabled={disabled}
+      onClick={onToggle}
+      style={{
+        width: 32,
+        height: 18,
+        borderRadius: 99,
+        border:
+          '1px solid var(--line)',
+        background: on
+          ? color ||
+            'rgba(52,211,153,.35)'
+          : 'rgba(255,255,255,.06)',
+        position: 'relative',
+        flexShrink: 0,
+        cursor: disabled
+          ? 'default'
+          : 'pointer',
+        opacity: disabled
+          ? .45
+          : 1,
+        transition:
+          'background .15s ease',
+      }}
+    >
+      <span
+        style={{
+          position: 'absolute',
+          top: 2,
+          insetInlineStart: on
+            ? 15
+            : 2,
+          width: 12,
+          height: 12,
+          borderRadius: '50%',
+          background: on
+            ? '#E8F0FF'
+            : '#7A8DB0',
+          transition:
+            'inset-inline-start .15s ease',
+        }}
+      />
+    </button>
+  );
+}
 
 
 function Picker({
@@ -264,6 +342,334 @@ function WeekChart({
         }
       )}
     </div>
+  );
+}
+
+
+// 🏷 موج Identity v1 — کارت لقب و
+// حریم نمایش نام واقعی (§۳/§Privacy)
+function NicknameCard({
+  user,
+  onSaved,
+}) {
+  const toast = useUIStore(
+    (state) => state.toast
+  );
+
+  const [editing, setEditing] =
+    useState(false);
+
+  const [value, setValue] =
+    useState('');
+
+
+  const saveMutation =
+    useMutation({
+      mutationFn: (raw) =>
+        api.patch(
+          '/api/profile/nickname',
+
+          { nickname: raw }
+        ),
+
+      onSuccess: async () => {
+        hapticNotif('success');
+
+        toast(
+          'لقب به‌روزرسانی شد ✅',
+          'success'
+        );
+
+        setEditing(false);
+
+        await onSaved();
+      },
+
+      onError: (error) => {
+        hapticNotif('error');
+
+        toast(
+          errorText(
+            error,
+            'ثبت لقب انجام نشد'
+          ),
+          'error'
+        );
+      },
+    });
+
+
+  const privacyMutation =
+    useMutation({
+      mutationFn: (on) =>
+        api.patch(
+          '/api/profile/privacy',
+
+          {
+            show_real_name: on,
+          }
+        ),
+
+      onSuccess: async () => {
+        hapticNotif('success');
+
+        toast(
+          'تنظیم نمایش ذخیره شد ✅',
+          'success'
+        );
+
+        await onSaved();
+      },
+
+      onError: (error) => {
+        hapticNotif('error');
+
+        toast(
+          errorText(
+            error,
+            'ذخیره انجام نشد'
+          ),
+          'error'
+        );
+      },
+    });
+
+
+  const nick = user.nickname || '';
+
+  const canChange =
+    user.can_change_nickname !==
+    false;
+
+  const coolDays =
+    number(
+      user.nickname_cooldown_days
+    ) || 30;
+
+  const showReal =
+    user.show_real_name !== false;
+
+  const nextText = faDate(
+    user.next_change_at
+  );
+
+  const pending =
+    saveMutation.isPending;
+
+
+  const startEdit = () => {
+    haptic();
+
+    setValue(nick);
+    setEditing(true);
+  };
+
+
+  const submit = (event) => {
+    event.preventDefault();
+
+    if (!pending) {
+      saveMutation.mutate(
+        value.trim()
+      );
+    }
+  };
+
+
+  return (
+    <section className="card">
+      <div className="sec-title">
+        🏷 لقب و نام نمایشی
+      </div>
+
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 9,
+        }}
+      >
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+          }}
+        >
+          <div
+            style={{
+              overflow: 'hidden',
+
+              fontSize: 15,
+
+              fontWeight: 900,
+
+              textOverflow:
+                'ellipsis',
+
+              whiteSpace:
+                'nowrap',
+            }}
+          >
+            {nick || '—'}
+          </div>
+
+          <div
+            style={{
+              color:
+                'var(--txm)',
+
+              fontSize: 9.5,
+
+              marginTop: 3,
+            }}
+          >
+            {nick
+              ? 'این نام در رتبه‌بندی، فید و نشان‌ها دیده می‌شود'
+              : 'لقبی ندارید؛ نام واقعی شما نمایش داده می‌شود'}
+          </div>
+        </div>
+
+        {!editing && (
+          <button
+            type="button"
+            className="btn btn-dark"
+            disabled={
+              !canChange || pending
+            }
+            onClick={startEdit}
+          >
+            {nick
+              ? 'ویرایش'
+              : 'انتخاب لقب'}
+          </button>
+        )}
+      </div>
+
+      {editing && (
+        <form
+          onSubmit={submit}
+          style={{
+            display: 'flex',
+            gap: 7,
+            marginTop: 12,
+          }}
+        >
+          <input
+            className="inp"
+            value={value}
+            maxLength={24}
+            placeholder={
+              'لقب (۳ تا ۲۴ نویسه)'
+            }
+            autoFocus
+            onChange={(event) =>
+              setValue(
+                event.target.value
+              )
+            }
+          />
+
+          <button
+            className="btn btn-p"
+            type="submit"
+            disabled={pending}
+          >
+            {pending ? (
+              <Spinner size={14} />
+            ) : (
+              'ذخیره'
+            )}
+          </button>
+
+          <button
+            className="btn btn-dark"
+            type="button"
+            onClick={() =>
+              setEditing(false)
+            }
+          >
+            لغو
+          </button>
+        </form>
+      )}
+
+      {nick && !editing && (
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() =>
+            saveMutation.mutate('')
+          }
+          style={{
+            padding: 0,
+            marginTop: 8,
+            color: 'var(--txm)',
+            background: 'none',
+            border: 0,
+            fontSize: 10,
+            cursor: 'pointer',
+          }}
+        >
+          حذف لقب ✕
+        </button>
+      )}
+
+      <div
+        style={{
+          color: 'var(--txm)',
+          fontSize: 9,
+          marginTop: 9,
+        }}
+      >
+        {canChange
+          ? `تغییر لقب هر ${coolDays} روز یک‌بار ممکن است؛ نام واقعی در ثبت نمره و گزارش‌ها همیشه ثابت می‌ماند.`
+          : `تغییر بعدی لقب از ${nextText} ممکن می‌شود.`}
+      </div>
+
+      <div className="divider" />
+
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+        }}
+      >
+        <div style={{ flex: 1 }}>
+          <b style={{ fontSize: 12 }}>
+            نمایش اسم واقعی
+          </b>
+
+          <div
+            style={{
+              color:
+                'var(--txm)',
+
+              fontSize: 9.5,
+
+              marginTop: 2,
+            }}
+          >
+            {showReal
+              ? 'در فضای عمومی نام واقعی شما هم دیده می‌شود'
+              : 'در فضای عمومی فقط لقب شما دیده می‌شود'}
+          </div>
+        </div>
+
+        <MiniSwitch
+          on={showReal}
+          disabled={
+            privacyMutation
+              .isPending
+          }
+          onToggle={() =>
+            privacyMutation.mutate(
+              !showReal
+            )
+          }
+        />
+      </div>
+    </section>
   );
 }
 
@@ -723,8 +1129,11 @@ export default function Profile() {
                     fontSize: 24,
                   }}
                 >
-                  {user.name?.[0] ||
-                    'ه'}
+                  {(
+                    user
+                      .display_name ||
+                    user.name
+                  )?.[0] || 'ه'}
                 </div>
 
                 <div
@@ -751,9 +1160,30 @@ export default function Profile() {
                         'nowrap',
                     }}
                   >
-                    {user.name ||
+                    {user
+                      .display_name ||
+                      user.name ||
                       'کاربر هامزیار'}
                   </h2>
+
+                  {user.nickname && (
+                    <div
+                      style={{
+                        color:
+                          'var(--txm)',
+
+                        fontSize:
+                          9.5,
+
+                        marginTop:
+                          2,
+                      }}
+                    >
+                      نام واقعی:{' '}
+                      {user.name ||
+                        '—'}
+                    </div>
+                  )}
 
                   <button
                     type="button"
@@ -957,6 +1387,19 @@ export default function Profile() {
                 </form>
               )}
             </section>
+
+
+            {/* 🏷 موج Identity v1 —
+                لقب + حریم نام واقعی */}
+            <NicknameCard
+              user={user}
+              onSaved={refreshAll}
+            />
+
+
+            {/* 👑 موج P0 — کارت قهرمان
+                Prestige (رنک/هدف/رقیب/سپر) */}
+            <PrestigeHero />
 
 
             {rank?.rank && (
