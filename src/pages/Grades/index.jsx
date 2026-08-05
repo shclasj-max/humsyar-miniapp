@@ -1,3 +1,4 @@
+import PageError from '../../components/shared/PageError';
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
@@ -55,7 +56,7 @@ const visual = (value) => {
       color: 'var(--txm)',
 
       soft:
-        'rgba(100,116,139,.12)',
+        'var(--soft-mut)',
 
       label:
         'در انتظار',
@@ -68,10 +69,10 @@ const visual = (value) => {
   if (safe >= 85) {
     return {
       color:
-        '#34D399',
+        'var(--t-ok)',
 
       soft:
-        'rgba(16,185,129,.12)',
+        'var(--soft-ok)',
 
       label:
         'عالی',
@@ -84,10 +85,10 @@ const visual = (value) => {
   if (safe >= 70) {
     return {
       color:
-        '#70A7FF',
+        'var(--t-acc)',
 
       soft:
-        'rgba(59,130,246,.12)',
+        'var(--soft-acc)',
 
       label:
         'خوب',
@@ -100,10 +101,10 @@ const visual = (value) => {
   if (safe >= 50) {
     return {
       color:
-        '#FCD34D',
+        'var(--t-warn)',
 
       soft:
-        'rgba(245,158,11,.12)',
+        'var(--soft-warn)',
 
       label:
         'متوسط',
@@ -115,10 +116,10 @@ const visual = (value) => {
 
   return {
     color:
-      '#FB7185',
+      'var(--t-err)',
 
     soft:
-      'rgba(239,68,68,.12)',
+      'var(--soft-err)',
 
     label:
       'نیازمند تلاش',
@@ -198,8 +199,7 @@ function GradeRow({
             placeItems:
               'center',
 
-            borderRadius:
-              16,
+            borderRadius: 'var(--r-lg)',
 
             background:
               style.soft,
@@ -217,8 +217,7 @@ function GradeRow({
                 color:
                   style.color,
 
-                fontSize:
-                  17,
+                fontSize: 'var(--fs-xl)',
 
                 fontWeight:
                   900,
@@ -235,8 +234,7 @@ function GradeRow({
                 color:
                   'var(--txm)',
 
-                fontSize:
-                  8,
+                fontSize: 'var(--fs-cap)',
 
                 marginTop:
                   2,
@@ -258,8 +256,7 @@ function GradeRow({
               overflow:
                 'hidden',
 
-              fontSize:
-                13.5,
+              fontSize: 'var(--fs-md)',
 
               fontWeight:
                 850,
@@ -280,8 +277,7 @@ function GradeRow({
               color:
                 'var(--tx2)',
 
-              fontSize:
-                10.5,
+              fontSize: 'var(--fs-cap)',
 
               marginTop:
                 3,
@@ -296,8 +292,7 @@ function GradeRow({
               color:
                 'var(--txm)',
 
-              fontSize:
-                9.5,
+              fontSize: 'var(--fs-cap)',
 
               marginTop:
                 3,
@@ -318,8 +313,7 @@ function GradeRow({
         >
           <div
             style={{
-              fontSize:
-                19,
+              fontSize: 'var(--fs-xl)',
             }}
           >
             {style.icon}
@@ -330,8 +324,7 @@ function GradeRow({
               color:
                 style.color,
 
-              fontSize:
-                9.5,
+              fontSize: 'var(--fs-cap)',
 
               fontWeight:
                 800,
@@ -365,8 +358,7 @@ function GradeRow({
               color:
                 'var(--txm)',
 
-              fontSize:
-                9,
+              fontSize: 'var(--fs-cap)',
             }}
           >
             درصد کسب‌شده
@@ -377,8 +369,7 @@ function GradeRow({
               color:
                 style.color,
 
-              fontSize:
-                10,
+              fontSize: 'var(--fs-cap)',
 
               fontWeight:
                 800,
@@ -415,13 +406,11 @@ function GradeRow({
               'var(--tx2)',
 
             background:
-              'rgba(100,116,139,.08)',
+              'var(--soft-mut)',
 
-            borderRadius:
-              11,
+            borderRadius: 'var(--r-md)',
 
-            fontSize:
-              10.5,
+            fontSize: 'var(--fs-cap)',
 
             lineHeight:
               1.7,
@@ -615,31 +604,13 @@ export default function Grades() {
         {isLoading ? (
           <GradesSkeleton />
         ) : isError ? (
-          <div className="empty card">
-            <div className="empty__ic">
-              🌐
-            </div>
-
-            <div>
-              دریافت نمرات انجام نشد.
-            </div>
-
-            <button
-              className="btn btn-p"
-              onClick={() =>
-                refetch()
-              }
-              disabled={
-                isRefetching
-              }
-            >
-              {isRefetching ? (
-                <Spinner size={15} />
-              ) : (
-                'تلاش دوباره'
-              )}
-            </button>
-          </div>
+          <PageError
+            text={
+              'دریافت نمرات انجام نشد.'
+            }
+            onRetry={() => refetch()}
+            pending={isRefetching}
+          />
         ) : grades.length ===
           0 ? (
           <div className="empty card">
@@ -661,8 +632,7 @@ export default function Grades() {
 
             <div
               style={{
-                fontSize:
-                  10.5,
+                fontSize: 'var(--fs-cap)',
               }}
             >
               بعد از ثبت توسط مدیر محتوا،
@@ -782,11 +752,9 @@ export default function Grades() {
                           color:
                             'var(--txm)',
 
-                          fontSize:
-                            8,
+                          fontSize: 'var(--fs-cap)',
 
-                          marginTop:
-                            4,
+                          marginTop: 'var(--sp-1)',
                         }}
                       >
                         از ۲۰
@@ -805,8 +773,7 @@ export default function Grades() {
                       color:
                         'var(--txm)',
 
-                      fontSize:
-                        10.5,
+                      fontSize: 'var(--fs-cap)',
                     }}
                   >
                     میانگین کل شما
@@ -817,8 +784,7 @@ export default function Grades() {
                       color:
                         averageStyle.color,
 
-                      fontSize:
-                        18,
+                      fontSize: 'var(--fs-xl)',
 
                       fontWeight:
                         900,
@@ -836,8 +802,7 @@ export default function Grades() {
                       color:
                         'var(--tx2)',
 
-                      fontSize:
-                        10.5,
+                      fontSize: 'var(--fs-cap)',
 
                       lineHeight:
                         1.7,
@@ -869,8 +834,7 @@ export default function Grades() {
                     color:
                       'var(--ok)',
 
-                    fontSize:
-                      20,
+                    fontSize: 'var(--fs-xl)',
 
                     fontWeight:
                       900,
@@ -884,8 +848,7 @@ export default function Grades() {
                     color:
                       'var(--txm)',
 
-                    fontSize:
-                      9.5,
+                    fontSize: 'var(--fs-cap)',
                   }}
                 >
                   نمره قبولی
@@ -907,8 +870,7 @@ export default function Grades() {
                     color:
                       'var(--acc2)',
 
-                    fontSize:
-                      20,
+                    fontSize: 'var(--fs-xl)',
 
                     fontWeight:
                       900,
@@ -922,8 +884,7 @@ export default function Grades() {
                     color:
                       'var(--txm)',
 
-                    fontSize:
-                      9.5,
+                    fontSize: 'var(--fs-cap)',
                   }}
                 >
                   بهترین عملکرد
@@ -941,11 +902,10 @@ export default function Grades() {
                   alignItems:
                     'center',
 
-                  gap:
-                    10,
+                  gap: 'var(--sp-3)',
 
                   borderColor:
-                    'rgba(245,158,11,.25)',
+                    'var(--bd-warn)',
                 }}
               >
                 <span
@@ -960,8 +920,7 @@ export default function Grades() {
                 <div>
                   <b
                     style={{
-                      fontSize:
-                        12,
+                      fontSize: 'var(--fs-sm)',
                     }}
                   >
                     {total -
@@ -975,8 +934,7 @@ export default function Grades() {
                       color:
                         'var(--txm)',
 
-                      fontSize:
-                        9.5,
+                      fontSize: 'var(--fs-cap)',
 
                       marginTop:
                         2,
@@ -993,8 +951,7 @@ export default function Grades() {
             <div
               className="sec-title"
               style={{
-                marginTop:
-                  4,
+                marginTop: 'var(--sp-1)',
               }}
             >
               📋 جزئیات نمرات
