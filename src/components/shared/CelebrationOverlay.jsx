@@ -19,9 +19,9 @@ import {
 
 /* پالت کاغذرنگی — پیرامون رنگ رنک + رنگ‌های برند */
 const CONFETTI_COLORS = [
-  '#FBBF24', '#34D399', '#60A5FA',
-  '#F472B6', '#A78BFA', '#22D3EE',
-  '#FB923C', '#F8FAFC',
+  'var(--t-warn)', 'var(--t-ok)', 'var(--t-acc-md)',
+  'var(--t-pink)', 'var(--t-pur)', 'var(--t-info)',
+  'var(--t-warn)', 'var(--tx)',
 ];
 
 
@@ -161,7 +161,7 @@ export default function CelebrationOverlay({
         <div
           style={{
             color: 'var(--txm)',
-            fontSize: 11,
+            fontSize: 'var(--fs-meta)',
             fontWeight: 700,
           }}
         >
@@ -175,7 +175,7 @@ export default function CelebrationOverlay({
             style={{
               marginTop: 8,
               color: 'var(--txm)',
-              fontSize: 11,
+              fontSize: 'var(--fs-meta)',
             }}
           >
             {fromLine}
@@ -201,7 +201,7 @@ export default function CelebrationOverlay({
           style={{
             margin: '10px 0 0',
             color: 'var(--tx2)',
-            fontSize: 10.5,
+            fontSize: 'var(--fs-cap)',
             lineHeight: 1.9,
           }}
         >
