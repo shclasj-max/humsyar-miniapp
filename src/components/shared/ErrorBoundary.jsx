@@ -153,12 +153,12 @@ export default class ErrorBoundary
               margin: '0 auto',
 
               background:
-                'rgba(239,68,68,.12)',
+                'var(--soft-err)',
 
               border:
-                '1px solid rgba(239,68,68,.3)',
+                '1px solid var(--bd-err)',
 
-              borderRadius: 22,
+              borderRadius: 'var(--r-xl)',
               fontSize: 32,
             }}
           >
@@ -167,8 +167,8 @@ export default class ErrorBoundary
 
           <h1
             style={{
-              marginTop: 14,
-              fontSize: 17,
+              marginTop: 'var(--sp-4)',
+              fontSize: 'var(--fs-xl)',
               fontWeight: 900,
             }}
           >
@@ -177,9 +177,9 @@ export default class ErrorBoundary
 
           <p
             style={{
-              marginTop: 7,
+              marginTop: 'var(--sp-2)',
               color: 'var(--tx2)',
-              fontSize: 10.5,
+              fontSize: 'var(--fs-cap)',
               lineHeight: 1.9,
             }}
           >
@@ -197,19 +197,19 @@ export default class ErrorBoundary
               display: 'block',
               maxHeight: 90,
               overflow: 'auto',
-              marginTop: 14,
+              marginTop: 'var(--sp-4)',
               padding: '9px 11px',
 
-              color: '#FCA5A5',
+              color: 'var(--t-err)',
 
               background:
-                'rgba(3,7,15,.6)',
+                'var(--scrim)',
 
               border:
-                '1px solid rgba(239,68,68,.2)',
+                '1px solid var(--bd-err)',
 
-              borderRadius: 11,
-              fontSize: 9.5,
+              borderRadius: 'var(--r-md)',
+              fontSize: 'var(--fs-cap)',
               lineHeight: 1.7,
               textAlign: 'left',
               wordBreak: 'break-word',
