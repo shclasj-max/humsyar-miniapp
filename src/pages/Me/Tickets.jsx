@@ -1,3 +1,6 @@
+import PageError from '../../components/shared/PageError';
+import { number } from '../../lib/format';
+
 import { useEffect, useRef, useState } from 'react';
 
 import {
@@ -31,13 +34,7 @@ import {
 } from '../../stores/uiStore';
 
 
-const number = (value) => {
-  const parsed = Number(value);
 
-  return Number.isFinite(parsed)
-    ? Math.max(0, parsed)
-    : 0;
-};
 
 
 const statusInfo = (status) => {
@@ -408,8 +405,7 @@ export default function Tickets() {
                     color:
                       'var(--txm)',
 
-                    fontSize:
-                      10,
+                    fontSize: 'var(--fs-cap)',
 
                     marginTop:
                       3,
@@ -427,7 +423,7 @@ export default function Tickets() {
             className="card"
             style={{
               display: 'grid',
-              gap: 10,
+              gap: 'var(--sp-3)',
             }}
           >
             <label className="fld-label">
@@ -501,8 +497,7 @@ export default function Tickets() {
                     ? 'var(--ok)'
                     : 'var(--txm)',
 
-                fontSize:
-                  9,
+                fontSize: 'var(--fs-cap)',
               }}
             >
               {form.message
@@ -600,7 +595,7 @@ export default function Tickets() {
                     ticket.status ===
                     'closed'
                       ? 'var(--bd)'
-                      : 'rgba(16,185,129,.25)',
+                      : 'var(--bd-ok)',
                 }}
               >
                 <div
@@ -621,8 +616,7 @@ export default function Tickets() {
                         color:
                           'var(--txm)',
 
-                        fontSize:
-                          9.5,
+                        fontSize: 'var(--fs-cap)',
                       }}
                     >
                       موضوع درخواست
@@ -633,8 +627,7 @@ export default function Tickets() {
                         display:
                           'block',
 
-                        fontSize:
-                          13.5,
+                        fontSize: 'var(--fs-md)',
 
                         marginTop:
                           3,
@@ -666,13 +659,11 @@ export default function Tickets() {
                       'var(--tx2)',
 
                     background:
-                      'rgba(100,116,139,.08)',
+                      'var(--soft-mut)',
 
-                    borderRadius:
-                      12,
+                    borderRadius: 'var(--r-md)',
 
-                    fontSize:
-                      11,
+                    fontSize: 'var(--fs-meta)',
 
                     lineHeight:
                       1.8,
@@ -731,14 +722,14 @@ export default function Tickets() {
 
                             background:
                               mine
-                                ? 'rgba(59,130,246,.14)'
-                                : 'rgba(16,185,129,.12)',
+                                ? 'var(--soft-acc)'
+                                : 'var(--soft-ok)',
 
                             border:
                               `1px solid ${
                                 mine
                                   ? 'var(--bdg)'
-                                  : 'rgba(16,185,129,.22)'
+                                  : 'var(--bd-ok)'
                               }`,
 
                             borderRadius:
@@ -746,8 +737,7 @@ export default function Tickets() {
                                 ? '15px 15px 4px 15px'
                                 : '15px 15px 15px 4px',
 
-                            fontSize:
-                              11,
+                            fontSize: 'var(--fs-meta)',
 
                             lineHeight:
                               1.8,
@@ -762,11 +752,9 @@ export default function Tickets() {
                               color:
                                 'var(--txm)',
 
-                              fontSize:
-                                8.5,
+                              fontSize: 'var(--fs-cap)',
 
-                              marginTop:
-                                4,
+                              marginTop: 'var(--sp-1)',
                             }}
                           >
                             {mine
@@ -840,8 +828,7 @@ export default function Tickets() {
                     color:
                       'var(--txm)',
 
-                    fontSize:
-                      10.5,
+                    fontSize: 'var(--fs-cap)',
 
                     textAlign:
                       'center',
@@ -874,8 +861,7 @@ export default function Tickets() {
             'card card-glow hero-card'
           }
           style={{
-            marginBottom:
-              14,
+            marginBottom: 'var(--sp-4)',
           }}
         >
           <div
@@ -904,8 +890,7 @@ export default function Tickets() {
                 placeItems:
                   'center',
 
-                borderRadius:
-                  16,
+                borderRadius: 'var(--r-lg)',
 
                 background:
                   'var(--grad-brand)',
@@ -927,8 +912,7 @@ export default function Tickets() {
                   color:
                     'var(--txm)',
 
-                  fontSize:
-                    10.5,
+                  fontSize: 'var(--fs-cap)',
                 }}
               >
                 مرکز پشتیبانی هامزیار
@@ -939,8 +923,7 @@ export default function Tickets() {
                   display:
                     'block',
 
-                  fontSize:
-                    16.5,
+                  fontSize: 'var(--fs-lg)',
 
                   marginTop:
                     2,
@@ -954,8 +937,7 @@ export default function Tickets() {
                   color:
                     'var(--tx2)',
 
-                  fontSize:
-                    9.5,
+                  fontSize: 'var(--fs-cap)',
 
                   marginTop:
                     3,
@@ -975,8 +957,7 @@ export default function Tickets() {
             'btn btn-p btn-full'
           }
           style={{
-            marginBottom:
-              14,
+            marginBottom: 'var(--sp-4)',
           }}
           onClick={() =>
             setView('new')
@@ -994,24 +975,12 @@ export default function Tickets() {
         {isLoading ? (
           <TicketsSkeleton />
         ) : isError ? (
-          <div className="empty card">
-            <div className="empty__ic">
-              🌐
-            </div>
-
-            <div>
-              دریافت تیکت‌ها انجام نشد.
-            </div>
-
-            <button
-              className="btn btn-p"
-              onClick={() =>
-                refetch()
-              }
-            >
-              تلاش دوباره
-            </button>
-          </div>
+          <PageError
+            text={
+              'دریافت تیکت‌ها انجام نشد.'
+            }
+            onRetry={() => refetch()}
+          />
         ) : tickets.length === 0 ? (
           <div className="empty card">
             هنوز تیکتی ثبت نکرده‌اید.
@@ -1083,17 +1052,15 @@ export default function Tickets() {
                         placeItems:
                           'center',
 
-                        borderRadius:
-                          14,
+                        borderRadius: 'var(--r-md)',
 
                         background:
                           item.status ===
                           'closed'
-                            ? 'rgba(100,116,139,.12)'
-                            : 'rgba(16,185,129,.12)',
+                            ? 'var(--soft-mut)'
+                            : 'var(--soft-ok)',
 
-                        fontSize:
-                          20,
+                        fontSize: 'var(--fs-xl)',
                       }}
                     >
                       🎫
@@ -1116,8 +1083,7 @@ export default function Tickets() {
                           overflow:
                             'hidden',
 
-                          fontSize:
-                            12.5,
+                          fontSize: 'var(--fs-sm)',
 
                           textOverflow:
                             'ellipsis',
@@ -1138,8 +1104,7 @@ export default function Tickets() {
                           color:
                             'var(--txm)',
 
-                          fontSize:
-                            9.5,
+                          fontSize: 'var(--fs-cap)',
 
                           marginTop:
                             3,
