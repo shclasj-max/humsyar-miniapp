@@ -91,8 +91,7 @@ export default function QuestionHistory() {
             'card card-glow hero-card'
           }
           style={{
-            marginBottom:
-              14,
+            marginBottom: 'var(--sp-4)',
           }}
         >
           <div
@@ -121,8 +120,7 @@ export default function QuestionHistory() {
                 placeItems:
                   'center',
 
-                borderRadius:
-                  16,
+                borderRadius: 'var(--r-lg)',
 
                 background:
                   'var(--grad-brand)',
@@ -145,8 +143,7 @@ export default function QuestionHistory() {
                   color:
                     'var(--txm)',
 
-                  fontSize:
-                    10,
+                  fontSize: 'var(--fs-cap)',
                 }}
               >
                 مرور عملکرد گذشته
@@ -157,8 +154,7 @@ export default function QuestionHistory() {
                   display:
                     'block',
 
-                  fontSize:
-                    16.5,
+                  fontSize: 'var(--fs-lg)',
 
                   marginTop:
                     2,
@@ -173,8 +169,7 @@ export default function QuestionHistory() {
                   color:
                     'var(--tx2)',
 
-                  fontSize:
-                    9.5,
+                  fontSize: 'var(--fs-cap)',
 
                   marginTop:
                     3,
@@ -194,8 +189,7 @@ export default function QuestionHistory() {
                       ? 'var(--warn)'
                       : 'var(--err)',
 
-                fontSize:
-                  20,
+                fontSize: 'var(--fs-xl)',
 
                 fontWeight:
                   900,
@@ -272,8 +266,8 @@ export default function QuestionHistory() {
 
                     borderColor:
                       item.is_correct
-                        ? 'rgba(16,185,129,.25)'
-                        : 'rgba(239,68,68,.25)',
+                        ? 'var(--bd-ok)'
+                        : 'var(--bd-err)',
 
                     animationDelay:
                       `${
@@ -329,8 +323,7 @@ export default function QuestionHistory() {
 
                   <div
                     style={{
-                      fontSize:
-                        12,
+                      fontSize: 'var(--fs-sm)',
 
                       fontWeight:
                         650,
@@ -351,11 +344,9 @@ export default function QuestionHistory() {
                       gridTemplateColumns:
                         '1fr 1fr',
 
-                      gap:
-                        7,
+                      gap: 'var(--sp-2)',
 
-                      marginTop:
-                        10,
+                      marginTop: 'var(--sp-3)',
                     }}
                   >
                     <div
@@ -370,14 +361,12 @@ export default function QuestionHistory() {
 
                         background:
                           item.is_correct
-                            ? 'rgba(16,185,129,.08)'
-                            : 'rgba(239,68,68,.08)',
+                            ? 'var(--soft-ok)'
+                            : 'var(--soft-err)',
 
-                        borderRadius:
-                          10,
+                        borderRadius: 'var(--r-sm)',
 
-                        fontSize:
-                          9.5,
+                        fontSize: 'var(--fs-cap)',
                       }}
                     >
                       پاسخ شما:{' '}
@@ -399,13 +388,11 @@ export default function QuestionHistory() {
                           'var(--ok)',
 
                         background:
-                          'rgba(16,185,129,.08)',
+                          'var(--soft-ok)',
 
-                        borderRadius:
-                          10,
+                        borderRadius: 'var(--r-sm)',
 
-                        fontSize:
-                          9.5,
+                        fontSize: 'var(--fs-cap)',
                       }}
                     >
                       پاسخ صحیح:{' '}
@@ -427,11 +414,9 @@ export default function QuestionHistory() {
                         color:
                           'var(--txm)',
 
-                        fontSize:
-                          8.5,
+                        fontSize: 'var(--fs-cap)',
 
-                        marginTop:
-                          7,
+                        marginTop: 'var(--sp-2)',
                       }}
                     >
                       📆{' '}
