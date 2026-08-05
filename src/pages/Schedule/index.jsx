@@ -1,3 +1,6 @@
+import PageError from '../../components/shared/PageError';
+import EmptyState from '../../components/shared/EmptyState';
+
 import { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
@@ -17,22 +20,22 @@ const TYPES = {
   class: {
     icon: '🏫',
     label: 'کلاس‌ها',
-    color: '#70A7FF',
-    soft: 'rgba(59,130,246,.12)',
+    color: 'var(--t-acc)',
+    soft: 'var(--soft-acc)',
   },
 
   exam: {
     icon: '📝',
     label: 'امتحانات',
-    color: '#FB7185',
-    soft: 'rgba(239,68,68,.12)',
+    color: 'var(--t-err)',
+    soft: 'var(--soft-err)',
   },
 
   makeup: {
     icon: '🔄',
     label: 'جبرانی',
-    color: '#FCD34D',
-    soft: 'rgba(245,158,11,.12)',
+    color: 'var(--t-warn)',
+    soft: 'var(--soft-warn)',
   },
 };
 
@@ -70,23 +73,6 @@ const groupName = (value) => {
   return `گروه ${value}`;
 };
 
-function Empty({
-  type,
-}) {
-  return (
-    <div className="empty card">
-      <div className="empty__ic">
-        {TYPES[type].icon}
-      </div>
-
-      <div>
-        موردی در بخش{' '}
-        {TYPES[type].label}{' '}
-        ثبت نشده است.
-      </div>
-    </div>
-  );
-}
 
 export default function Schedule() {
   const [
@@ -228,7 +214,7 @@ export default function Schedule() {
             'card card-glow hero-card'
           }
           style={{
-            marginBottom: 14,
+            marginBottom: 'var(--sp-4)',
           }}
         >
           <div
@@ -246,8 +232,7 @@ export default function Schedule() {
                 display: 'grid',
                 placeItems: 'center',
 
-                borderRadius:
-                  16,
+                borderRadius: 'var(--r-lg)',
 
                 background:
                   'var(--grad-brand)',
@@ -271,8 +256,7 @@ export default function Schedule() {
                   color:
                     'var(--txm)',
 
-                  fontSize:
-                    10.5,
+                  fontSize: 'var(--fs-cap)',
                 }}
               >
                 برنامه ترم جاری
@@ -280,7 +264,7 @@ export default function Schedule() {
 
               <div
                 style={{
-                  fontSize: 17,
+                  fontSize: 'var(--fs-xl)',
 
                   fontWeight:
                     900,
@@ -302,8 +286,7 @@ export default function Schedule() {
 
                   gap: 5,
 
-                  marginTop:
-                    7,
+                  marginTop: 'var(--sp-2)',
                 }}
               >
                 <span className="badge b-acc">
@@ -334,20 +317,19 @@ export default function Schedule() {
                     padding:
                       '8px 7px',
 
-                    borderRadius:
-                      14,
+                    borderRadius: 'var(--r-md)',
 
                     background:
                       nearestDays <=
                       3
-                        ? 'rgba(239,68,68,.12)'
+                        ? 'var(--soft-err)'
                         : 'var(--acc-soft)',
 
                     border:
                       `1px solid ${
                         nearestDays <=
                         3
-                          ? 'rgba(239,68,68,.24)'
+                          ? 'var(--bd-err)'
                           : 'var(--bdg)'
                       }`,
                   }}
@@ -360,8 +342,7 @@ export default function Schedule() {
                           ? 'var(--err)'
                           : 'var(--acc2)',
 
-                      fontSize:
-                        18,
+                      fontSize: 'var(--fs-xl)',
 
                       fontWeight:
                         900,
@@ -375,8 +356,7 @@ export default function Schedule() {
                       color:
                         'var(--txm)',
 
-                      fontSize:
-                        8,
+                      fontSize: 'var(--fs-cap)',
                     }}
                   >
                     {nearestDays ===
@@ -428,33 +408,21 @@ export default function Schedule() {
         {isLoading ? (
           <ScheduleSkeleton />
         ) : isError ? (
-          <div className="empty card">
-            <div className="empty__ic">
-              🌐
-            </div>
-
-            <div>
-              دریافت برنامه انجام نشد.
-            </div>
-
-            <button
-              className="btn btn-p"
-              onClick={() =>
-                refetch()
-              }
-              disabled={
-                isRefetching
-              }
-            >
-              {isRefetching ? (
-                <Spinner size={15} />
-              ) : (
-                'تلاش دوباره'
-              )}
-            </button>
-          </div>
+          <PageError
+            text={
+              'دریافت برنامه انجام نشد.'
+            }
+            onRetry={() => refetch()}
+            pending={isRefetching}
+          />
         ) : items.length === 0 ? (
-          <Empty type={tab} />
+          <EmptyState
+            icon={TYPES[tab].icon}
+          >
+            موردی در بخش{' '}
+            {TYPES[tab].label}{' '}
+            ثبت نشده است.
+          </EmptyState>
         ) : (
           <section
             style={{
@@ -498,7 +466,7 @@ export default function Schedule() {
 
                       borderColor:
                         urgent
-                          ? 'rgba(239,68,68,.3)'
+                          ? 'var(--bd-err)'
                           : 'var(--bd)',
                     }}
                   >
@@ -527,12 +495,11 @@ export default function Schedule() {
                           placeItems:
                             'center',
 
-                          borderRadius:
-                            14,
+                          borderRadius: 'var(--r-md)',
 
                           background:
                             urgent
-                              ? 'rgba(239,68,68,.12)'
+                              ? 'var(--soft-err)'
                               : config.soft,
 
                           fontSize:
@@ -564,8 +531,7 @@ export default function Schedule() {
                               overflow:
                                 'hidden',
 
-                              fontSize:
-                                13.5,
+                              fontSize: 'var(--fs-md)',
 
                               fontWeight:
                                 850,
@@ -595,8 +561,7 @@ export default function Schedule() {
                               color:
                                 'var(--tx2)',
 
-                              fontSize:
-                                10.5,
+                              fontSize: 'var(--fs-cap)',
 
                               marginTop:
                                 3,
@@ -617,8 +582,7 @@ export default function Schedule() {
 
                             gap: 5,
 
-                            marginTop:
-                              7,
+                            marginTop: 'var(--sp-2)',
                           }}
                         >
                           <span className="badge b-acc">
@@ -680,8 +644,7 @@ export default function Schedule() {
                     {note && (
                       <div
                         style={{
-                          marginTop:
-                            10,
+                          marginTop: 'var(--sp-3)',
 
                           padding:
                             '8px 10px',
@@ -690,13 +653,11 @@ export default function Schedule() {
                             'var(--tx2)',
 
                           background:
-                            'rgba(100,116,139,.08)',
+                            'var(--soft-mut)',
 
-                          borderRadius:
-                            11,
+                          borderRadius: 'var(--r-md)',
 
-                          fontSize:
-                            10.5,
+                          fontSize: 'var(--fs-cap)',
 
                           lineHeight:
                             1.7,
