@@ -126,13 +126,13 @@ function ReferenceFile({
 
           color:
             isPersian
-              ? '#34D399'
-              : '#70A7FF',
+              ? 'var(--t-ok)'
+              : 'var(--t-acc)',
 
           background:
             isPersian
-              ? 'rgba(16,185,129,.12)'
-              : 'rgba(59,130,246,.12)',
+              ? 'var(--soft-ok)'
+              : 'var(--soft-acc)',
         }}
       >
         {
@@ -1027,7 +1027,7 @@ const styles = {
     /* موج ۳.۱۰ — سینک با دستورِ .hero-card
        (دمِ بنفشِ شاخه‌ی رفرنس حفظ شده) */
     background:
-      'linear-gradient(145deg,rgba(29,78,216,.22),rgba(16,24,39,.95) 52%,rgba(139,92,246,.08))',
+      'linear-gradient(145deg,var(--soft-acc-deep),var(--surf-card) 52%,var(--soft-pur))',
   },
 
   heroIcon: {
@@ -1037,23 +1037,23 @@ const styles = {
     width: 52,
     height: 52,
     fontSize: 25,
-    borderRadius: 16,
+    borderRadius: 'var(--r-lg)',
 
     background:
-      'linear-gradient(135deg,#1D4ED8,#3B82F6 55%,#8B5CF6)',
+      'linear-gradient(135deg,var(--acc-dim),var(--acc) 55%,var(--pur))',
 
     boxShadow:
       'var(--shd-glow)',
   },
 
   heroTitle: {
-    fontSize: 15,
+    fontSize: 'var(--fs-lg)',
   },
 
   heroText: {
-    marginTop: 4,
+    marginTop: 'var(--sp-1)',
     color: 'var(--tx2)',
-    fontSize: 10.5,
+    fontSize: 'var(--fs-cap)',
     lineHeight: 1.9,
   },
 
@@ -1095,14 +1095,14 @@ const styles = {
 
   subjectMeta: {
     color: 'var(--tx2)',
-    fontSize: 10,
+    fontSize: 'var(--fs-cap)',
   },
 
   bookCard: {
     display: 'flex',
     alignItems: 'center',
     width: '100%',
-    gap: 10,
+    gap: 'var(--sp-3)',
     fontFamily: 'inherit',
     textAlign: 'right',
     cursor: 'pointer',
@@ -1114,10 +1114,10 @@ const styles = {
     flex: '0 0 43px',
     height: 43,
     fontSize: 22,
-    borderRadius: 12,
+    borderRadius: 'var(--r-md)',
 
     background:
-      'rgba(139,92,246,.12)',
+      'var(--soft-pur)',
   },
 
   bookBody: {
@@ -1144,23 +1144,23 @@ const styles = {
 
   languageButton: {
     width: '100%',
-    gap: 7,
+    gap: 'var(--sp-2)',
   },
 
   notice: {
     display: 'flex',
     alignItems: 'center',
-    gap: 7,
-    padding: 10,
+    gap: 'var(--sp-2)',
+    padding: 'var(--sp-3)',
     color: 'var(--tx2)',
-    fontSize: 9.5,
+    fontSize: 'var(--fs-cap)',
     lineHeight: 1.8,
   },
 
   fileCard: {
     display: 'flex',
     alignItems: 'center',
-    gap: 10,
+    gap: 'var(--sp-3)',
     padding: 11,
   },
 
@@ -1171,7 +1171,7 @@ const styles = {
     width: 43,
     height: 43,
     fontSize: 21,
-    borderRadius: 12,
+    borderRadius: 'var(--r-md)',
   },
 
   fileBody: {
@@ -1183,18 +1183,18 @@ const styles = {
   },
 
   fileTitle: {
-    fontSize: 11.5,
+    fontSize: 'var(--fs-meta)',
   },
 
   fileMeta: {
     color: 'var(--tx2)',
-    fontSize: 9.5,
+    fontSize: 'var(--fs-cap)',
   },
 
   description: {
     marginTop: 3,
     color: 'var(--txm)',
-    fontSize: 9,
+    fontSize: 'var(--fs-cap)',
     lineHeight: 1.7,
   },
 
@@ -1203,7 +1203,7 @@ const styles = {
     minWidth: 68,
     minHeight: 34,
     padding: '6px 9px',
-    fontSize: 10,
+    fontSize: 'var(--fs-cap)',
   },
 
   empty: {
@@ -1220,7 +1220,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     flexDirection: 'column',
-    gap: 10,
+    gap: 'var(--sp-3)',
     padding: 25,
     color: 'var(--tx2)',
     textAlign: 'center',
