@@ -1,3 +1,6 @@
+import PageError from '../../components/shared/PageError';
+import { faNum, number, percent } from '../../lib/format';
+
 import { useState } from 'react';
 import {
   useMutation,
@@ -18,11 +21,7 @@ import {
 import { haptic, tg } from '../../lib/telegram';
 
 /* 👑 موج P2 Prestige — ارقام فارسی کوتاه */
-const faNum = (value) =>
-  String(value ?? '').replace(
-    /\d/g,
-    (digit) => '۰۱۲۳۴۵۶۷۸۹'[digit]
-  );
+
 
 /* ⚔️ کارت «چالش ارتقا آماده است» — از نمای
    چالش داخل همان پیلود یکتای ['prestige'] */
@@ -53,7 +52,7 @@ export function ChallengeCard() {
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 10,
+          gap: 'var(--sp-3)',
           border:
             '1.5px solid var(--warn)',
           textDecoration: 'none',
@@ -65,7 +64,7 @@ export function ChallengeCard() {
         </span>
 
         <div style={{ flex: 1 }}>
-          <b style={{ fontSize: 12.5 }}>
+          <b style={{ fontSize: 'var(--fs-sm)' }}>
             چالش ارتقا آماده است — {ch.icon}{' '}
             {ch.title}
           </b>
@@ -73,7 +72,7 @@ export function ChallengeCard() {
           <div
             style={{
               color: 'var(--txm)',
-              fontSize: 9.5,
+              fontSize: 'var(--fs-cap)',
             }}
           >
             {ch.apex
@@ -85,7 +84,7 @@ export function ChallengeCard() {
         <span
           style={{
             color: 'var(--warn)',
-            fontSize: 12,
+            fontSize: 'var(--fs-sm)',
           }}
         >
           ›
@@ -103,10 +102,10 @@ export function ChallengeCard() {
           alignItems: 'center',
           gap: 9,
           color: 'var(--txm)',
-          fontSize: 10.5,
+          fontSize: 'var(--fs-cap)',
         }}
       >
-        <span style={{ fontSize: 18 }}>
+        <span style={{ fontSize: 'var(--fs-xl)' }}>
           ⏳
         </span>
         چالش ارتقا در کول‌داون است — XP‌ات
@@ -124,10 +123,10 @@ export function ChallengeCard() {
           alignItems: 'center',
           gap: 9,
           color: 'var(--txm)',
-          fontSize: 10.5,
+          fontSize: 'var(--fs-cap)',
         }}
       >
-        <span style={{ fontSize: 18 }}>
+        <span style={{ fontSize: 'var(--fs-xl)' }}>
           🔒
         </span>
         چالش Apex هنوز قفل است — پیش‌شرط‌ها را
@@ -185,7 +184,7 @@ export function FeedCard() {
       className="card fade-up"
       style={{
         display: 'grid',
-        gap: 10,
+        gap: 'var(--sp-3)',
       }}
     >
       <div
@@ -205,7 +204,7 @@ export function FeedCard() {
         >
           <div
             style={{
-              fontSize: 11.5,
+              fontSize: 'var(--fs-meta)',
               lineHeight: 1.8,
             }}
           >
@@ -231,7 +230,7 @@ export function FeedCard() {
                       : '')
                   }
                   style={{
-                    fontSize: 10.5,
+                    fontSize: 'var(--fs-cap)',
                     padding: '3px 10px',
                   }}
                   onClick={() => {
@@ -277,19 +276,9 @@ export const openExternal = (url) => {
   window.open(url, '_blank', 'noopener');
 };
 
-const number = (value) => {
-  const parsed = Number(value);
 
-  return Number.isFinite(parsed)
-    ? Math.max(0, parsed)
-    : 0;
-};
 
-const percent = (value) =>
-  Math.min(
-    100,
-    number(value)
-  );
+
 
 /* ✅ سلام متناسب با ساعت روز —
    میکروجزئیتی که محصول را زنده
@@ -365,12 +354,12 @@ function Ring({
             y2="1"
           >
             <stop
-              stopColor="#3B82F6"
+              stopColor="var(--acc)"
             />
 
             <stop
               offset="1"
-              stopColor="#22D3EE"
+              stopColor="var(--t-info)"
             />
           </linearGradient>
         </defs>
@@ -392,7 +381,7 @@ function Ring({
           <div
             style={{
               color: 'var(--tx)',
-              fontSize: 17,
+              fontSize: 'var(--fs-xl)',
               fontWeight: 900,
               lineHeight: 1,
             }}
@@ -403,7 +392,7 @@ function Ring({
           <div
             style={{
               color: 'var(--txm)',
-              fontSize: 8,
+              fontSize: 'var(--fs-cap)',
               marginTop: 3,
             }}
           >
@@ -429,18 +418,18 @@ function Metric({
         padding: 12,
         display: 'flex',
         alignItems: 'center',
-        gap: 10,
+        gap: 'var(--sp-3)',
       }}
     >
       <div
         style={{
           width: 38,
           height: 38,
-          borderRadius: 12,
+          borderRadius: 'var(--r-md)',
           display: 'grid',
           placeItems: 'center',
           background: soft,
-          fontSize: 18,
+          fontSize: 'var(--fs-xl)',
         }}
       >
         {icon}
@@ -450,7 +439,7 @@ function Metric({
         <div
           style={{
             color,
-            fontSize: 18,
+            fontSize: 'var(--fs-xl)',
             fontWeight: 900,
             lineHeight: 1.2,
           }}
@@ -461,7 +450,7 @@ function Metric({
         <div
           style={{
             color: 'var(--txm)',
-            fontSize: 9.5,
+            fontSize: 'var(--fs-cap)',
             marginTop: 2,
           }}
         >
@@ -491,7 +480,7 @@ function WeekChart({
         display: 'flex',
         alignItems: 'flex-end',
         height: 84,
-        gap: 7,
+        gap: 'var(--sp-2)',
         paddingTop: 8,
       }}
     >
@@ -522,7 +511,7 @@ function WeekChart({
                 style={{
                   color:
                     'var(--tx2)',
-                  fontSize: 8.5,
+                  fontSize: 'var(--fs-cap)',
                 }}
               >
                 {value || ''}
@@ -550,7 +539,7 @@ function WeekChart({
 
                   boxShadow:
                     value
-                      ? '0 5px 14px rgba(59,130,246,.18)'
+                      ? '0 5px 14px var(--acc-glow)'
                       : 'none',
                 }}
               />
@@ -559,7 +548,7 @@ function WeekChart({
                 style={{
                   color:
                     'var(--txm)',
-                  fontSize: 8,
+                  fontSize: 'var(--fs-cap)',
                 }}
               >
                 {String(
@@ -570,36 +559,6 @@ function WeekChart({
           );
         }
       )}
-    </div>
-  );
-}
-
-function ErrorState({
-  onRetry,
-  loading,
-}) {
-  return (
-    <div className="empty card">
-      <div className="empty__ic">
-        🌐
-      </div>
-
-      <div>
-        دریافت اطلاعات داشبورد انجام
-        نشد.
-      </div>
-
-      <button
-        className="btn btn-p"
-        onClick={onRetry}
-        disabled={loading}
-      >
-        {loading ? (
-          <Spinner size={16} />
-        ) : (
-          'تلاش دوباره'
-        )}
-      </button>
     </div>
   );
 }
@@ -779,11 +738,12 @@ export default function Dashboard() {
         {isLoading ? (
           <DashboardSkeleton />
         ) : isError ? (
-          <ErrorState
-            onRetry={refetch}
-            loading={
-              isRefetching
+          <PageError
+            text={
+              'دریافت اطلاعات داشبورد انجام نشد.'
             }
+            onRetry={() => refetch()}
+            pending={isRefetching}
           />
         ) : (
           <div
@@ -830,7 +790,7 @@ export default function Dashboard() {
                     style={{
                       color:
                         'var(--txm)',
-                      fontSize: 10.5,
+                      fontSize: 'var(--fs-cap)',
                     }}
                   >
                     {dayGreeting()}
@@ -838,7 +798,7 @@ export default function Dashboard() {
 
                   <div
                     style={{
-                      fontSize: 19,
+                      fontSize: 'var(--fs-xl)',
                       fontWeight: 900,
                       marginTop: 2,
                       overflow:
@@ -861,7 +821,7 @@ export default function Dashboard() {
                       flexWrap:
                         'wrap',
                       gap: 5,
-                      marginTop: 7,
+                      marginTop: 'var(--sp-2)',
                     }}
                   >
                     {role && (
@@ -922,9 +882,9 @@ export default function Dashboard() {
                   padding: 13,
                   textAlign: 'right',
                   borderColor:
-                    'rgba(244,114,182,.28)',
+                    'var(--soft-pink)',
                   background:
-                    'linear-gradient(145deg,rgba(236,72,153,.12),rgba(16,24,39,.95) 55%,rgba(244,114,182,.07))',
+                    'linear-gradient(145deg,var(--soft-pink),var(--surf-card) 55%,var(--soft-pink))',
                 }}
               >
                 <span
@@ -933,10 +893,10 @@ export default function Dashboard() {
                     width: 42,
                     height: 42,
                     placeItems: 'center',
-                    borderRadius: 14,
+                    borderRadius: 'var(--r-md)',
                     background:
-                      'rgba(236,72,153,.14)',
-                    fontSize: 20,
+                      'var(--soft-pink)',
+                    fontSize: 'var(--fs-xl)',
                   }}
                 >
                   💙
@@ -948,8 +908,8 @@ export default function Dashboard() {
                   <b
                     style={{
                       display: 'block',
-                      color: '#F9A8D4',
-                      fontSize: 12.5,
+                      color: 'var(--t-pink)',
+                      fontSize: 'var(--fs-sm)',
                     }}
                   >
                     حمایت از هامزیار
@@ -959,7 +919,7 @@ export default function Dashboard() {
                     style={{
                       display: 'block',
                       color: 'var(--txm)',
-                      fontSize: 9.6,
+                      fontSize: 'var(--fs-cap)',
                       marginTop: 3,
                       lineHeight: 1.7,
                     }}
@@ -973,8 +933,8 @@ export default function Dashboard() {
                   className="badge"
                   style={{
                     background:
-                      'rgba(236,72,153,.14)',
-                    color: '#F9A8D4',
+                      'var(--soft-pink)',
+                    color: 'var(--t-pink)',
                   }}
                 >
                   💙 حمایت
@@ -992,9 +952,9 @@ export default function Dashboard() {
                   )
                 }
                 label="سؤال پاسخ‌داده"
-                color="#70A7FF"
+                color="var(--t-acc)"
                 soft={
-                  'rgba(59,130,246,.12)'
+                  'var(--soft-acc)'
                 }
               />
 
@@ -1007,9 +967,9 @@ export default function Dashboard() {
                   )
                 }
                 label="پاسخ صحیح"
-                color="#34D399"
+                color="var(--t-ok)"
                 soft={
-                  'rgba(16,185,129,.12)'
+                  'var(--soft-ok)'
                 }
               />
 
@@ -1021,9 +981,9 @@ export default function Dashboard() {
                   )
                 }
                 label="دانلود منابع"
-                color="#22D3EE"
+                color="var(--t-info)"
                 soft={
-                  'rgba(34,211,238,.12)'
+                  'var(--soft-info)'
                 }
               />
 
@@ -1036,9 +996,9 @@ export default function Dashboard() {
                   )
                 }
                 label="فعالیت این هفته"
-                color="#FCD34D"
+                color="var(--t-warn)"
                 soft={
-                  'rgba(245,158,11,.12)'
+                  'var(--soft-warn)'
                 }
               />
             </section>
@@ -1120,7 +1080,7 @@ export default function Dashboard() {
                         flexWrap:
                           'wrap',
 
-                        gap: 7,
+                        gap: 'var(--sp-2)',
                       }}
                     >
                       {weakTopics.map(
@@ -1209,7 +1169,7 @@ export default function Dashboard() {
                           style={{
                             borderColor:
                               urgent
-                                ? 'rgba(239,68,68,.3)'
+                                ? 'var(--bd-err)'
                                 : 'var(--bd)',
                           }}
                         >
@@ -1238,16 +1198,14 @@ export default function Dashboard() {
                                 placeItems:
                                   'center',
 
-                                borderRadius:
-                                  13,
+                                borderRadius: 'var(--r-md)',
 
                                 background:
                                   urgent
-                                    ? 'rgba(239,68,68,.12)'
+                                    ? 'var(--soft-err)'
                                     : 'var(--acc-soft)',
 
-                                fontSize:
-                                  20,
+                                fontSize: 'var(--fs-xl)',
                               }}
                             >
                               📝
@@ -1273,8 +1231,7 @@ export default function Dashboard() {
                                   color:
                                     'var(--txm)',
 
-                                  fontSize:
-                                    10.5,
+                                  fontSize: 'var(--fs-cap)',
 
                                   marginTop:
                                     3,
@@ -1381,7 +1338,7 @@ export default function Dashboard() {
                           alignItems:
                             'center',
 
-                          gap: 10,
+                          gap: 'var(--sp-3)',
 
                           padding:
                             '10px 0',
@@ -1449,8 +1406,7 @@ export default function Dashboard() {
                               color:
                                 'var(--ok)',
 
-                              fontSize:
-                                12,
+                              fontSize: 'var(--fs-sm)',
 
                               fontWeight:
                                 800,
@@ -1467,8 +1423,7 @@ export default function Dashboard() {
                               color:
                                 'var(--txm)',
 
-                              fontSize:
-                                9,
+                              fontSize: 'var(--fs-cap)',
                             }}
                           >
                             {number(
@@ -1508,7 +1463,7 @@ export default function Dashboard() {
                     'right',
 
                   borderColor:
-                    'rgba(245,158,11,.25)',
+                    'var(--bd-warn)',
                 }}
               >
                 <span
@@ -1536,8 +1491,7 @@ export default function Dashboard() {
                       color:
                         'var(--txm)',
 
-                      fontSize:
-                        10.5,
+                      fontSize: 'var(--fs-cap)',
                     }}
                   >
                     پیگیری گفت‌وگوهای
