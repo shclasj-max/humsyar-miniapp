@@ -1,3 +1,5 @@
+import { faNum } from '../../lib/format';
+
 import { useState } from 'react';
 
 import {
@@ -25,11 +27,7 @@ import {
    limited ⇒ فقط کارت محدود. QR/لینک اشتراک
    از سرور می‌آید؛ خالی بود ⇒ بلوک پنهان. */
 
-const faNum = (value) =>
-  String(value ?? '').replace(
-    /\d/g,
-    (digit) => '۰۱۲۳۴۵۶۷۸۹'[digit]
-  );
+
 
 function RecordCell({ icon, label, value }) {
   return (
@@ -42,18 +40,18 @@ function RecordCell({ icon, label, value }) {
         padding: '10px 6px',
       }}
     >
-      <span style={{ fontSize: 17 }}>
+      <span style={{ fontSize: 'var(--fs-xl)' }}>
         {icon}
       </span>
 
-      <b style={{ fontSize: 12 }}>
+      <b style={{ fontSize: 'var(--fs-sm)' }}>
         {value}
       </b>
 
       <span
         style={{
           color: 'var(--txm)',
-          fontSize: 8.5,
+          fontSize: 'var(--fs-cap)',
         }}
       >
         {label}
@@ -169,7 +167,7 @@ export default function HeroCard() {
             <span
               style={{
                 color: 'var(--txm)',
-                fontSize: 10.5,
+                fontSize: 'var(--fs-cap)',
               }}
             >
               فقط رنک و دسته‌ی او در لیدربرد دیده می‌شود.
@@ -201,7 +199,7 @@ export default function HeroCard() {
               'var(--elev)',
             padding: '26px 18px',
             textAlign: 'center',
-            color: '#0B1220',
+            color: 'var(--bg-soft)',
             display: 'grid',
             gap: 5,
           }}
@@ -210,13 +208,13 @@ export default function HeroCard() {
             {data.icon}
           </div>
 
-          <b style={{ fontSize: 19 }}>
+          <b style={{ fontSize: 'var(--fs-xl)' }}>
             {data.name}
           </b>
 
           <div
             style={{
-              fontSize: 12.5,
+              fontSize: 'var(--fs-sm)',
               fontWeight: 800,
             }}
           >
@@ -239,12 +237,12 @@ export default function HeroCard() {
                 <span
                   style={{
                     background:
-                      'rgba(11,18,32,.85)',
-                    color: '#fff',
-                    borderRadius: 999,
+                      'var(--scrim)',
+                    color: 'var(--t-white)',
+                    borderRadius: 'var(--r-pill)',
                     padding:
                       '3px 11px',
-                    fontSize: 10.5,
+                    fontSize: 'var(--fs-cap)',
                     fontWeight: 700,
                   }}
                 >
@@ -257,12 +255,12 @@ export default function HeroCard() {
                 <span
                   style={{
                     background:
-                      'rgba(11,18,32,.85)',
-                    color: '#fff',
-                    borderRadius: 999,
+                      'var(--scrim)',
+                    color: 'var(--t-white)',
+                    borderRadius: 'var(--r-pill)',
                     padding:
                       '3px 11px',
-                    fontSize: 10.5,
+                    fontSize: 'var(--fs-cap)',
                     fontWeight: 700,
                   }}
                 >
@@ -307,7 +305,7 @@ export default function HeroCard() {
                   >
                     <span
                       style={{
-                        fontSize: 16,
+                        fontSize: 'var(--fs-lg)',
                       }}
                     >
                       {badge.icon}
@@ -315,7 +313,7 @@ export default function HeroCard() {
 
                     <b
                       style={{
-                        fontSize: 10.5,
+                        fontSize: 'var(--fs-cap)',
                       }}
                     >
                       {badge.title}
@@ -384,7 +382,7 @@ export default function HeroCard() {
           className="card"
           style={{
             display: 'grid',
-            gap: 10,
+            gap: 'var(--sp-3)',
             textAlign: 'center',
           }}
         >
@@ -419,7 +417,7 @@ export default function HeroCard() {
           <span
             style={{
               color: 'var(--txm)',
-              fontSize: 9,
+              fontSize: 'var(--fs-cap)',
             }}
           >
             لینک کارت — بدون نمایش آمار حساس
