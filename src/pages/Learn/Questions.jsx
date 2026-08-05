@@ -17,6 +17,7 @@ import {
 import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 import QuestionCard from '../../components/shared/QuestionCard';
+import CelebrationOverlay from '../../components/shared/CelebrationOverlay';
 
 import {
 
@@ -67,6 +68,14 @@ function ResultBox({
   result,
   onNext,
 }) {
+  /* 👑 موج P0 — خلاصه‌ی Prestige پاسخ
+     (افزایشی؛ در نبودش هیچ خطی کشیده نمی‌شود) */
+  const prestige =
+    result?.prestige || null;
+
+  const xpGained =
+    Number(prestige?.xp_gained) || 0;
+
   return (
     <section
       className={
@@ -78,8 +87,8 @@ function ResultBox({
 
         borderColor:
           result.is_correct
-            ? 'rgba(16,185,129,.3)'
-            : 'rgba(239,68,68,.3)',
+            ? 'var(--bd-ok)'
+            : 'var(--bd-err)',
       }}
     >
       <div
@@ -89,8 +98,7 @@ function ResultBox({
               ? 'var(--ok)'
               : 'var(--err)',
 
-          fontSize:
-            14,
+          fontSize: 'var(--fs-lg)',
 
           fontWeight:
             900,
@@ -101,6 +109,50 @@ function ResultBox({
           : '❌ پاسخ نادرست'}
       </div>
 
+      {prestige && (
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            gap: 6,
+            marginTop: 'var(--sp-2)',
+
+            color: 'var(--tx2)',
+            fontSize: 'var(--fs-cap)',
+            fontWeight: 700,
+          }}
+        >
+          {xpGained > 0 && (
+            <span
+              style={{
+                color: 'var(--warn)',
+              }}
+            >
+              ⚡ +{xpGained} XP
+            </span>
+          )}
+
+          {prestige.display?.title && (
+            <span>
+              {prestige.display.icon}{' '}
+              {prestige.display.title}{' '}
+              {prestige.display.stars}
+            </span>
+          )}
+
+          {Number(
+            prestige.streak?.current
+          ) > 1 && (
+            <span>
+              · 🔥{' '}
+              {prestige.streak.current}{' '}
+              روز
+            </span>
+          )}
+        </div>
+      )}
+
       {result.explanation && (
         <div
           style={{
@@ -110,8 +162,7 @@ function ResultBox({
             color:
               'var(--tx2)',
 
-            fontSize:
-              11,
+            fontSize: 'var(--fs-meta)',
 
             lineHeight:
               1.9,
@@ -354,11 +405,10 @@ function DesignQuestion({
                 placeItems:
                   'center',
 
-                borderRadius:
-                  16,
+                borderRadius: 'var(--r-lg)',
 
                 background:
-                  'linear-gradient(135deg,#7C3AED,#3B82F6)',
+                  'linear-gradient(135deg,var(--pur-dim),var(--acc))',
 
                 fontSize:
                   24,
@@ -377,8 +427,7 @@ function DesignQuestion({
                   color:
                     'var(--txm)',
 
-                  fontSize:
-                    9.5,
+                  fontSize: 'var(--fs-cap)',
 
                   marginTop:
                     3,
@@ -398,8 +447,7 @@ function DesignQuestion({
             display:
               'grid',
 
-            gap:
-              10,
+            gap: 'var(--sp-3)',
           }}
         >
           <div className="grid2">
@@ -492,8 +540,7 @@ function DesignQuestion({
               color:
                 'var(--txm)',
 
-              fontSize:
-                9.5,
+              fontSize: 'var(--fs-cap)',
             }}
           >
             گزینه‌ها؛ روی حرف پاسخ صحیح
@@ -511,8 +558,7 @@ function DesignQuestion({
                   display:
                     'flex',
 
-                  gap:
-                    7,
+                  gap: 'var(--sp-2)',
                 }}
               >
                 <button
@@ -541,7 +587,7 @@ function DesignQuestion({
                     border:
                       form.correct ===
                       index
-                        ? '1px solid rgba(16,185,129,.3)'
+                        ? '1px solid var(--bd-ok)'
                         : '1px solid var(--bd)',
                   }}
                 >
@@ -738,9 +784,19 @@ export default function Questions() {
     setLoadingQuestion,
   ] = useState(false);
 
+  /* 👑 موج P0 — جشن ارتقا (پیلود
+     celebration پاسخ)؛ null = پنهان */
+  const [
+    celebration,
+    setCelebration,
+  ] = useState(null);
+
   const toast = useUIStore(
     (state) => state.toast
   );
+
+  const queryClient =
+    useQueryClient();
 
 
   const {
@@ -909,6 +965,30 @@ export default function Questions() {
             ? 'success'
             : 'error'
         );
+
+        /* 👑 موج P0 — جشن ارتقا در صورت
+           وجود + تازه‌سازی کش قهرمان */
+        if (
+          answer?.prestige
+            ?.celebration
+        ) {
+          setCelebration(
+            answer.prestige
+              .celebration
+          );
+        }
+
+        if (answer?.prestige) {
+          queryClient
+            .invalidateQueries({
+              queryKey: ['prestige'],
+            });
+
+          queryClient
+            .invalidateQueries({
+              queryKey: ['dashboard'],
+            });
+        }
       },
 
       onError: () =>
@@ -1027,8 +1107,7 @@ export default function Questions() {
                 'hero-card hero-card--purple'
               }
               style={{
-                marginBottom:
-                  14,
+                marginBottom: 'var(--sp-4)',
               }}
             >
               <div
@@ -1057,11 +1136,10 @@ export default function Questions() {
                     placeItems:
                       'center',
 
-                    borderRadius:
-                      16,
+                    borderRadius: 'var(--r-lg)',
 
                     background:
-                      'linear-gradient(135deg,#7C3AED,#3B82F6)',
+                      'linear-gradient(135deg,var(--pur-dim),var(--acc))',
 
                     fontSize:
                       25,
@@ -1073,8 +1151,7 @@ export default function Questions() {
                 <div>
                   <b
                     style={{
-                      fontSize:
-                        16.5,
+                      fontSize: 'var(--fs-lg)',
                     }}
                   >
                     تمرین هوشمند و هدفمند
@@ -1085,8 +1162,7 @@ export default function Questions() {
                       color:
                         'var(--txm)',
 
-                      fontSize:
-                        10,
+                      fontSize: 'var(--fs-cap)',
 
                       marginTop:
                         3,
@@ -1151,11 +1227,10 @@ export default function Questions() {
                     placeItems:
                       'center',
 
-                    borderRadius:
-                      14,
+                    borderRadius: 'var(--r-md)',
 
                     background:
-                      'rgba(245,158,11,.12)',
+                      'var(--soft-warn)',
 
                     fontSize:
                       21,
@@ -1182,8 +1257,7 @@ export default function Questions() {
                       color:
                         'var(--txm)',
 
-                      fontSize:
-                        9.5,
+                      fontSize: 'var(--fs-cap)',
 
                       marginTop:
                         3,
@@ -1236,11 +1310,10 @@ export default function Questions() {
                     placeItems:
                       'center',
 
-                    borderRadius:
-                      14,
+                    borderRadius: 'var(--r-md)',
 
                     background:
-                      'rgba(239,68,68,.12)',
+                      'var(--soft-err)',
 
                     fontSize:
                       21,
@@ -1267,8 +1340,7 @@ export default function Questions() {
                       color:
                         'var(--txm)',
 
-                      fontSize:
-                        9.5,
+                      fontSize: 'var(--fs-cap)',
 
                       marginTop:
                         3,
@@ -1323,8 +1395,7 @@ export default function Questions() {
                     placeItems:
                       'center',
 
-                    borderRadius:
-                      14,
+                    borderRadius: 'var(--r-md)',
 
                     background:
                       'var(--acc-soft)',
@@ -1354,8 +1425,7 @@ export default function Questions() {
                       color:
                         'var(--txm)',
 
-                      fontSize:
-                        9.5,
+                      fontSize: 'var(--fs-cap)',
 
                       marginTop:
                         3,
@@ -1396,8 +1466,7 @@ export default function Questions() {
                         )
                       }
                       style={{
-                        padding:
-                          14,
+                        padding: 'var(--sp-4)',
 
                         textAlign:
                           'center',
@@ -1426,8 +1495,7 @@ export default function Questions() {
                           margin:
                             '0 auto 7px',
 
-                          borderRadius:
-                            14,
+                          borderRadius: 'var(--r-md)',
 
                           background:
                             'var(--acc-soft)',
@@ -1441,8 +1509,7 @@ export default function Questions() {
 
                       <b
                         style={{
-                          fontSize:
-                            11.5,
+                          fontSize: 'var(--fs-meta)',
                         }}
                       >
                         {item.name}
@@ -1453,8 +1520,7 @@ export default function Questions() {
                           color:
                             'var(--txm)',
 
-                          fontSize:
-                            8.5,
+                          fontSize: 'var(--fs-cap)',
 
                           marginTop:
                             3,
@@ -1480,8 +1546,7 @@ export default function Questions() {
                 gap:
                   8,
 
-                marginTop:
-                  14,
+                marginTop: 'var(--sp-4)',
               }}
             >
               <button
@@ -1600,8 +1665,7 @@ export default function Questions() {
                       color:
                         'var(--txm)',
 
-                      fontSize:
-                        8.5,
+                      fontSize: 'var(--fs-cap)',
                     }}
                   >
                     کل
@@ -1623,8 +1687,7 @@ export default function Questions() {
                       color:
                         'var(--txm)',
 
-                      fontSize:
-                        8.5,
+                      fontSize: 'var(--fs-cap)',
                     }}
                   >
                     صحیح
@@ -1654,8 +1717,7 @@ export default function Questions() {
                       color:
                         'var(--txm)',
 
-                      fontSize:
-                        8.5,
+                      fontSize: 'var(--fs-cap)',
                     }}
                   >
                     درصد
@@ -1666,6 +1728,17 @@ export default function Questions() {
           </>
         )}
       </main>
+
+      {/* 👑 موج P0 — جشن ارتقا روی
+          همه‌ی ویوهای این صفحه */}
+      {celebration && (
+        <CelebrationOverlay
+          celebration={celebration}
+          onClose={() =>
+            setCelebration(null)
+          }
+        />
+      )}
     </>
   );
 }
