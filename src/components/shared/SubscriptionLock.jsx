@@ -86,7 +86,7 @@ export default function SubscriptionLock({
            «محتوای ویژه» هم‌راستا با شاخه‌ی
            رفرنس/منابع */
         background:
-          'linear-gradient(145deg,rgba(29,78,216,.2),rgba(16,24,39,.95) 55%,rgba(139,92,246,.08))',
+          'linear-gradient(145deg,var(--soft-acc-deep),var(--surf-card) 55%,var(--soft-pur))',
       }}
     >
       <div
@@ -98,12 +98,12 @@ export default function SubscriptionLock({
           margin: '0 auto',
 
           background:
-            'rgba(139,92,246,.12)',
+            'var(--soft-pur)',
 
           border:
-            '1px solid rgba(139,92,246,.3)',
+            '1px solid var(--bd-pur)',
 
-          borderRadius: 20,
+          borderRadius: 'var(--r-lg)',
           fontSize: 30,
         }}
       >
@@ -113,7 +113,7 @@ export default function SubscriptionLock({
       <h2
         style={{
           marginTop: 13,
-          fontSize: 15.5,
+          fontSize: 'var(--fs-lg)',
           fontWeight: 900,
         }}
       >
@@ -122,9 +122,9 @@ export default function SubscriptionLock({
 
       <p
         style={{
-          marginTop: 7,
+          marginTop: 'var(--sp-2)',
           color: 'var(--tx2)',
-          fontSize: 11,
+          fontSize: 'var(--fs-meta)',
           lineHeight: 1.9,
         }}
       >
@@ -149,24 +149,24 @@ export default function SubscriptionLock({
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 10,
+                gap: 'var(--sp-3)',
 
                 padding: '9px 12px',
 
                 background:
-                  'rgba(255,255,255,.03)',
+                  'var(--ovr)',
 
                 border:
-                  '1px solid rgba(148,163,184,.1)',
+                  '1px solid var(--bd)',
 
-                borderRadius: 12,
-                fontSize: 10,
+                borderRadius: 'var(--r-md)',
+                fontSize: 'var(--fs-cap)',
                 lineHeight: 1.7,
               }}
             >
               <span
                 style={{
-                  fontSize: 15,
+                  fontSize: 'var(--fs-lg)',
                   flexShrink: 0,
                 }}
               >
