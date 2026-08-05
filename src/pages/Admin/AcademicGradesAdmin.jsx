@@ -364,7 +364,7 @@ export default function AcademicGradesAdmin() {
             <label
               style={{
                 display: 'block',
-                fontSize: 11,
+                fontSize: 'var(--fs-meta)',
                 color: 'var(--txm)',
                 marginBottom: 5,
               }}
@@ -394,7 +394,7 @@ export default function AcademicGradesAdmin() {
             <label
               style={{
                 display: 'block',
-                fontSize: 11,
+                fontSize: 'var(--fs-meta)',
                 color: 'var(--txm)',
                 marginBottom: 5,
               }}
@@ -426,7 +426,7 @@ export default function AcademicGradesAdmin() {
             <label
               style={{
                 display: 'block',
-                fontSize: 11,
+                fontSize: 'var(--fs-meta)',
                 color: 'var(--txm)',
                 marginBottom: 5,
               }}
@@ -497,7 +497,7 @@ export default function AcademicGradesAdmin() {
                   style={{
                     color:
                       'var(--txm)',
-                    fontSize: 11,
+                    fontSize: 'var(--fs-meta)',
                     padding:
                       '10px 2px',
                   }}
@@ -548,8 +548,7 @@ export default function AcademicGradesAdmin() {
                             color:
                               'var(--txm)',
 
-                            fontSize:
-                              10.5,
+                            fontSize: 'var(--fs-cap)',
 
                             marginTop: 2,
                           }}
@@ -612,8 +611,7 @@ export default function AcademicGradesAdmin() {
                     >
                       <div
                         style={{
-                          fontSize:
-                            12.5,
+                          fontSize: 'var(--fs-sm)',
 
                           fontWeight:
                             600,
@@ -625,8 +623,7 @@ export default function AcademicGradesAdmin() {
                       {entry.student_id && (
                         <div
                           style={{
-                            fontSize:
-                              10,
+                            fontSize: 'var(--fs-cap)',
 
                             color:
                               'var(--txm)',
@@ -720,8 +717,7 @@ export default function AcademicGradesAdmin() {
                         cursor:
                           'pointer',
 
-                        fontSize:
-                          16,
+                        fontSize: 'var(--fs-lg)',
                       }}
                     >
                       🗑
@@ -766,7 +762,7 @@ export default function AcademicGradesAdmin() {
         <button
           className="btn btn-p btn-full"
           style={{
-            marginBottom: 14,
+            marginBottom: 'var(--sp-4)',
           }}
           onClick={() => {
             haptic();
@@ -812,7 +808,7 @@ export default function AcademicGradesAdmin() {
                   display: 'flex',
                   justifyContent:
                     'space-between',
-                  gap: 10,
+                  gap: 'var(--sp-3)',
                   alignItems:
                     'flex-start',
                 }}
@@ -837,7 +833,7 @@ export default function AcademicGradesAdmin() {
                       color:
                         'var(--txm)',
 
-                      fontSize: 11,
+                      fontSize: 'var(--fs-meta)',
 
                       marginTop: 3,
                     }}
@@ -937,7 +933,7 @@ export default function AcademicGradesAdmin() {
                   >
                     <div
                       style={{
-                        fontSize: 17,
+                        fontSize: 'var(--fs-xl)',
 
                         fontWeight:
                           800,
@@ -955,7 +951,7 @@ export default function AcademicGradesAdmin() {
 
                     <div
                       style={{
-                        fontSize: 10,
+                        fontSize: 'var(--fs-cap)',
 
                         color:
                           'var(--txm)',
@@ -974,15 +970,15 @@ export default function AcademicGradesAdmin() {
                 <div
                   style={{
                     display: 'flex',
-                    gap: 7,
-                    marginTop: 10,
+                    gap: 'var(--sp-2)',
+                    marginTop: 'var(--sp-3)',
                   }}
                 >
                   <button
                     className="btn btn-dark"
                     style={{
                       flex: 1,
-                      fontSize: 11,
+                      fontSize: 'var(--fs-meta)',
                     }}
                     onClick={() =>
                       setEditing({
@@ -1001,7 +997,7 @@ export default function AcademicGradesAdmin() {
                     className="btn btn-d"
                     style={{
                       flex: 1,
-                      fontSize: 11,
+                      fontSize: 'var(--fs-meta)',
                     }}
                     disabled={
                       deleteMutation
