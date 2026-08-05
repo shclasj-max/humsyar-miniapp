@@ -1,3 +1,5 @@
+import { number } from '../../lib/format';
+
 import { useQuery } from '@tanstack/react-query';
 
 import { Link } from 'react-router-dom';
@@ -22,13 +24,7 @@ const faDigits = (value) =>
   );
 
 
-const number = (value) => {
-  const parsed = Number(value);
-
-  return Number.isFinite(parsed)
-    ? parsed
-    : 0;
-};
+;
 
 
 /* درصد پر شدن نوار از have/span پیلود —
@@ -79,7 +75,7 @@ function PrestigeSkeleton() {
           style={{
             display: 'grid',
             flex: 1,
-            gap: 7,
+            gap: 'var(--sp-2)',
           }}
         >
           <span
@@ -105,7 +101,7 @@ function PrestigeSkeleton() {
         style={{
           width: '100%',
           height: 5,
-          borderRadius: 999,
+          borderRadius: 'var(--r-pill)',
         }}
       />
     </section>
@@ -126,7 +122,7 @@ function RivalLine({
     <div
       style={{
         color: 'var(--tx2)',
-        fontSize: 10,
+        fontSize: 'var(--fs-cap)',
         lineHeight: 1.8,
       }}
     >
@@ -249,7 +245,7 @@ export default function PrestigeHero({
           <b
             className="pr-title"
             style={{
-              fontSize: 13,
+              fontSize: 'var(--fs-md)',
             }}
           >
             {data.title} {data.roman}
@@ -268,7 +264,7 @@ export default function PrestigeHero({
             style={{
               overflow: 'hidden',
               color: 'var(--tx2)',
-              fontSize: 10,
+              fontSize: 'var(--fs-cap)',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
             }}
@@ -345,13 +341,13 @@ export default function PrestigeHero({
               display: 'flex',
               flexWrap: 'wrap',
               alignItems: 'baseline',
-              gap: 7,
+              gap: 'var(--sp-2)',
             }}
           >
             <b
               className="pr-title"
               style={{
-                fontSize: 16,
+                fontSize: 'var(--fs-lg)',
                 lineHeight: 1.7,
               }}
             >
@@ -369,7 +365,7 @@ export default function PrestigeHero({
           <div
             style={{
               color: 'var(--txm)',
-              fontSize: 9.5,
+              fontSize: 'var(--fs-cap)',
               lineHeight: 1.8,
             }}
           >
@@ -404,15 +400,15 @@ export default function PrestigeHero({
             padding: '8px 11px',
 
             color: 'var(--warn)',
-            fontSize: 10.5,
+            fontSize: 'var(--fs-cap)',
             fontWeight: 700,
             lineHeight: 1.8,
 
             background:
-              'rgba(245,158,11,.08)',
+              'var(--soft-warn)',
 
             border:
-              '1px solid rgba(245,158,11,.22)',
+              '1px solid var(--bd-warn)',
 
             borderRadius: 'var(--r-md)',
           }}
@@ -429,7 +425,7 @@ export default function PrestigeHero({
       <div
         style={{
           display: 'grid',
-          gap: 7,
+          gap: 'var(--sp-2)',
         }}
       >
         <div
@@ -444,7 +440,7 @@ export default function PrestigeHero({
           <span
             style={{
               color: 'var(--tx2)',
-              fontSize: 11,
+              fontSize: 'var(--fs-meta)',
               fontWeight: 700,
               lineHeight: 1.8,
             }}
@@ -455,7 +451,7 @@ export default function PrestigeHero({
           <span
             style={{
               color: 'var(--txm)',
-              fontSize: 9.5,
+              fontSize: 'var(--fs-cap)',
               whiteSpace: 'nowrap',
             }}
           >
@@ -488,7 +484,7 @@ export default function PrestigeHero({
           <div
             style={{
               color: 'var(--tx2)',
-              fontSize: 10,
+              fontSize: 'var(--fs-cap)',
               lineHeight: 1.8,
             }}
           >
