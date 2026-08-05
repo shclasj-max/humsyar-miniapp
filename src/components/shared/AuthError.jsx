@@ -24,10 +24,10 @@ const STATES = {
       'این Mini App باید از طریق دکمهٔ مخصوص داخل ربات هامزیار باز شود.',
 
     color:
-      '#70A7FF',
+      'var(--t-acc)',
 
     soft:
-      'rgba(59,130,246,.13)',
+      'var(--soft-acc-2)',
 
     retry:
       false,
@@ -44,10 +44,10 @@ const STATES = {
       'حساب تلگرام شما هنوز در هامزیار ثبت نشده است. به ربات برگردید، دستور /start را بزنید و مراحل ثبت‌نام را انجام دهید.',
 
     color:
-      '#FCD34D',
+      'var(--t-warn)',
 
     soft:
-      'rgba(245,158,11,.13)',
+      'var(--soft-warn-2)',
 
     retry:
       true,
@@ -64,10 +64,10 @@ const STATES = {
       'ثبت‌نام شما انجام شده اما حساب هنوز توسط مدیریت تأیید نشده است. بعد از تأیید دوباره تلاش کنید.',
 
     color:
-      '#FCD34D',
+      'var(--t-warn)',
 
     soft:
-      'rgba(245,158,11,.13)',
+      'var(--soft-warn-2)',
 
     retry:
       true,
@@ -84,10 +84,10 @@ const STATES = {
       'دسترسی این حساب موقتاً غیرفعال شده است. برای پیگیری با مدیریت یا پشتیبانی هامزیار تماس بگیرید.',
 
     color:
-      '#FB7185',
+      'var(--t-err)',
 
     soft:
-      'rgba(239,68,68,.13)',
+      'var(--soft-err-2)',
 
     retry:
       false,
@@ -104,10 +104,10 @@ const STATES = {
       'اتصال اینترنت یا سرور هامزیار در دسترس نیست. اینترنت خود را بررسی کنید و دوباره تلاش کنید.',
 
     color:
-      '#22D3EE',
+      'var(--t-info)',
 
     soft:
-      'rgba(34,211,238,.13)',
+      'var(--soft-info)',
 
     retry:
       true,
@@ -124,10 +124,10 @@ const STATES = {
       'برای حفظ امنیت، نشست Mini App منقضی شده است. برنامه را ببندید و دوباره از داخل ربات باز کنید.',
 
     color:
-      '#FCD34D',
+      'var(--t-warn)',
 
     soft:
-      'rgba(245,158,11,.13)',
+      'var(--soft-warn-2)',
 
     retry:
       false,
@@ -144,10 +144,10 @@ const STATES = {
       'احراز هویت تلگرام انجام نشد. Mini App را ببندید و مجدداً از داخل ربات هامزیار باز کنید.',
 
     color:
-      '#FB7185',
+      'var(--t-err)',
 
     soft:
-      'rgba(239,68,68,.13)',
+      'var(--soft-err-2)',
 
     retry:
       false,
@@ -170,10 +170,10 @@ export default function AuthError({
         'امکان ورود به هامزیار وجود ندارد. چند لحظه بعد دوباره تلاش کنید.',
 
       color:
-        '#FB7185',
+        'var(--t-err)',
 
       soft:
-        'rgba(239,68,68,.13)',
+        'var(--soft-err-2)',
 
       retry:
         true,
@@ -317,8 +317,7 @@ export default function AuthError({
                 state.color
               }35`,
 
-            borderRadius:
-              23,
+            borderRadius: 'var(--r-xl)',
 
             boxShadow:
               `0 10px 30px ${
@@ -337,8 +336,7 @@ export default function AuthError({
             marginTop:
               16,
 
-            fontSize:
-              18,
+            fontSize: 'var(--fs-xl)',
 
             fontWeight:
               900,
@@ -355,8 +353,7 @@ export default function AuthError({
             color:
               'var(--tx2)',
 
-            fontSize:
-              11,
+            fontSize: 'var(--fs-meta)',
 
             lineHeight:
               1.9,
@@ -370,8 +367,7 @@ export default function AuthError({
           'not_registered' && (
           <div
             style={{
-              marginTop:
-                14,
+              marginTop: 'var(--sp-4)',
 
               padding:
                 '10px 11px',
@@ -380,13 +376,11 @@ export default function AuthError({
                 'var(--tx2)',
 
               background:
-                'rgba(100,116,139,.08)',
+                'var(--soft-mut)',
 
-              borderRadius:
-                12,
+              borderRadius: 'var(--r-md)',
 
-              fontSize:
-                10,
+              fontSize: 'var(--fs-cap)',
 
               lineHeight:
                 1.8,
@@ -457,8 +451,7 @@ export default function AuthError({
             color:
               'var(--txm)',
 
-            fontSize:
-              8.5,
+            fontSize: 'var(--fs-cap)',
           }}
         >
           کد وضعیت:{' '}
