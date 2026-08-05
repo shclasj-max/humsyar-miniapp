@@ -1,3 +1,7 @@
+import MenuRow from '../../components/shared/MenuRow';
+
+import { number, percent } from '../../lib/format';
+
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../lib/api';
@@ -12,138 +16,6 @@ import {
 import { haptic } from '../../lib/telegram';
 import { useAuthStore } from '../../stores/authStore';
 
-const number = (value) => {
-  const parsed = Number(value);
-
-  return Number.isFinite(parsed)
-    ? Math.max(0, parsed)
-    : 0;
-};
-
-const percent = (value) =>
-  Math.min(
-    100,
-    number(value)
-  );
-
-function MenuRow({
-  icon,
-  title,
-  description,
-  badge,
-  tone = 'blue',
-  onClick,
-  last = false,
-}) {
-  const colors = {
-    blue: [
-      'rgba(59,130,246,.12)',
-      '#70A7FF',
-    ],
-
-    green: [
-      'rgba(16,185,129,.12)',
-      '#34D399',
-    ],
-
-    yellow: [
-      'rgba(245,158,11,.12)',
-      '#FCD34D',
-    ],
-
-    red: [
-      'rgba(239,68,68,.12)',
-      '#FB7185',
-    ],
-
-    purple: [
-      'rgba(139,92,246,.13)',
-      '#C4B5FD',
-    ],
-  };
-
-  const [
-    soft,
-    color,
-  ] = colors[tone] ||
-    colors.blue;
-
-  return (
-    <button
-      type="button"
-      className="menu-row"
-      onClick={() => {
-        haptic();
-        onClick();
-      }}
-      style={{
-        borderBottom:
-          last
-            ? 0
-            : undefined,
-      }}
-    >
-      <span
-        style={{
-          display: 'grid',
-          flex: '0 0 40px',
-          height: 40,
-          placeItems: 'center',
-          borderRadius: 12,
-          background: soft,
-          color,
-          fontSize: 19,
-        }}
-      >
-        {icon}
-      </span>
-
-      <span
-        style={{
-          flex: 1,
-          minWidth: 0,
-          textAlign: 'right',
-        }}
-      >
-        <b
-          style={{
-            display: 'block',
-            fontSize: 12.5,
-          }}
-        >
-          {title}
-        </b>
-
-        {description && (
-          <span
-            style={{
-              display: 'block',
-              color: 'var(--txm)',
-              fontSize: 9.8,
-              marginTop: 2,
-            }}
-          >
-            {description}
-          </span>
-        )}
-      </span>
-
-      {badge && (
-        <span className="badge b-yel">
-          {badge}
-        </span>
-      )}
-
-      <span
-        style={{
-          color: 'var(--txm)',
-        }}
-      >
-        ←
-      </span>
-    </button>
-  );
-}
 
 export default function Me() {
   const navigate =
@@ -420,8 +292,7 @@ export default function Me() {
                       overflow:
                         'hidden',
 
-                      fontSize:
-                        17,
+                      fontSize: 'var(--fs-xl)',
 
                       fontWeight:
                         900,
@@ -447,8 +318,7 @@ export default function Me() {
                         color:
                           'var(--txm)',
 
-                        fontSize:
-                          9.5,
+                        fontSize: 'var(--fs-cap)',
 
                         marginTop:
                           2,
@@ -497,8 +367,7 @@ export default function Me() {
                     color:
                       'var(--txm)',
 
-                    fontSize:
-                      18,
+                    fontSize: 'var(--fs-xl)',
                   }}
                 >
                   ←
@@ -526,8 +395,7 @@ export default function Me() {
                       color:
                         'var(--txm)',
 
-                      fontSize:
-                        10,
+                      fontSize: 'var(--fs-cap)',
                     }}
                   >
                     آمادگی تستی
@@ -538,8 +406,7 @@ export default function Me() {
                       color:
                         'var(--acc2)',
 
-                      fontSize:
-                        11,
+                      fontSize: 'var(--fs-meta)',
                     }}
                   >
                     {readiness}٪
@@ -563,14 +430,12 @@ export default function Me() {
                     justifyContent:
                       'space-between',
 
-                    marginTop:
-                      7,
+                    marginTop: 'var(--sp-2)',
 
                     color:
                       'var(--txm)',
 
-                    fontSize:
-                      9.5,
+                    fontSize: 'var(--fs-cap)',
                   }}
                 >
                   <span>
@@ -618,10 +483,10 @@ export default function Me() {
                 className="card"
                 style={{
                   borderColor:
-                    'rgba(16,185,129,.25)',
+                    'var(--bd-ok)',
 
                   background:
-                    'linear-gradient(145deg,rgba(16,185,129,.1),rgba(16,24,39,.95))',
+                    'linear-gradient(145deg,var(--soft-ok),var(--surf-card))',
                 }}
               >
                 <div
@@ -646,11 +511,10 @@ export default function Me() {
                       placeItems:
                         'center',
 
-                      borderRadius:
-                        14,
+                      borderRadius: 'var(--r-md)',
 
                       background:
-                        'rgba(16,185,129,.12)',
+                        'var(--soft-ok)',
 
                       fontSize:
                         21,
@@ -669,8 +533,7 @@ export default function Me() {
                         color:
                           'var(--ok)',
 
-                        fontSize:
-                          12.5,
+                        fontSize: 'var(--fs-sm)',
                       }}
                     >
                       اشتراک{' '}
@@ -687,8 +550,7 @@ export default function Me() {
                         color:
                           'var(--txm)',
 
-                        fontSize:
-                          9.5,
+                        fontSize: 'var(--fs-cap)',
 
                         marginTop:
                           3,
@@ -719,8 +581,7 @@ export default function Me() {
                       padding:
                         '6px 10px',
 
-                      fontSize:
-                        10,
+                      fontSize: 'var(--fs-cap)',
                     }}
                     onClick={() =>
                       navigate(
@@ -760,10 +621,10 @@ export default function Me() {
                     'right',
 
                   borderColor:
-                    'rgba(245,158,11,.24)',
+                    'var(--bd-warn)',
 
                   background:
-                    'linear-gradient(145deg,rgba(245,158,11,.08),rgba(16,24,39,.95))',
+                    'linear-gradient(145deg,var(--soft-warn),var(--surf-card))',
                 }}
               >
                 <span
@@ -784,8 +645,7 @@ export default function Me() {
                       color:
                         'var(--warn)',
 
-                      fontSize:
-                        12.5,
+                      fontSize: 'var(--fs-sm)',
                     }}
                   >
                     اشتراک فعال نیست
@@ -799,8 +659,7 @@ export default function Me() {
                       color:
                         'var(--txm)',
 
-                      fontSize:
-                        9.5,
+                      fontSize: 'var(--fs-cap)',
 
                       marginTop:
                         2,
@@ -1035,7 +894,7 @@ export default function Me() {
                       '0 14px',
 
                     borderColor:
-                      'rgba(245,158,11,.2)',
+                      'var(--bd-warn)',
                   }}
                 >
                   {user.role ===
