@@ -9,13 +9,13 @@ const CONFIG = {
       '✓',
 
     color:
-      '#34D399',
+      'var(--t-ok)',
 
     soft:
-      'rgba(16,185,129,.13)',
+      'var(--soft-ok)',
 
     border:
-      'rgba(16,185,129,.26)',
+      'var(--bd-ok)',
   },
 
   error: {
@@ -23,13 +23,13 @@ const CONFIG = {
       '!',
 
     color:
-      '#FB7185',
+      'var(--t-err)',
 
     soft:
-      'rgba(239,68,68,.13)',
+      'var(--soft-err-2)',
 
     border:
-      'rgba(239,68,68,.26)',
+      'var(--bd-err)',
   },
 
   warning: {
@@ -37,13 +37,13 @@ const CONFIG = {
       '!',
 
     color:
-      '#FCD34D',
+      'var(--t-warn)',
 
     soft:
-      'rgba(245,158,11,.13)',
+      'var(--soft-warn-2)',
 
     border:
-      'rgba(245,158,11,.26)',
+      'var(--bd-warn)',
   },
 
   info: {
@@ -51,13 +51,13 @@ const CONFIG = {
       'i',
 
     color:
-      '#70A7FF',
+      'var(--t-acc)',
 
     soft:
-      'rgba(59,130,246,.13)',
+      'var(--soft-acc-2)',
 
     border:
-      'rgba(59,130,246,.26)',
+      'var(--bdg)',
   },
 };
 
@@ -104,8 +104,7 @@ export default function Toast() {
         maxWidth:
           470,
 
-        gap:
-          7,
+        gap: 'var(--sp-2)',
 
         transform:
           'translateX(-50%)',
@@ -147,8 +146,7 @@ export default function Toast() {
                 minHeight:
                   52,
 
-                gap:
-                  10,
+                gap: 'var(--sp-3)',
 
                 padding:
                   '9px 11px',
@@ -161,8 +159,7 @@ export default function Toast() {
                     config.border
                   }`,
 
-                borderRadius:
-                  16,
+                borderRadius: 'var(--r-lg)',
 
                 boxShadow:
                   'var(--shd-3)',
@@ -196,11 +193,9 @@ export default function Toast() {
                   background:
                     config.soft,
 
-                  borderRadius:
-                    11,
+                  borderRadius: 'var(--r-md)',
 
-                  fontSize:
-                    16,
+                  fontSize: 'var(--fs-lg)',
 
                   fontWeight:
                     900,
@@ -214,8 +209,7 @@ export default function Toast() {
                   flex:
                     1,
 
-                  fontSize:
-                    11,
+                  fontSize: 'var(--fs-meta)',
 
                   fontWeight:
                     650,
@@ -244,8 +238,7 @@ export default function Toast() {
                   background:
                     config.color,
 
-                  borderRadius:
-                    999,
+                  borderRadius: 'var(--r-pill)',
 
                   opacity:
                     .7,
