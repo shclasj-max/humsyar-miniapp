@@ -1,3 +1,7 @@
+import EmptyState from '../../components/shared/EmptyState';
+
+import { faNum, number, errorText } from '../../lib/format';
+
 import { confirmAction } from '../../lib/confirm';
 import {
   useEffect,
@@ -42,50 +46,13 @@ import {
 } from '../../stores/uiStore';
 
 
-const number = (value) =>
-  Math.max(
-    0,
-    Number(value) || 0
-  );
 
 
-const errorText = (
-  error,
-  fallback
-) => {
-  const detail =
-    error?.response?.data?.detail;
-
-  return typeof detail === 'string'
-    ? detail
-    : fallback;
-};
 
 
-function Empty({
-  icon = '📭',
-  children,
-}) {
-  return (
-    <div className="empty card">
-      <div
-        style={{
-          fontSize: 40,
-        }}
-      >
-        {icon}
-      </div>
 
-      <div
-        style={{
-          marginTop: 8,
-        }}
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
+
+
 
 
 /* مدیریت کاربران */
@@ -254,8 +221,7 @@ export function AdminUsers() {
               width: 35,
               height: 35,
 
-              borderRadius:
-                11,
+              borderRadius: 'var(--r-md)',
 
               background:
                 'var(--elev)',
@@ -282,7 +248,7 @@ export function AdminUsers() {
               13,
 
             background:
-              'linear-gradient(145deg,rgba(59,130,246,.15),rgba(16,24,39,.95))',
+              'linear-gradient(145deg,var(--soft-acc),var(--surf-card))',
           }}
         >
           <div
@@ -311,8 +277,7 @@ export function AdminUsers() {
                 placeItems:
                   'center',
 
-                borderRadius:
-                  16,
+                borderRadius: 'var(--r-lg)',
 
                 background:
                   'var(--grad-brand)',
@@ -332,8 +297,7 @@ export function AdminUsers() {
             >
               <b
                 style={{
-                  fontSize:
-                    16,
+                  fontSize: 'var(--fs-lg)',
                 }}
               >
                 کاربران هامزیار
@@ -489,7 +453,7 @@ export function AdminUsers() {
                 style={{
                   color:
                     status === key
-                      ? '#fff'
+                      ? 'var(--t-white)'
                       : 'var(--tx2)',
 
                   background:
@@ -508,7 +472,7 @@ export function AdminUsers() {
         {isLoading ? (
           <UsersActionsSkeleton />
         ) : isError ? (
-          <Empty icon="🌐">
+          <EmptyState icon="🌐">
             دریافت کاربران انجام نشد.
 
             <button
@@ -523,11 +487,11 @@ export function AdminUsers() {
             >
               تلاش دوباره
             </button>
-          </Empty>
+          </EmptyState>
         ) : users.length === 0 ? (
-          <Empty>
+          <EmptyState>
             کاربری با این فیلتر پیدا نشد.
-          </Empty>
+          </EmptyState>
         ) : (
           <section
             style={{
@@ -567,8 +531,7 @@ export function AdminUsers() {
                     width:
                       '100%',
 
-                    gap:
-                      10,
+                    gap: 'var(--sp-3)',
 
                     padding:
                       12,
@@ -616,8 +579,7 @@ export function AdminUsers() {
                         overflow:
                           'hidden',
 
-                        fontSize:
-                          12.5,
+                        fontSize: 'var(--fs-sm)',
 
                         textOverflow:
                           'ellipsis',
@@ -641,7 +603,7 @@ export function AdminUsers() {
                               user.prestige
                                 .color ||
                               'var(--txm)',
-                            fontSize: 9.5,
+                            fontSize: 'var(--fs-cap)',
                             fontWeight: 700,
                             marginRight: 5,
                           }}
@@ -666,8 +628,7 @@ export function AdminUsers() {
                         color:
                           'var(--txm)',
 
-                        fontSize:
-                          9.2,
+                        fontSize: 'var(--fs-cap)',
 
                         marginTop:
                           3,
@@ -762,11 +723,7 @@ export function AdminUsers() {
 /* جزئیات کاربر */
 
 /* عدد فارسی محلی — این صفحه faNum خارجی ندارد */
-const faNum = (value) =>
-  String(value ?? '').replace(
-    /\d/g,
-    (digit) => '۰۱۲۳۴۵۶۷۸۹'[digit],
-  );
+
 
 
 /* 🛡 کارت نقش‌های RBAC — موج RBAC-W2 (قرارداد §UserManagement)
@@ -886,15 +843,15 @@ function UserRbacCard({ uid }) {
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 7,
+          gap: 'var(--sp-2)',
         }}
       >
-        <b style={{ fontSize: 11 }}>
+        <b style={{ fontSize: 'var(--fs-meta)' }}>
           🛡 نقش‌های RBAC
         </b>
         <span
           className="badge b-gray"
-          style={{ fontSize: 8.5 }}
+          style={{ fontSize: 'var(--fs-cap)' }}
         >
           {faNum(assigned.length)} نقش ·
           {' '}{faNum(userPerms.length)} مجوز
@@ -904,7 +861,7 @@ function UserRbacCard({ uid }) {
           className="tab-btn"
           style={{
             marginInlineStart: 'auto',
-            fontSize: 8.5,
+            fontSize: 'var(--fs-cap)',
             minHeight: 24,
             padding: '2px 8px',
           }}
@@ -930,7 +887,7 @@ function UserRbacCard({ uid }) {
         {userQ.isPending && (
           <span
             className="skeleton"
-            style={{ height: 22, width: 90, borderRadius: 8 }}
+            style={{ height: 22, width: 90, borderRadius: 'var(--r-sm)' }}
           />
         )}
         {!userQ.isPending &&
@@ -938,7 +895,7 @@ function UserRbacCard({ uid }) {
             <span
               style={{
                 color: 'var(--txm)',
-                fontSize: 9.5,
+                fontSize: 'var(--fs-cap)',
               }}
             >
               هنوز نقشی ندارد (دانشجوِ عادی)
@@ -950,7 +907,7 @@ function UserRbacCard({ uid }) {
             className="badge"
             title={role.desc || role.label}
             style={{
-              fontSize: 9,
+              fontSize: 'var(--fs-cap)',
               background: `${role.color}1f`,
               color: role.color,
               border: `1px solid ${role.color}55`,
@@ -974,7 +931,7 @@ function UserRbacCard({ uid }) {
               style={{
                 all: 'unset',
                 cursor: 'pointer',
-                fontSize: 10,
+                fontSize: 'var(--fs-cap)',
                 opacity: 0.7,
               }}
             >
@@ -988,7 +945,7 @@ function UserRbacCard({ uid }) {
       <input
         type="search"
         className="input"
-        style={{ minHeight: 32, fontSize: 10.5 }}
+        style={{ minHeight: 32, fontSize: 'var(--fs-cap)' }}
         placeholder="جست‌وجوی نقش برای افزودن…"
         value={q}
         onChange={(event) =>
@@ -1008,7 +965,7 @@ function UserRbacCard({ uid }) {
             <span
               style={{
                 color: 'var(--txm)',
-                fontSize: 9.5,
+                fontSize: 'var(--fs-cap)',
               }}
             >
               نقشی پیدا نشد
@@ -1021,7 +978,7 @@ function UserRbacCard({ uid }) {
               className="tab-btn"
               disabled={assignM.isPending}
               style={{
-                fontSize: 9.5,
+                fontSize: 'var(--fs-cap)',
                 minHeight: 26,
                 borderColor: `${role.color}66`,
                 color: role.color,
@@ -1061,7 +1018,7 @@ function UserRbacCard({ uid }) {
             <span
               style={{
                 color: 'var(--txm)',
-                fontSize: 9.5,
+                fontSize: 'var(--fs-cap)',
               }}
             >
               مجوزی در کار نیست
@@ -1072,7 +1029,7 @@ function UserRbacCard({ uid }) {
               key={permKey}
               className="badge b-gray"
               title={permKey}
-              style={{ fontSize: 8.5 }}
+              style={{ fontSize: 'var(--fs-cap)' }}
             >
               {permLabels[permKey] || permKey}
             </span>
@@ -1330,9 +1287,9 @@ export function AdminUserDetail() {
             />
           </>
         ) : isError || !user ? (
-          <Empty icon="🌐">
+          <EmptyState icon="🌐">
             کاربر پیدا نشد.
-          </Empty>
+          </EmptyState>
         ) : (
           <div
             style={{
@@ -1352,7 +1309,7 @@ export function AdminUserDetail() {
                   17,
 
                 background:
-                  'linear-gradient(145deg,rgba(59,130,246,.15),rgba(16,24,39,.95))',
+                  'linear-gradient(145deg,var(--soft-acc),var(--surf-card))',
               }}
             >
               <div
@@ -1392,8 +1349,7 @@ export function AdminUserDetail() {
                 >
                   <h2
                     style={{
-                      fontSize:
-                        17,
+                      fontSize: 'var(--fs-xl)',
                     }}
                   >
                     {user.name ||
@@ -1551,7 +1507,7 @@ export function AdminUserDetail() {
                 <div
                   style={{
                     color: 'var(--txm)',
-                    fontSize: 9.5,
+                    fontSize: 'var(--fs-cap)',
                     lineHeight: 1.8,
                   }}
                 >
@@ -1564,8 +1520,7 @@ export function AdminUserDetail() {
                     display:
                       'flex',
 
-                    gap:
-                      7,
+                    gap: 'var(--sp-2)',
                   }}
                 >
                   <button
@@ -1701,8 +1656,7 @@ export function AdminUserDetail() {
                           color:
                             'var(--txm)',
 
-                          fontSize:
-                            10.5,
+                          fontSize: 'var(--fs-cap)',
                         }}
                       >
                         {label}
@@ -1713,8 +1667,7 @@ export function AdminUserDetail() {
                           marginRight:
                             'auto',
 
-                          fontSize:
-                            11.5,
+                          fontSize: 'var(--fs-meta)',
                         }}
                       >
                         {value}
@@ -1809,7 +1762,7 @@ export function AdminUserDetail() {
                 <div
                   className="pop-in"
                   style={{
-                    marginTop: 10,
+                    marginTop: 'var(--sp-3)',
                   }}
                 >
                   <textarea
@@ -2077,9 +2030,9 @@ export function AdminIntakes() {
             icon={40}
           />
         ) : items.length === 0 ? (
-          <Empty>
+          <EmptyState>
             ورودی‌ای ثبت نشده است.
-          </Empty>
+          </EmptyState>
         ) : (
           <section
             style={{
@@ -2121,16 +2074,14 @@ export function AdminIntakes() {
                       placeItems:
                         'center',
 
-                      borderRadius:
-                        14,
+                      borderRadius: 'var(--r-md)',
 
                       background:
                         item.active
-                          ? 'rgba(16,185,129,.12)'
-                          : 'rgba(100,116,139,.12)',
+                          ? 'var(--soft-ok)'
+                          : 'var(--soft-mut)',
 
-                      fontSize:
-                        20,
+                      fontSize: 'var(--fs-xl)',
                     }}
                   >
                     📅
@@ -2152,8 +2103,7 @@ export function AdminIntakes() {
                         color:
                           'var(--txm)',
 
-                        fontSize:
-                          9.5,
+                        fontSize: 'var(--fs-cap)',
 
                         marginTop:
                           3,
@@ -2199,11 +2149,9 @@ export function AdminIntakes() {
                     display:
                       'flex',
 
-                    gap:
-                      7,
+                    gap: 'var(--sp-2)',
 
-                    marginTop:
-                      10,
+                    marginTop: 'var(--sp-3)',
                   }}
                 >
                   <button
@@ -2466,8 +2414,7 @@ export function AdminContentAdmins() {
                     color:
                       'var(--txm)',
 
-                    fontSize:
-                      9,
+                    fontSize: 'var(--fs-cap)',
                   }}
                 >
                   گروه{' '}
@@ -2495,9 +2442,9 @@ export function AdminContentAdmins() {
             circle
           />
         ) : adminList.length === 0 ? (
-          <Empty>
+          <EmptyState>
             مدیر محتوایی ثبت نشده است.
-          </Empty>
+          </EmptyState>
         ) : (
           <section
             className="card"
@@ -2545,8 +2492,7 @@ export function AdminContentAdmins() {
                         color:
                           'var(--txm)',
 
-                        fontSize:
-                          9,
+                        fontSize: 'var(--fs-cap)',
                       }}
                     >
                       مدیر محتوا
@@ -2689,14 +2635,13 @@ export function AdminBlacklist() {
             gap:
               12,
 
-            marginBottom:
-              14,
+            marginBottom: 'var(--sp-4)',
 
             borderColor:
-              'rgba(239,68,68,.25)',
+              'var(--bd-err)',
 
             background:
-              'linear-gradient(145deg,rgba(239,68,68,.1),rgba(16,24,39,.95))',
+              'linear-gradient(145deg,var(--soft-err),var(--surf-card))',
           }}
         >
           <span
@@ -2718,8 +2663,7 @@ export function AdminBlacklist() {
                 color:
                   'var(--txm)',
 
-                fontSize:
-                  9.5,
+                fontSize: 'var(--fs-cap)',
 
                 marginTop:
                   3,
@@ -2735,7 +2679,7 @@ export function AdminBlacklist() {
         {isLoading ? (
           <UsersListSkeleton />
         ) : isError ? (
-          <Empty icon="🌐">
+          <EmptyState icon="🌐">
             دریافت فهرست انجام نشد.
 
             <button
@@ -2750,11 +2694,11 @@ export function AdminBlacklist() {
             >
               تلاش دوباره
             </button>
-          </Empty>
+          </EmptyState>
         ) : rows.length === 0 ? (
-          <Empty icon="✅">
+          <EmptyState icon="✅">
             هیچ کاربری مسدود نیست.
-          </Empty>
+          </EmptyState>
         ) : (
           <section
             style={{
@@ -2778,8 +2722,7 @@ export function AdminBlacklist() {
                     alignItems:
                       'center',
 
-                    gap:
-                      10,
+                    gap: 'var(--sp-3)',
                   }}
                 >
                   <span
@@ -2796,14 +2739,12 @@ export function AdminBlacklist() {
                       placeItems:
                         'center',
 
-                      borderRadius:
-                        14,
+                      borderRadius: 'var(--r-md)',
 
                       background:
-                        'rgba(239,68,68,.12)',
+                        'var(--soft-err)',
 
-                      fontSize:
-                        20,
+                      fontSize: 'var(--fs-xl)',
                     }}
                   >
                     🚫
@@ -2825,8 +2766,7 @@ export function AdminBlacklist() {
                         color:
                           'var(--txm)',
 
-                        fontSize:
-                          9,
+                        fontSize: 'var(--fs-cap)',
 
                         marginTop:
                           3,
