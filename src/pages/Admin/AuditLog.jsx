@@ -246,7 +246,7 @@ function AuditItem({ log }) {
           style={{
             display: 'flex',
             gap: 5,
-            marginTop: 7,
+            marginTop: 'var(--sp-2)',
           }}
         >
           <span
@@ -388,7 +388,7 @@ export default function AuditLog() {
             style={{
               width: 36,
               height: 36,
-              borderRadius: 12,
+              borderRadius: 'var(--r-md)',
               background:
                 'var(--elev)',
               border:
@@ -457,8 +457,8 @@ export default function AuditLog() {
           onSubmit={submitSearch}
           style={{
             display: 'flex',
-            gap: 7,
-            marginBottom: 10,
+            gap: 'var(--sp-2)',
+            marginBottom: 'var(--sp-3)',
           }}
         >
           <input
@@ -587,7 +587,7 @@ export default function AuditLog() {
                 marginTop: 11,
                 textAlign: 'center',
                 color: 'var(--txm)',
-                fontSize: 9.3,
+                fontSize: 'var(--fs-cap)',
               }}
             >
               نمایش {logs.length} از{' '}
@@ -598,7 +598,7 @@ export default function AuditLog() {
               <button
                 className="btn btn-dark btn-full"
                 style={{
-                  marginTop: 10,
+                  marginTop: 'var(--sp-3)',
                 }}
                 disabled={
                   isFetchingNextPage
