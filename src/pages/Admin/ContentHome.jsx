@@ -33,10 +33,10 @@ const TOOLS = [
       '/admin/content/questions',
 
     color:
-      '#C4B5FD',
+      'var(--t-pur)',
 
     soft:
-      'rgba(139,92,246,.13)',
+      'var(--soft-pur)',
   },
 
   {
@@ -50,10 +50,10 @@ const TOOLS = [
       '/admin/content/schedule',
 
     color:
-      '#70A7FF',
+      'var(--t-acc)',
 
     soft:
-      'rgba(59,130,246,.12)',
+      'var(--soft-acc)',
   },
 
   {
@@ -67,10 +67,10 @@ const TOOLS = [
       '/admin/content/grades',
 
     color:
-      '#34D399',
+      'var(--t-ok)',
 
     soft:
-      'rgba(16,185,129,.12)',
+      'var(--soft-ok)',
   },
 
   {
@@ -84,10 +84,10 @@ const TOOLS = [
       '/admin/content/basic-science',
 
     color:
-      '#22D3EE',
+      'var(--t-info)',
 
     soft:
-      'rgba(34,211,238,.12)',
+      'var(--soft-info)',
   },
 
   {
@@ -101,10 +101,10 @@ const TOOLS = [
       '/admin/content/references',
 
     color:
-      '#70A7FF',
+      'var(--t-acc)',
 
     soft:
-      'rgba(59,130,246,.12)',
+      'var(--soft-acc)',
   },
 
   {
@@ -118,10 +118,10 @@ const TOOLS = [
       '/admin/content/qbank',
 
     color:
-      '#FCD34D',
+      'var(--t-warn)',
 
     soft:
-      'rgba(245,158,11,.12)',
+      'var(--soft-warn)',
   },
 
   {
@@ -135,10 +135,10 @@ const TOOLS = [
       '/admin/content/faq',
 
     color:
-      '#C4B5FD',
+      'var(--t-pur)',
 
     soft:
-      'rgba(139,92,246,.13)',
+      'var(--soft-pur)',
   },
 
   {
@@ -152,10 +152,10 @@ const TOOLS = [
       '/admin/content/reports',
 
     color:
-      '#FB7185',
+      'var(--t-err)',
 
     soft:
-      'rgba(239,68,68,.12)',
+      'var(--soft-err)',
   },
 ];
 
@@ -220,11 +220,10 @@ export default function ContentHome() {
             padding:
               18,
 
-            marginBottom:
-              14,
+            marginBottom: 'var(--sp-4)',
 
             background:
-              'linear-gradient(145deg,rgba(16,185,129,.13),rgba(16,24,39,.95) 55%,rgba(34,211,238,.08))',
+              'linear-gradient(145deg,var(--soft-ok),var(--surf-card) 55%,var(--soft-info))',
           }}
         >
           <div
@@ -253,11 +252,10 @@ export default function ContentHome() {
                 placeItems:
                   'center',
 
-                borderRadius:
-                  18,
+                borderRadius: 'var(--r-lg)',
 
                 background:
-                  'linear-gradient(135deg,#059669,#06B6D4)',
+                  'linear-gradient(135deg,var(--ok-dim),var(--info))',
 
                 fontSize:
                   27,
@@ -277,8 +275,7 @@ export default function ContentHome() {
                   color:
                     'var(--txm)',
 
-                  fontSize:
-                    10,
+                  fontSize: 'var(--fs-cap)',
                 }}
               >
                 مرکز محتوای آموزشی
@@ -289,8 +286,7 @@ export default function ContentHome() {
                   display:
                     'block',
 
-                  fontSize:
-                    17,
+                  fontSize: 'var(--fs-xl)',
 
                   marginTop:
                     2,
@@ -304,8 +300,7 @@ export default function ContentHome() {
                   color:
                     'var(--tx2)',
 
-                  fontSize:
-                    9.5,
+                  fontSize: 'var(--fs-cap)',
 
                   marginTop:
                     3,
@@ -363,8 +358,7 @@ export default function ContentHome() {
                       ? 'var(--warn)'
                       : 'var(--ok)',
 
-                  fontSize:
-                    20,
+                  fontSize: 'var(--fs-xl)',
                 }}
               >
                 {pending}
@@ -375,8 +369,7 @@ export default function ContentHome() {
                   color:
                     'var(--txm)',
 
-                  fontSize:
-                    9,
+                  fontSize: 'var(--fs-cap)',
                 }}
               >
                 سؤال در انتظار
@@ -398,8 +391,7 @@ export default function ContentHome() {
                   color:
                     'var(--ok)',
 
-                  fontSize:
-                    20,
+                  fontSize: 'var(--fs-xl)',
                 }}
               >
                 {Number(
@@ -413,8 +405,7 @@ export default function ContentHome() {
                   color:
                     'var(--txm)',
 
-                  fontSize:
-                    9,
+                  fontSize: 'var(--fs-cap)',
                 }}
               >
                 سؤال تأییدشده
@@ -436,8 +427,7 @@ export default function ContentHome() {
                   color:
                     'var(--acc2)',
 
-                  fontSize:
-                    20,
+                  fontSize: 'var(--fs-xl)',
                 }}
               >
                 {Number(
@@ -451,8 +441,7 @@ export default function ContentHome() {
                   color:
                     'var(--txm)',
 
-                  fontSize:
-                    9,
+                  fontSize: 'var(--fs-cap)',
                 }}
               >
                 محتوای آموزشی
@@ -474,8 +463,7 @@ export default function ContentHome() {
                   color:
                     'var(--err)',
 
-                  fontSize:
-                    20,
+                  fontSize: 'var(--fs-xl)',
                 }}
               >
                 {Number(
@@ -489,8 +477,7 @@ export default function ContentHome() {
                   color:
                     'var(--txm)',
 
-                  fontSize:
-                    9,
+                  fontSize: 'var(--fs-cap)',
                 }}
               >
                 امتحان پیش‌رو
@@ -521,17 +508,15 @@ export default function ContentHome() {
               width:
                 '100%',
 
-              gap:
-                10,
+              gap: 'var(--sp-3)',
 
-              marginBottom:
-                14,
+              marginBottom: 'var(--sp-4)',
 
               textAlign:
                 'right',
 
               borderColor:
-                'rgba(245,158,11,.28)',
+                'var(--bd-warn)',
             }}
           >
             <span
@@ -567,8 +552,7 @@ export default function ContentHome() {
                   color:
                     'var(--txm)',
 
-                  fontSize:
-                    9.5,
+                  fontSize: 'var(--fs-cap)',
                 }}
               >
                 برای حفظ کیفیت بانک سؤال
@@ -647,8 +631,7 @@ export default function ContentHome() {
                     placeItems:
                       'center',
 
-                    borderRadius:
-                      14,
+                    borderRadius: 'var(--r-md)',
 
                     color:
                       item.color,
@@ -674,8 +657,7 @@ export default function ContentHome() {
                       display:
                         'block',
 
-                      fontSize:
-                        12.5,
+                      fontSize: 'var(--fs-sm)',
                     }}
                   >
                     {item.title}
@@ -689,8 +671,7 @@ export default function ContentHome() {
                       color:
                         'var(--txm)',
 
-                      fontSize:
-                        9.5,
+                      fontSize: 'var(--fs-cap)',
 
                       marginTop:
                         3,
