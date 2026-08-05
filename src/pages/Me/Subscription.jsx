@@ -1,3 +1,5 @@
+import { number } from '../../lib/format';
+
 import { confirmAction } from '../../lib/confirm';
 import {
   useMemo,
@@ -31,13 +33,7 @@ import {
 } from '../../stores/uiStore';
 
 
-const number = (value) => {
-  const parsed = Number(value);
 
-  return Number.isFinite(parsed)
-    ? Math.max(0, parsed)
-    : 0;
-};
 
 
 const money = (value) => {
@@ -400,8 +396,7 @@ export default function Subscription() {
               display:
                 'grid',
 
-              gap:
-                14,
+              gap: 'var(--sp-4)',
             }}
           >
             <section
@@ -414,8 +409,8 @@ export default function Subscription() {
 
                 background:
                   data?.active
-                    ? 'linear-gradient(145deg,rgba(16,185,129,.15),rgba(16,24,39,.95))'
-                    : 'linear-gradient(145deg,rgba(29,78,216,.2),rgba(16,24,39,.95) 55%,rgba(139,92,246,.08))',
+                    ? 'linear-gradient(145deg,var(--soft-ok),var(--surf-card))'
+                    : 'linear-gradient(145deg,var(--soft-acc-deep),var(--surf-card) 55%,var(--soft-pur))',
               }}
             >
               <div
@@ -444,12 +439,11 @@ export default function Subscription() {
                     placeItems:
                       'center',
 
-                    borderRadius:
-                      18,
+                    borderRadius: 'var(--r-lg)',
 
                     background:
                       data?.active
-                        ? 'rgba(16,185,129,.15)'
+                        ? 'var(--soft-ok)'
                         : 'var(--grad-brand)',
 
                     fontSize:
@@ -472,8 +466,7 @@ export default function Subscription() {
                       color:
                         'var(--txm)',
 
-                      fontSize:
-                        10,
+                      fontSize: 'var(--fs-cap)',
                     }}
                   >
                     {data?.active
@@ -491,8 +484,7 @@ export default function Subscription() {
                           ? 'var(--ok)'
                           : 'var(--tx)',
 
-                      fontSize:
-                        17,
+                      fontSize: 'var(--fs-xl)',
 
                       marginTop:
                         2,
@@ -510,8 +502,7 @@ export default function Subscription() {
                       color:
                         'var(--tx2)',
 
-                      fontSize:
-                        9.5,
+                      fontSize: 'var(--fs-cap)',
 
                       marginTop:
                         3,
@@ -547,14 +538,13 @@ export default function Subscription() {
                   display:
                     'flex',
 
-                  gap:
-                    10,
+                  gap: 'var(--sp-3)',
 
                   borderColor:
-                    'rgba(245,158,11,.27)',
+                    'var(--bd-warn)',
 
                   background:
-                    'rgba(245,158,11,.07)',
+                    'var(--soft-warn)',
                 }}
               >
                 <span
@@ -582,8 +572,7 @@ export default function Subscription() {
                       color:
                         'var(--txm)',
 
-                      fontSize:
-                        9.5,
+                      fontSize: 'var(--fs-cap)',
 
                       marginTop:
                         3,
@@ -603,7 +592,7 @@ export default function Subscription() {
                 className="card"
                 style={{
                   borderColor:
-                    'rgba(16,185,129,.27)',
+                    'var(--bd-ok)',
                 }}
               >
                 <div className="sec-title">
@@ -615,8 +604,7 @@ export default function Subscription() {
                     color:
                       'var(--tx2)',
 
-                    fontSize:
-                      10.5,
+                    fontSize: 'var(--fs-cap)',
 
                     lineHeight:
                       1.8,
@@ -629,8 +617,7 @@ export default function Subscription() {
                   <span
                     className="badge b-gray"
                     style={{
-                      marginTop:
-                        7,
+                      marginTop: 'var(--sp-2)',
                     }}
                   >
                     شناسه{' '}
@@ -711,7 +698,7 @@ export default function Subscription() {
 
                             background:
                               chosen
-                                ? 'linear-gradient(145deg,rgba(59,130,246,.14),rgba(16,24,39,.96))'
+                                ? 'linear-gradient(145deg,var(--soft-acc),var(--surf-card))'
                                 : undefined,
                           }}
                         >
@@ -765,8 +752,7 @@ export default function Subscription() {
                                 color:
                                   'var(--txm)',
 
-                                fontSize:
-                                  9.5,
+                                fontSize: 'var(--fs-cap)',
 
                                 marginTop:
                                   3,
@@ -787,8 +773,7 @@ export default function Subscription() {
                                   ? 'var(--acc2)'
                                   : 'var(--tx)',
 
-                              fontSize:
-                                12.5,
+                              fontSize: 'var(--fs-sm)',
                             }}
                           >
                             {money(
@@ -814,8 +799,7 @@ export default function Subscription() {
                   display:
                     'grid',
 
-                  gap:
-                    10,
+                  gap: 'var(--sp-3)',
                 }}
               >
                 <div className="sec-title">
@@ -828,10 +812,9 @@ export default function Subscription() {
                       '10px 11px',
 
                     background:
-                      'rgba(100,116,139,.08)',
+                      'var(--soft-mut)',
 
-                    borderRadius:
-                      12,
+                    borderRadius: 'var(--r-md)',
                   }}
                 >
                   <div
@@ -842,8 +825,7 @@ export default function Subscription() {
                       justifyContent:
                         'space-between',
 
-                      fontSize:
-                        10.5,
+                      fontSize: 'var(--fs-cap)',
                     }}
                   >
                     <span>
@@ -863,11 +845,9 @@ export default function Subscription() {
                       justifyContent:
                         'space-between',
 
-                      marginTop:
-                        7,
+                      marginTop: 'var(--sp-2)',
 
-                      fontSize:
-                        10.5,
+                      fontSize: 'var(--fs-cap)',
                     }}
                   >
                     <span>
@@ -918,8 +898,7 @@ export default function Subscription() {
                     display:
                       'flex',
 
-                    gap:
-                      7,
+                    gap: 'var(--sp-2)',
                   }}
                 >
                   <input
@@ -976,8 +955,7 @@ export default function Subscription() {
                       justifyContent:
                         'center',
 
-                      padding:
-                        7,
+                      padding: 'var(--sp-2)',
                     }}
                   >
                     {discount.percent}٪
@@ -1001,13 +979,12 @@ export default function Subscription() {
                           'center',
 
                         background:
-                          'rgba(59,130,246,.08)',
+                          'var(--soft-acc)',
 
                         border:
                           '1px dashed var(--bdg)',
 
-                        borderRadius:
-                          13,
+                        borderRadius: 'var(--r-md)',
                       }}
                     >
                       <div
@@ -1015,8 +992,7 @@ export default function Subscription() {
                           color:
                             'var(--txm)',
 
-                          fontSize:
-                            9.5,
+                          fontSize: 'var(--fs-cap)',
                         }}
                       >
                         واریز به شماره کارت
@@ -1030,8 +1006,7 @@ export default function Subscription() {
                           color:
                             'var(--acc2)',
 
-                          fontSize:
-                            16,
+                          fontSize: 'var(--fs-lg)',
 
                           fontWeight:
                             900,
@@ -1039,8 +1014,7 @@ export default function Subscription() {
                           letterSpacing:
                             1.5,
 
-                          marginTop:
-                            4,
+                          marginTop: 'var(--sp-1)',
                         }}
                       >
                         {data?.payment
@@ -1053,8 +1027,7 @@ export default function Subscription() {
                           color:
                             'var(--tx2)',
 
-                          fontSize:
-                            10,
+                          fontSize: 'var(--fs-cap)',
 
                           marginTop:
                             3,
@@ -1073,8 +1046,7 @@ export default function Subscription() {
                         color:
                           'var(--txm)',
 
-                        fontSize:
-                          10,
+                        fontSize: 'var(--fs-cap)',
                       }}
                     >
                       تصویر رسید؛ حداکثر
@@ -1137,8 +1109,7 @@ export default function Subscription() {
                           border:
                             '1px solid var(--bd)',
 
-                          borderRadius:
-                            13,
+                          borderRadius: 'var(--r-md)',
                         }}
                       />
                     )}
@@ -1159,10 +1130,9 @@ export default function Subscription() {
                         'center',
 
                       background:
-                        'rgba(16,185,129,.1)',
+                        'var(--soft-ok)',
 
-                      borderRadius:
-                        13,
+                      borderRadius: 'var(--r-md)',
                     }}
                   >
                     🎁 این پلن با کد تخفیف
@@ -1192,8 +1162,7 @@ export default function Subscription() {
                         color:
                           'var(--txm)',
 
-                        fontSize:
-                          9,
+                        fontSize: 'var(--fs-cap)',
                       }}
                     >
                       محتوا فقط برای استفاده
@@ -1312,8 +1281,7 @@ export default function Subscription() {
                               alignItems:
                                 'center',
 
-                              gap:
-                                10,
+                              gap: 'var(--sp-3)',
                             }}
                           >
                             <span
@@ -1330,14 +1298,12 @@ export default function Subscription() {
                                 placeItems:
                                   'center',
 
-                                borderRadius:
-                                  13,
+                                borderRadius: 'var(--r-md)',
 
                                 background:
-                                  'rgba(100,116,139,.1)',
+                                  'var(--soft-mut)',
 
-                                fontSize:
-                                  19,
+                                fontSize: 'var(--fs-xl)',
                               }}
                             >
                               {icon}
@@ -1360,8 +1326,7 @@ export default function Subscription() {
                                   color:
                                     'var(--txm)',
 
-                                  fontSize:
-                                    9,
+                                  fontSize: 'var(--fs-cap)',
 
                                   marginTop:
                                     3,
@@ -1403,13 +1368,11 @@ export default function Subscription() {
                                     : 'var(--tx2)',
 
                                 background:
-                                  'rgba(100,116,139,.08)',
+                                  'var(--soft-mut)',
 
-                                borderRadius:
-                                  10,
+                                borderRadius: 'var(--r-sm)',
 
-                                fontSize:
-                                  9.5,
+                                fontSize: 'var(--fs-cap)',
                               }}
                             >
                               یادداشت مدیریت:{' '}
