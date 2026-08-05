@@ -1,3 +1,7 @@
+import EmptyState from '../../components/shared/EmptyState';
+
+import { number, errorText } from '../../lib/format';
+
 import { confirmAction } from '../../lib/confirm';
 import {
   useEffect,
@@ -35,11 +39,7 @@ import {
 } from '../../stores/uiStore';
 
 
-const number = (value) =>
-  Math.max(
-    0,
-    Number(value) || 0
-  );
+
 
 
 const money = (value) => {
@@ -54,17 +54,7 @@ const money = (value) => {
 };
 
 
-const errorText = (
-  error,
-  fallback
-) => {
-  const detail =
-    error?.response?.data?.detail;
 
-  return typeof detail === 'string'
-    ? detail
-    : fallback;
-};
 
 
 const TABS = [
@@ -95,15 +85,7 @@ const TABS = [
 ];
 
 
-function Empty({
-  children,
-}) {
-  return (
-    <div className="empty card">
-      {children}
-    </div>
-  );
-}
+
 
 
 export default function SubscriptionAdmin() {
@@ -678,8 +660,7 @@ export default function SubscriptionAdmin() {
               height:
                 35,
 
-              borderRadius:
-                11,
+              borderRadius: 'var(--r-md)',
 
               background:
                 'var(--elev)',
@@ -706,7 +687,7 @@ export default function SubscriptionAdmin() {
               13,
 
             background:
-              'linear-gradient(145deg,rgba(16,185,129,.12),rgba(16,24,39,.95) 55%,rgba(59,130,246,.08))',
+              'linear-gradient(145deg,var(--soft-ok),var(--surf-card) 55%,var(--soft-acc))',
           }}
         >
           <div
@@ -735,11 +716,10 @@ export default function SubscriptionAdmin() {
                 placeItems:
                   'center',
 
-                borderRadius:
-                  16,
+                borderRadius: 'var(--r-lg)',
 
                 background:
-                  'linear-gradient(135deg,#059669,#3B82F6)',
+                  'linear-gradient(135deg,var(--ok-dim),var(--acc))',
 
                 fontSize:
                   25,
@@ -751,8 +731,7 @@ export default function SubscriptionAdmin() {
             <div>
               <b
                 style={{
-                  fontSize:
-                    16.5,
+                  fontSize: 'var(--fs-lg)',
                 }}
               >
                 مرکز مالی هامزیار
@@ -763,8 +742,7 @@ export default function SubscriptionAdmin() {
                   color:
                     'var(--txm)',
 
-                  fontSize:
-                    9.5,
+                  fontSize: 'var(--fs-cap)',
 
                   marginTop:
                     3,
@@ -803,7 +781,7 @@ export default function SubscriptionAdmin() {
                 style={{
                   color:
                     tab === key
-                      ? '#fff'
+                      ? 'var(--t-white)'
                       : 'var(--tx2)',
 
                   background:
@@ -820,9 +798,9 @@ export default function SubscriptionAdmin() {
 
 
         {isError ? (
-          <Empty>
+          <EmptyState>
             دریافت اطلاعات انجام نشد.
-          </Empty>
+          </EmptyState>
         ) : tab ===
           'overview' ? (
           <>
@@ -832,14 +810,14 @@ export default function SubscriptionAdmin() {
                   '💎',
                   stats.active,
                   'فعال',
-                  '#34D399',
+                  'var(--t-ok)',
                 ],
 
                 [
                   '⏳',
                   stats.pending,
                   'رسید منتظر',
-                  '#FCD34D',
+                  'var(--t-warn)',
                 ],
 
                 [
@@ -848,7 +826,7 @@ export default function SubscriptionAdmin() {
                     stats.revenue_month
                   ),
                   'درآمد ماه',
-                  '#22D3EE',
+                  'var(--t-info)',
                 ],
 
                 [
@@ -857,7 +835,7 @@ export default function SubscriptionAdmin() {
                     stats.conv_rate
                   )}٪`,
                   'نرخ تأیید',
-                  '#70A7FF',
+                  'var(--t-acc)',
                 ],
               ].map(
                 ([
@@ -907,8 +885,7 @@ export default function SubscriptionAdmin() {
                         color:
                           'var(--txm)',
 
-                        fontSize:
-                          9,
+                        fontSize: 'var(--fs-cap)',
                       }}
                     >
                       {label}
@@ -1218,8 +1195,7 @@ export default function SubscriptionAdmin() {
                       alignItems:
                         'center',
 
-                      gap:
-                        10,
+                      gap: 'var(--sp-3)',
                     }}
                   >
                     <span
@@ -1246,8 +1222,7 @@ export default function SubscriptionAdmin() {
                           color:
                             'var(--txm)',
 
-                          fontSize:
-                            9,
+                          fontSize: 'var(--fs-cap)',
                         }}
                       >
                         {number(
@@ -1280,8 +1255,7 @@ export default function SubscriptionAdmin() {
                       display:
                         'flex',
 
-                      gap:
-                        7,
+                      gap: 'var(--sp-2)',
 
                       marginTop:
                         9,
@@ -1377,7 +1351,7 @@ export default function SubscriptionAdmin() {
                       color:
                         paymentStatus ===
                         key
-                          ? '#fff'
+                          ? 'var(--t-white)'
                           : 'var(--tx2)',
 
                       background:
@@ -1405,18 +1379,18 @@ export default function SubscriptionAdmin() {
               ariaLabel="جست‌وجوی رسیدها"
               loading={paymentsFetching}
               style={{
-                marginBottom: 10,
+                marginBottom: 'var(--sp-3)',
               }}
             />
 
 
             {paymentRows.length ===
               0 ? (
-              <Empty>
+              <EmptyState>
                 {payQuery
                   ? 'رسیدی با این عبارت پیدا نشد.'
                   : 'رسیدی در این وضعیت نیست.'}
-              </Empty>
+              </EmptyState>
             ) : (
               <section
                 style={{
@@ -1471,8 +1445,7 @@ export default function SubscriptionAdmin() {
                               color:
                                 'var(--txm)',
 
-                              fontSize:
-                                9,
+                              fontSize: 'var(--fs-cap)',
 
                               marginTop:
                                 3,
@@ -1570,11 +1543,9 @@ export default function SubscriptionAdmin() {
                               display:
                                 'flex',
 
-                              gap:
-                                7,
+                              gap: 'var(--sp-2)',
 
-                              marginTop:
-                                7,
+                              marginTop: 'var(--sp-2)',
                             }}
                           >
                             <button
@@ -1711,7 +1682,7 @@ export default function SubscriptionAdmin() {
                       color:
                         subscriberStatus ===
                         key
-                          ? '#fff'
+                          ? 'var(--t-white)'
                           : 'var(--tx2)',
 
                       background:
@@ -1739,18 +1710,18 @@ export default function SubscriptionAdmin() {
               ariaLabel="جست‌وجوی مشترکین"
               loading={subscribersFetching}
               style={{
-                marginBottom: 10,
+                marginBottom: 'var(--sp-3)',
               }}
             />
 
 
             {subscriberRows.length ===
               0 ? (
-              <Empty>
+              <EmptyState>
                 {subQuery
                   ? 'مشترکی با این عبارت پیدا نشد.'
                   : 'مشترکی در این وضعیت نیست.'}
-              </Empty>
+              </EmptyState>
             ) : (
               <section
                 style={{
@@ -1780,8 +1751,7 @@ export default function SubscriptionAdmin() {
                           alignItems:
                             'center',
 
-                          gap:
-                            10,
+                          gap: 'var(--sp-3)',
                         }}
                       >
                         <span
@@ -1813,8 +1783,7 @@ export default function SubscriptionAdmin() {
                               color:
                                 'var(--txm)',
 
-                              fontSize:
-                                9,
+                              fontSize: 'var(--fs-cap)',
                             }}
                           >
                             {item.username
@@ -1845,8 +1814,7 @@ export default function SubscriptionAdmin() {
                               display:
                                 'grid',
 
-                              gap:
-                                7,
+                              gap: 'var(--sp-2)',
 
                               marginTop:
                                 8,
@@ -1883,8 +1851,7 @@ export default function SubscriptionAdmin() {
                                 display:
                                   'flex',
 
-                                gap:
-                                  7,
+                                gap: 'var(--sp-2)',
                               }}
                             >
                               <button
@@ -2123,8 +2090,7 @@ export default function SubscriptionAdmin() {
                         alignItems:
                           'center',
 
-                        gap:
-                          10,
+                        gap: 'var(--sp-3)',
                       }}
                     >
                       <span
@@ -2153,8 +2119,7 @@ export default function SubscriptionAdmin() {
                             color:
                               'var(--txm)',
 
-                            fontSize:
-                              9,
+                            fontSize: 'var(--fs-cap)',
                           }}
                         >
                           {number(
@@ -2194,8 +2159,7 @@ export default function SubscriptionAdmin() {
                         display:
                           'flex',
 
-                        gap:
-                          7,
+                        gap: 'var(--sp-2)',
 
                         marginTop:
                           8,
