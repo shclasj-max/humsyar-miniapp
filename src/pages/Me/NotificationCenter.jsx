@@ -1,3 +1,5 @@
+import { faNum } from '../../lib/format';
+
 import {
   useMemo,
   useState,
@@ -72,28 +74,24 @@ const CAT_LABELS = {
 
 
 const TONE_COLORS = {
-  blue:   ['rgba(59,130,246,.13)',  '#93C5FD'],
-  green:  ['rgba(16,185,129,.12)',  '#34D399'],
-  yellow: ['rgba(245,158,11,.12)',  '#FCD34D'],
-  red:    ['rgba(239,68,68,.12)',   '#FB7185'],
-  purple: ['rgba(139,92,246,.13)',  '#C4B5FD'],
-  acc:    ['rgba(34,211,238,.12)',  '#67E8F9'],
+  blue:   ['var(--soft-acc-2)',  'var(--t-acc-hi)'],
+  green:  ['var(--soft-ok)',  'var(--t-ok)'],
+  yellow: ['var(--soft-warn)',  'var(--t-warn)'],
+  red:    ['var(--soft-err)',   'var(--t-err)'],
+  purple: ['var(--soft-pur)',  'var(--t-pur)'],
+  acc:    ['var(--soft-info)',  'var(--t-info)'],
 };
 
 
 const PRIO_META = {
-  critical: ['⚫ حیاتی', '#FB7185'],
-  high:     ['🟠 مهم',  '#FCD34D'],
+  critical: ['⚫ حیاتی', 'var(--t-err)'],
+  high:     ['🟠 مهم',  'var(--t-warn)'],
   normal:   [null,       null],
   low:      [null,       null],
 };
 
 
-const faNum = (value) =>
-  String(value ?? '').replace(
-    /\d/g,
-    (digit) => '۰۱۲۳۴۵۶۷۸۹'[digit],
-  );
+
 
 
 function getErrorMessage(error, fallback) {
@@ -475,7 +473,7 @@ export default function NotificationCenter() {
         style={{
           minHeight: 32,
           padding: '5px 9px',
-          fontSize: 10.5,
+          fontSize: 'var(--fs-cap)',
         }}
         onClick={() => {
           haptic('light');
@@ -516,7 +514,7 @@ export default function NotificationCenter() {
         style={{
           display: 'flex',
           alignItems: 'flex-start',
-          gap: 10,
+          gap: 'var(--sp-3)',
           padding: '11px 4px',
           borderTop:
             index === 0
@@ -530,12 +528,12 @@ export default function NotificationCenter() {
           style={{
             width: 34,
             height: 34,
-            borderRadius: 12,
+            borderRadius: 'var(--r-md)',
             background: soft,
             color,
             display: 'grid',
             placeItems: 'center',
-            fontSize: 15,
+            fontSize: 'var(--fs-lg)',
             flexShrink: 0,
           }}
         >
@@ -571,7 +569,7 @@ export default function NotificationCenter() {
                   width: 7,
                   height: 7,
                   borderRadius: '50%',
-                  background: '#60A5FA',
+                  background: 'var(--t-acc-md)',
                   flexShrink: 0,
                 }}
               />
@@ -580,7 +578,7 @@ export default function NotificationCenter() {
             {item.pinned && (
               <span
                 aria-label="سنجاق‌شده"
-                style={{ fontSize: 10 }}
+                style={{ fontSize: 'var(--fs-cap)' }}
               >
                 📌
               </span>
@@ -588,7 +586,7 @@ export default function NotificationCenter() {
 
             <b
               style={{
-                fontSize: 11.5,
+                fontSize: 'var(--fs-meta)',
                 flex: 1,
                 minWidth: 0,
               }}
@@ -601,7 +599,7 @@ export default function NotificationCenter() {
                 className="badge b-pur"
                 title="موجهای چندباره‌ی یکدست"
                 style={{
-                  fontSize: 9,
+                  fontSize: 'var(--fs-cap)',
                   padding: '1px 6px',
                 }}
               >
@@ -614,7 +612,7 @@ export default function NotificationCenter() {
                 style={{
                   width: 6,
                   height: 6,
-                  borderRadius: 99,
+                  borderRadius: 'var(--r-pill)',
                   background: prioColor,
                   flexShrink: 0,
                 }}
@@ -626,7 +624,7 @@ export default function NotificationCenter() {
           <div
             style={{
               color: 'var(--tx2)',
-              fontSize: 10,
+              fontSize: 'var(--fs-cap)',
               marginTop: 3,
               lineHeight: 1.7,
               whiteSpace: 'pre-line',
@@ -647,10 +645,10 @@ export default function NotificationCenter() {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 7,
+              gap: 'var(--sp-2)',
               marginTop: 5,
               color: 'var(--txm)',
-              fontSize: 9,
+              fontSize: 'var(--fs-cap)',
             }}
           >
             <span>
@@ -660,7 +658,7 @@ export default function NotificationCenter() {
             <span
               className="badge b-gray"
               style={{
-                fontSize: 8.5,
+                fontSize: 'var(--fs-cap)',
                 padding: '1px 5px',
               }}
             >
@@ -673,7 +671,7 @@ export default function NotificationCenter() {
                 style={{
                   marginInlineStart: 'auto',
                   color: 'var(--acc)',
-                  fontSize: 12,
+                  fontSize: 'var(--fs-sm)',
                 }}
                 aria-hidden="true"
               >
@@ -696,7 +694,7 @@ export default function NotificationCenter() {
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: 4,
+            gap: 'var(--sp-1)',
             flexShrink: 0,
           }}
         >
@@ -725,7 +723,7 @@ export default function NotificationCenter() {
               all: 'unset',
               cursor: 'pointer',
               opacity: item.pinned ? 1 : 0.5,
-              fontSize: 11,
+              fontSize: 'var(--fs-meta)',
             }}
           >
             📌
@@ -745,7 +743,7 @@ export default function NotificationCenter() {
               all: 'unset',
               cursor: 'pointer',
               color: 'var(--txm)',
-              fontSize: 11,
+              fontSize: 'var(--fs-meta)',
             }}
           >
             ✕
@@ -770,11 +768,11 @@ export default function NotificationCenter() {
       />
 
       <main
-        className="page"
+        className="page fade-up"
         style={{
           display: 'flex',
           flexDirection: 'column',
-          gap: 10,
+          gap: 'var(--sp-3)',
           paddingInline: 12,
         }}
       >
@@ -798,7 +796,7 @@ export default function NotificationCenter() {
             <span
               style={{
                 color: 'var(--txm)',
-                fontSize: 13,
+                fontSize: 'var(--fs-md)',
               }}
               aria-hidden="true"
             >
@@ -818,7 +816,7 @@ export default function NotificationCenter() {
                 flex: 1,
                 minHeight: 34,
                 padding: '7px 11px',
-                fontSize: 11.5,
+                fontSize: 'var(--fs-meta)',
               }}
             />
 
@@ -834,14 +832,14 @@ export default function NotificationCenter() {
               style={{
                 minHeight: 30,
                 padding: '4px 9px',
-                fontSize: 10,
+                fontSize: 'var(--fs-cap)',
                 flexShrink: 0,
                 ...(unreadOnly
                   ? {
                     background:
-                      'rgba(96,165,250,.16)',
-                    borderColor: '#60A5FA',
-                    color: '#93C5FD',
+                      'var(--soft-acc-2)',
+                    borderColor: 'var(--t-acc-md)',
+                    color: 'var(--t-acc-hi)',
                   }
                   : {}),
               }}
@@ -883,7 +881,7 @@ export default function NotificationCenter() {
                         : 'tab-btn'
                     }
                     style={{
-                      fontSize: 9.5,
+                      fontSize: 'var(--fs-cap)',
                       padding: '4px 9px',
                       minHeight: 28,
                       flexShrink: 0,
@@ -909,7 +907,7 @@ export default function NotificationCenter() {
               className="skeleton"
               style={{
                 height: 66,
-                borderRadius: 14,
+                borderRadius: 'var(--r-md)',
               }}
             />
           ))
@@ -955,7 +953,7 @@ export default function NotificationCenter() {
               <span
                 style={{
                   color: 'var(--txm)',
-                  fontSize: 10.5,
+                  fontSize: 'var(--fs-cap)',
                 }}
               >
                 هر اتفاق مهم حسابت
@@ -983,7 +981,7 @@ export default function NotificationCenter() {
               <span
                 style={{
                   color: 'var(--txm)',
-                  fontSize: 10.5,
+                  fontSize: 'var(--fs-cap)',
                 }}
               >
                 فیلترها یا کلمات را ساده‌تر کن
@@ -1003,7 +1001,7 @@ export default function NotificationCenter() {
               <div
                 style={{
                   color: 'var(--txm)',
-                  fontSize: 9,
+                  fontSize: 'var(--fs-cap)',
                   padding: '9px 4px 0',
                   fontWeight: 700,
                 }}
@@ -1028,7 +1026,7 @@ export default function NotificationCenter() {
                 <div
                   style={{
                     color: 'var(--txm)',
-                    fontSize: 9,
+                    fontSize: 'var(--fs-cap)',
                     padding: '9px 4px 0',
                     fontWeight: 700,
                   }}
