@@ -2189,7 +2189,7 @@ export default function AiChat() {
         style={{
           minHeight: 32,
           padding: '5px 9px',
-          fontSize: 11,
+          fontSize: 'var(--fs-meta)',
         }}
         onClick={() => {
           haptic('light');
@@ -2207,7 +2207,7 @@ export default function AiChat() {
         style={{
           minHeight: 32,
           padding: '5px 9px',
-          fontSize: 11,
+          fontSize: 'var(--fs-meta)',
         }}
         onClick={() =>
           createConvMutation.mutate()
@@ -2240,11 +2240,11 @@ export default function AiChat() {
       />
 
       <main
-        className="page"
+        className="page fade-up"
         style={{
           display: 'flex',
           flexDirection: 'column',
-          gap: 10,
+          gap: 'var(--sp-3)',
           paddingInline: 12,
         }}
       >
@@ -2328,16 +2328,16 @@ export default function AiChat() {
               style={{
                 display: 'flex',
                 alignItems: 'flex-start',
-                gap: 10,
+                gap: 'var(--sp-3)',
 
                 borderColor:
-                  'rgba(239,68,68,.22)',
+                  'var(--bd-err)',
 
                 background:
-                  'rgba(239,68,68,.08)',
+                  'var(--soft-err)',
               }}
             >
-              <span style={{ fontSize: 24 }}>
+              <span style={{ fontSize: 'var(--fs-2xl)' }}>
                 {
                   status?.banned
                     ? '⛔'
@@ -2356,9 +2356,9 @@ export default function AiChat() {
 
                 <p
                   style={{
-                    marginTop: 4,
+                    marginTop: 'var(--sp-1)',
                     color: 'var(--tx2)',
-                    fontSize: 11,
+                    fontSize: 'var(--fs-meta)',
                     lineHeight: 1.8,
                   }}
                 >
@@ -2386,7 +2386,7 @@ export default function AiChat() {
               <div
                 style={{
                   display: 'grid',
-                  gap: 10,
+                  gap: 'var(--sp-3)',
                 }}
               >
                 <div
@@ -2394,7 +2394,7 @@ export default function AiChat() {
                   style={{
                     width: '58%',
                     height: 52,
-                    borderRadius: 18,
+                    borderRadius: 'var(--r-lg)',
                   }}
                 />
 
@@ -2403,7 +2403,7 @@ export default function AiChat() {
                   style={{
                     width: '72%',
                     height: 66,
-                    borderRadius: 18,
+                    borderRadius: 'var(--r-lg)',
                     marginInlineStart: 'auto',
                   }}
                 />
@@ -2413,7 +2413,7 @@ export default function AiChat() {
                   style={{
                     width: '64%',
                     height: 52,
-                    borderRadius: 18,
+                    borderRadius: 'var(--r-lg)',
                   }}
                 />
               </div>
@@ -2658,7 +2658,7 @@ export default function AiChat() {
                     style={{
                       minHeight: 34,
                       padding: '5px 10px',
-                      fontSize: 10,
+                      fontSize: 'var(--fs-cap)',
                     }}
                   >
                     ■ پایان ضبط
@@ -2766,7 +2766,7 @@ export default function AiChat() {
                         ? (
                           <Spinner
                             size={16}
-                            color="#fff"
+                            color="var(--t-white)"
                           />
                         )
                         : '↑'
