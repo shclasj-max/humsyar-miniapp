@@ -228,7 +228,7 @@ export default function UserSearchSelect({
                     width: 36,
                     height: 36,
                     flex: '0 0 36px',
-                    fontSize: 15,
+                    fontSize: 'var(--fs-lg)',
                   }}
                 >
                   {user.name?.[0] ||
