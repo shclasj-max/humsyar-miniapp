@@ -46,43 +46,43 @@ const TYPES = {
   video: [
     '🎬',
     'ویدیو',
-    '#FB7185',
-    'rgba(239,68,68,.12)',
+    'var(--t-err)',
+    'var(--soft-err)',
   ],
 
   ppt: [
     '📊',
     'اسلاید',
-    '#FCD34D',
-    'rgba(245,158,11,.12)',
+    'var(--t-warn)',
+    'var(--soft-warn)',
   ],
 
   pdf: [
     '📄',
     'PDF',
-    '#70A7FF',
-    'rgba(59,130,246,.12)',
+    'var(--t-acc)',
+    'var(--soft-acc)',
   ],
 
   note: [
     '📝',
     'جزوه',
-    '#34D399',
-    'rgba(16,185,129,.12)',
+    'var(--t-ok)',
+    'var(--soft-ok)',
   ],
 
   test: [
     '🧪',
     'آزمون',
-    '#C4B5FD',
-    'rgba(139,92,246,.13)',
+    'var(--t-pur)',
+    'var(--soft-pur)',
   ],
 
   voice: [
     '🎧',
     'صوت',
-    '#22D3EE',
-    'rgba(34,211,238,.12)',
+    'var(--t-info)',
+    'var(--soft-info)',
   ],
 };
 
@@ -128,8 +128,8 @@ function ResourceFile({
     || [
       '📎',
       'فایل',
-      '#70A7FF',
-      'rgba(59,130,246,.12)',
+      'var(--t-acc)',
+      'var(--soft-acc)',
     ]
   );
 
@@ -1290,7 +1290,7 @@ const styles = {
     width: 52,
     height: 52,
     fontSize: 25,
-    borderRadius: 16,
+    borderRadius: 'var(--r-lg)',
 
     background:
       'var(--grad-brand)',
@@ -1300,13 +1300,13 @@ const styles = {
   },
 
   heroTitle: {
-    fontSize: 15,
+    fontSize: 'var(--fs-lg)',
   },
 
   heroText: {
-    marginTop: 4,
+    marginTop: 'var(--sp-1)',
     color: 'var(--tx2)',
-    fontSize: 10.5,
+    fontSize: 'var(--fs-cap)',
     lineHeight: 1.9,
   },
 
@@ -1341,14 +1341,14 @@ const styles = {
 
   navMeta: {
     color: 'var(--tx2)',
-    fontSize: 10,
+    fontSize: 'var(--fs-cap)',
   },
 
   rowCard: {
     display: 'flex',
     alignItems: 'center',
     width: '100%',
-    gap: 10,
+    gap: 'var(--sp-3)',
     fontFamily: 'inherit',
     textAlign: 'right',
     cursor: 'pointer',
@@ -1360,7 +1360,7 @@ const styles = {
     flex: '0 0 42px',
     height: 42,
     fontSize: 21,
-    borderRadius: 12,
+    borderRadius: 'var(--r-md)',
     background: 'var(--acc-soft)',
   },
 
@@ -1369,9 +1369,9 @@ const styles = {
     placeItems: 'center',
     flex: '0 0 38px',
     height: 38,
-    color: '#70A7FF',
+    color: 'var(--t-acc)',
     fontWeight: 900,
-    borderRadius: 12,
+    borderRadius: 'var(--r-md)',
     background: 'var(--acc-soft)',
   },
 
@@ -1391,7 +1391,7 @@ const styles = {
   fileCard: {
     display: 'flex',
     alignItems: 'center',
-    gap: 10,
+    gap: 'var(--sp-3)',
     padding: 11,
   },
 
@@ -1402,7 +1402,7 @@ const styles = {
     width: 43,
     height: 43,
     fontSize: 21,
-    borderRadius: 12,
+    borderRadius: 'var(--r-md)',
   },
 
   fileBody: {
@@ -1415,20 +1415,20 @@ const styles = {
 
   fileTitle: {
     overflow: 'hidden',
-    fontSize: 11.5,
+    fontSize: 'var(--fs-meta)',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
   },
 
   fileMeta: {
     color: 'var(--tx2)',
-    fontSize: 9.5,
+    fontSize: 'var(--fs-cap)',
   },
 
   fileDescription: {
     marginTop: 3,
     color: 'var(--txm)',
-    fontSize: 9,
+    fontSize: 'var(--fs-cap)',
     lineHeight: 1.7,
   },
 
@@ -1437,16 +1437,16 @@ const styles = {
     minWidth: 68,
     minHeight: 34,
     padding: '6px 9px',
-    fontSize: 10,
+    fontSize: 'var(--fs-cap)',
   },
 
   notice: {
     display: 'flex',
     alignItems: 'center',
-    gap: 7,
-    padding: 10,
+    gap: 'var(--sp-2)',
+    padding: 'var(--sp-3)',
     color: 'var(--tx2)',
-    fontSize: 9.5,
+    fontSize: 'var(--fs-cap)',
     lineHeight: 1.8,
   },
 
@@ -1464,7 +1464,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     flexDirection: 'column',
-    gap: 10,
+    gap: 'var(--sp-3)',
     padding: 25,
     color: 'var(--tx2)',
     textAlign: 'center',
