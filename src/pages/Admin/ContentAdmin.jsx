@@ -1,3 +1,7 @@
+import EmptyState from '../../components/shared/EmptyState';
+
+import { errorText } from '../../lib/format';
+
 import { confirmAction } from '../../lib/confirm';
 import { useState } from 'react';
 
@@ -38,43 +42,10 @@ const LETTERS = [
 ];
 
 
-const errorText = (
-  error,
-  fallback
-) => {
-  const detail =
-    error?.response?.data?.detail;
-
-  return typeof detail === 'string'
-    ? detail
-    : fallback;
-};
 
 
-function Empty({
-  icon = '📭',
-  children,
-}) {
-  return (
-    <div className="empty card">
-      <div
-        style={{
-          fontSize: 42,
-        }}
-      >
-        {icon}
-      </div>
 
-      <div
-        style={{
-          marginTop: 8,
-        }}
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
+
 
 
 function QuestionDetails({
@@ -150,7 +121,7 @@ function QuestionDetails({
 
         <div
           style={{
-            fontSize: 13,
+            fontSize: 'var(--fs-md)',
             fontWeight: 750,
             lineHeight: 1.9,
             marginBottom: 12,
@@ -164,7 +135,7 @@ function QuestionDetails({
         <div
           style={{
             display: 'grid',
-            gap: 7,
+            gap: 'var(--sp-2)',
           }}
         >
           {options.map(
@@ -192,18 +163,17 @@ function QuestionDetails({
 
                     background:
                       correct
-                        ? 'rgba(16,185,129,.1)'
-                        : 'rgba(100,116,139,.08)',
+                        ? 'var(--soft-ok)'
+                        : 'var(--soft-mut)',
 
                     border:
                       `1px solid ${
                         correct
-                          ? 'rgba(16,185,129,.25)'
+                          ? 'var(--bd-ok)'
                           : 'var(--bd)'
                       }`,
 
-                    borderRadius:
-                      11,
+                    borderRadius: 'var(--r-md)',
                   }}
                 >
                   <b>
@@ -243,13 +213,11 @@ function QuestionDetails({
                 'var(--tx2)',
 
               background:
-                'rgba(59,130,246,.08)',
+                'var(--soft-acc)',
 
-              borderRadius:
-                12,
+              borderRadius: 'var(--r-md)',
 
-              fontSize:
-                10.5,
+              fontSize: 'var(--fs-cap)',
 
               lineHeight:
                 1.8,
@@ -278,7 +246,7 @@ function QuestionDetails({
             gap: 8,
             marginTop: 12,
             color: 'var(--txm)',
-            fontSize: 9.5,
+            fontSize: 'var(--fs-cap)',
           }}
         >
           <span>
@@ -314,7 +282,7 @@ function QuestionDetails({
           style={{
             display: 'flex',
             gap: 8,
-            marginTop: 14,
+            marginTop: 'var(--sp-4)',
           }}
         >
           <button
@@ -503,8 +471,7 @@ export function ContentQuestions() {
               width: 35,
               height: 35,
 
-              borderRadius:
-                11,
+              borderRadius: 'var(--r-md)',
 
               background:
                 'var(--elev)',
@@ -568,10 +535,10 @@ export function ContentQuestions() {
           }
           style={{
             padding: 17,
-            marginBottom: 14,
+            marginBottom: 'var(--sp-4)',
 
             background:
-              'linear-gradient(145deg,rgba(139,92,246,.15),rgba(16,24,39,.95) 55%,rgba(245,158,11,.08))',
+              'linear-gradient(145deg,var(--soft-pur),var(--surf-card) 55%,var(--soft-warn))',
           }}
         >
           <div
@@ -587,10 +554,10 @@ export function ContentQuestions() {
                 width: 52,
                 height: 52,
                 placeItems: 'center',
-                borderRadius: 16,
+                borderRadius: 'var(--r-lg)',
 
                 background:
-                  'linear-gradient(135deg,#7C3AED,#3B82F6)',
+                  'linear-gradient(135deg,var(--pur-dim),var(--acc))',
 
                 fontSize: 25,
               }}
@@ -608,8 +575,7 @@ export function ContentQuestions() {
                   color:
                     'var(--txm)',
 
-                  fontSize:
-                    10,
+                  fontSize: 'var(--fs-cap)',
                 }}
               >
                 صف بررسی علمی
@@ -618,7 +584,7 @@ export function ContentQuestions() {
               <b
                 style={{
                   display: 'block',
-                  fontSize: 16.5,
+                  fontSize: 'var(--fs-lg)',
                   marginTop: 2,
                 }}
               >
@@ -631,8 +597,7 @@ export function ContentQuestions() {
                   color:
                     'var(--tx2)',
 
-                  fontSize:
-                    9.5,
+                  fontSize: 'var(--fs-cap)',
 
                   marginTop:
                     3,
@@ -656,7 +621,7 @@ export function ContentQuestions() {
               style={{
                 color:
                   filter === 'all'
-                    ? '#fff'
+                    ? 'var(--t-white)'
                     : 'var(--tx2)',
 
                 background:
@@ -681,7 +646,7 @@ export function ContentQuestions() {
                   style={{
                     color:
                       filter === lesson
-                        ? '#fff'
+                        ? 'var(--t-white)'
                         : 'var(--tx2)',
 
                     background:
@@ -701,7 +666,7 @@ export function ContentQuestions() {
         {isLoading ? (
           <LibraryTilesSkeleton />
         ) : isError ? (
-          <Empty icon="🌐">
+          <EmptyState icon="🌐">
             دریافت سؤال‌ها انجام نشد.
 
             <button
@@ -715,11 +680,11 @@ export function ContentQuestions() {
             >
               تلاش دوباره
             </button>
-          </Empty>
+          </EmptyState>
         ) : rows.length === 0 ? (
-          <Empty icon="✅">
+          <EmptyState icon="✅">
             سؤالی در انتظار بررسی نیست.
-          </Empty>
+          </EmptyState>
         ) : (
           <section
             style={{
@@ -795,8 +760,7 @@ export function ContentQuestions() {
                       overflow:
                         'hidden',
 
-                      fontSize:
-                        12,
+                      fontSize: 'var(--fs-sm)',
 
                       fontWeight:
                         650,
@@ -820,7 +784,7 @@ export function ContentQuestions() {
                       alignItems: 'center',
                       marginTop: 9,
                       color: 'var(--txm)',
-                      fontSize: 9,
+                      fontSize: 'var(--fs-cap)',
                     }}
                   >
                     <span>
@@ -844,8 +808,8 @@ export function ContentQuestions() {
                   <div
                     style={{
                       display: 'flex',
-                      gap: 7,
-                      marginTop: 10,
+                      gap: 'var(--sp-2)',
+                      marginTop: 'var(--sp-3)',
                     }}
                   >
                     <button
@@ -1100,7 +1064,7 @@ export function ContentFaq() {
             }
             style={{
               display: 'grid',
-              gap: 10,
+              gap: 'var(--sp-3)',
             }}
           >
             <input
@@ -1222,7 +1186,7 @@ export function ContentFaq() {
             marginBottom: 13,
 
             background:
-              'linear-gradient(145deg,rgba(139,92,246,.13),rgba(16,24,39,.95))',
+              'linear-gradient(145deg,var(--soft-pur),var(--surf-card))',
           }}
         >
           <span
@@ -1231,10 +1195,10 @@ export function ContentFaq() {
               width: 50,
               height: 50,
               placeItems: 'center',
-              borderRadius: 16,
+              borderRadius: 'var(--r-lg)',
 
               background:
-                'linear-gradient(135deg,#7C3AED,#3B82F6)',
+                'linear-gradient(135deg,var(--pur-dim),var(--acc))',
 
               fontSize: 24,
             }}
@@ -1249,7 +1213,7 @@ export function ContentFaq() {
           >
             <b
               style={{
-                fontSize: 16,
+                fontSize: 'var(--fs-lg)',
               }}
             >
               راهنمای کاربران
@@ -1260,8 +1224,7 @@ export function ContentFaq() {
                 color:
                   'var(--txm)',
 
-                fontSize:
-                  9.5,
+                fontSize: 'var(--fs-cap)',
 
                 marginTop:
                   3,
@@ -1279,7 +1242,7 @@ export function ContentFaq() {
             'btn btn-p btn-full'
           }
           style={{
-            marginBottom: 14,
+            marginBottom: 'var(--sp-4)',
           }}
           onClick={() =>
             setFormOpen(true)
@@ -1292,7 +1255,7 @@ export function ContentFaq() {
         {isLoading ? (
           <LibraryRowsSkeleton />
         ) : isError ? (
-          <Empty icon="🌐">
+          <EmptyState icon="🌐">
             دریافت FAQ انجام نشد.
 
             <button
@@ -1306,11 +1269,11 @@ export function ContentFaq() {
             >
               تلاش دوباره
             </button>
-          </Empty>
+          </EmptyState>
         ) : items.length === 0 ? (
-          <Empty>
+          <EmptyState>
             هنوز سؤالی ثبت نشده است.
-          </Empty>
+          </EmptyState>
         ) : (
           <section
             style={{
@@ -1377,8 +1340,7 @@ export function ContentFaq() {
                         style={{
                           flex: 1,
 
-                          fontSize:
-                            12,
+                          fontSize: 'var(--fs-sm)',
 
                           lineHeight:
                             1.7,
@@ -1415,8 +1377,7 @@ export function ContentFaq() {
                             color:
                               'var(--tx2)',
 
-                            fontSize:
-                              10.5,
+                            fontSize: 'var(--fs-cap)',
 
                             lineHeight:
                               1.9,
