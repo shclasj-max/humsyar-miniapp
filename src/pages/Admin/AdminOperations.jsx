@@ -1,3 +1,7 @@
+import EmptyState from '../../components/shared/EmptyState';
+
+import { number, errorText } from '../../lib/format';
+
 import { confirmAction } from '../../lib/confirm';
 import {
   useEffect,
@@ -31,35 +35,13 @@ import {
 } from '../../stores/uiStore';
 
 
-const errorText = (
-  error,
-  fallback
-) => {
-  const detail =
-    error?.response?.data?.detail;
-
-  return typeof detail === 'string'
-    ? detail
-    : fallback;
-};
 
 
-const number = (value) =>
-  Math.max(
-    0,
-    Number(value) || 0
-  );
 
 
-function Empty({
-  children,
-}) {
-  return (
-    <div className="empty card">
-      {children}
-    </div>
-  );
-}
+
+
+
 
 
 /* تیکت‌های پشتیبانی ادمین */
@@ -269,8 +251,7 @@ export function AdminTickets() {
                 display:
                   'grid',
 
-                gap:
-                  10,
+                gap: 'var(--sp-3)',
               }}
             >
               <section
@@ -319,8 +300,7 @@ export function AdminTickets() {
                         color:
                           'var(--txm)',
 
-                        fontSize:
-                          9.5,
+                        fontSize: 'var(--fs-cap)',
 
                         marginTop:
                           3,
@@ -371,13 +351,11 @@ export function AdminTickets() {
                       'var(--tx2)',
 
                     background:
-                      'rgba(100,116,139,.08)',
+                      'var(--soft-mut)',
 
-                    borderRadius:
-                      12,
+                    borderRadius: 'var(--r-md)',
 
-                    fontSize:
-                      11,
+                    fontSize: 'var(--fs-meta)',
 
                     lineHeight:
                       1.8,
@@ -396,9 +374,9 @@ export function AdminTickets() {
 
               {replies.length ===
                 0 ? (
-                <Empty>
+                <EmptyState>
                   هنوز پاسخی ثبت نشده است.
-                </Empty>
+                </EmptyState>
               ) : (
                 replies.map(
                   (
@@ -431,14 +409,12 @@ export function AdminTickets() {
                           background:
                             item.sender ===
                             'support'
-                              ? 'rgba(59,130,246,.14)'
-                              : 'rgba(16,185,129,.12)',
+                              ? 'var(--soft-acc)'
+                              : 'var(--soft-ok)',
 
-                          borderRadius:
-                            13,
+                          borderRadius: 'var(--r-md)',
 
-                          fontSize:
-                            10.5,
+                          fontSize: 'var(--fs-cap)',
 
                           lineHeight:
                             1.8,
@@ -451,8 +427,7 @@ export function AdminTickets() {
                             color:
                               'var(--txm)',
 
-                            fontSize:
-                              8,
+                            fontSize: 'var(--fs-cap)',
 
                             marginTop:
                               3,
@@ -579,7 +554,7 @@ export function AdminTickets() {
               13,
 
             background:
-              'linear-gradient(145deg,rgba(245,158,11,.1),rgba(16,24,39,.95))',
+              'linear-gradient(145deg,var(--soft-warn),var(--surf-card))',
           }}
         >
           <span
@@ -601,8 +576,7 @@ export function AdminTickets() {
                 color:
                   'var(--txm)',
 
-                fontSize:
-                  9.5,
+                fontSize: 'var(--fs-cap)',
               }}
             >
               پاسخ و پیگیری درخواست‌های
@@ -642,7 +616,7 @@ export function AdminTickets() {
                 style={{
                   color:
                     filter === key
-                      ? '#fff'
+                      ? 'var(--t-white)'
                       : 'var(--tx2)',
 
                   background:
@@ -661,7 +635,7 @@ export function AdminTickets() {
         {isLoading ? (
           <AdminOpsSkeleton />
         ) : isError ? (
-          <Empty>
+          <EmptyState>
             دریافت تیکت‌ها انجام نشد.
 
             <button
@@ -676,11 +650,11 @@ export function AdminTickets() {
             >
               تلاش دوباره
             </button>
-          </Empty>
+          </EmptyState>
         ) : tickets.length === 0 ? (
-          <Empty>
+          <EmptyState>
             تیکتی در این وضعیت نیست.
-          </Empty>
+          </EmptyState>
         ) : (
           <section
             style={{
@@ -714,8 +688,7 @@ export function AdminTickets() {
                     width:
                       '100%',
 
-                    gap:
-                      10,
+                    gap: 'var(--sp-3)',
 
                     textAlign:
                       'right',
@@ -735,14 +708,13 @@ export function AdminTickets() {
                       placeItems:
                         'center',
 
-                      borderRadius:
-                        14,
+                      borderRadius: 'var(--r-md)',
 
                       background:
                         item.status ===
                         'closed'
-                          ? 'rgba(100,116,139,.12)'
-                          : 'rgba(245,158,11,.12)',
+                          ? 'var(--soft-mut)'
+                          : 'var(--soft-warn)',
                     }}
                   >
                     🎫
@@ -771,8 +743,7 @@ export function AdminTickets() {
                         color:
                           'var(--txm)',
 
-                        fontSize:
-                          9.5,
+                        fontSize: 'var(--fs-cap)',
 
                         marginTop:
                           3,
@@ -1011,7 +982,7 @@ export function BroadcastAdmin() {
               13,
 
             background:
-              'linear-gradient(145deg,rgba(34,211,238,.1),rgba(16,24,39,.95))',
+              'linear-gradient(145deg,var(--soft-info),var(--surf-card))',
           }}
         >
           <div
@@ -1042,8 +1013,7 @@ export function BroadcastAdmin() {
                   color:
                     'var(--txm)',
 
-                  fontSize:
-                    9.5,
+                  fontSize: 'var(--fs-cap)',
                 }}
               >
                 پیام فوری یا زمان‌بندی‌شده
@@ -1184,8 +1154,7 @@ export function BroadcastAdmin() {
               color:
                 'var(--txm)',
 
-              fontSize:
-                9.5,
+              fontSize: 'var(--fs-cap)',
             }}
           >
             زمان ارسال؛ خالی یعنی فوری
@@ -1217,8 +1186,7 @@ export function BroadcastAdmin() {
             gap:
               8,
 
-            marginTop:
-              10,
+            marginTop: 'var(--sp-3)',
           }}
         >
           <button
@@ -1297,9 +1265,9 @@ export function BroadcastAdmin() {
         </div>
 
         {history.length === 0 ? (
-          <Empty>
+          <EmptyState>
             ارسالی ثبت نشده است.
-          </Empty>
+          </EmptyState>
         ) : (
           <section
             style={{
@@ -1323,8 +1291,7 @@ export function BroadcastAdmin() {
                 >
                   <div
                     style={{
-                      fontSize:
-                        11,
+                      fontSize: 'var(--fs-meta)',
 
                       lineHeight:
                         1.7,
@@ -1341,8 +1308,7 @@ export function BroadcastAdmin() {
                       gap:
                         5,
 
-                      marginTop:
-                        7,
+                      marginTop: 'var(--sp-2)',
                     }}
                   >
                     <span className="badge b-gray">
@@ -1561,8 +1527,7 @@ export function PollAdmin() {
               display:
                 'flex',
 
-              gap:
-                7,
+              gap: 'var(--sp-2)',
             }}
           >
             <input
@@ -1635,8 +1600,7 @@ export function PollAdmin() {
                   display:
                     'flex',
 
-                  gap:
-                    7,
+                  gap: 'var(--sp-2)',
                 }}
               >
                 <input
@@ -1725,8 +1689,7 @@ export function PollAdmin() {
                   color:
                     'var(--txm)',
 
-                  fontSize:
-                    9,
+                  fontSize: 'var(--fs-cap)',
                 }}
               >
                 نام رأی‌دهندگان نمایش داده
@@ -1961,8 +1924,7 @@ export function NotificationsAdmin() {
               display:
                 'flex',
 
-              gap:
-                7,
+              gap: 'var(--sp-2)',
             }}
           >
             {[
@@ -2018,11 +1980,9 @@ export function NotificationsAdmin() {
                 color:
                   'var(--txm)',
 
-                fontSize:
-                  9,
+                fontSize: 'var(--fs-cap)',
 
-                marginTop:
-                  7,
+                marginTop: 'var(--sp-2)',
               }}
             >
               آخرین ارسال:{' '}
@@ -2037,11 +1997,9 @@ export function NotificationsAdmin() {
                 color:
                   'var(--err)',
 
-                fontSize:
-                  9,
+                fontSize: 'var(--fs-cap)',
 
-                marginTop:
-                  4,
+                marginTop: 'var(--sp-1)',
               }}
             >
               آخرین خطا:{' '}
@@ -2063,9 +2021,9 @@ export function NotificationsAdmin() {
             icon={36}
           />
         ) : runs.length === 0 ? (
-          <Empty>
+          <EmptyState>
             تاریخچه‌ای ثبت نشده است.
-          </Empty>
+          </EmptyState>
         ) : (
           <section
             style={{
@@ -2089,8 +2047,7 @@ export function NotificationsAdmin() {
                     alignItems:
                       'center',
 
-                    gap:
-                      10,
+                    gap: 'var(--sp-3)',
                   }}
                 >
                   <span
@@ -2107,14 +2064,13 @@ export function NotificationsAdmin() {
                       placeItems:
                         'center',
 
-                      borderRadius:
-                        13,
+                      borderRadius: 'var(--r-md)',
 
                       background:
                         item.status ===
                         'success'
-                          ? 'rgba(16,185,129,.12)'
-                          : 'rgba(239,68,68,.12)',
+                          ? 'var(--soft-ok)'
+                          : 'var(--soft-err)',
                     }}
                   >
                     {item.status ===
@@ -2139,8 +2095,7 @@ export function NotificationsAdmin() {
                         color:
                           'var(--txm)',
 
-                        fontSize:
-                          9,
+                        fontSize: 'var(--fs-cap)',
 
                         marginTop:
                           3,
