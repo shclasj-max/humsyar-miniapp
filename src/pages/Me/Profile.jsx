@@ -1,3 +1,11 @@
+import Switch from '../../components/shared/Switch';
+
+import StatTile from '../../components/shared/StatTile';
+
+import PageError from '../../components/shared/PageError';
+
+import { faDate, number, percent, errorText } from '../../lib/format';
+
 import { useState } from 'react';
 
 import {
@@ -31,111 +39,6 @@ import {
 import {
   useAuthStore,
 } from '../../stores/authStore';
-
-
-const number = (value) => {
-  const parsed = Number(value);
-
-  return Number.isFinite(parsed)
-    ? Math.max(0, parsed)
-    : 0;
-};
-
-
-const percent = (value) =>
-  Math.min(
-    100,
-    number(value)
-  );
-
-
-const errorText = (
-  error,
-  fallback
-) => {
-  const detail =
-    error?.response?.data?.detail;
-
-  return typeof detail === 'string'
-    ? detail
-    : fallback;
-};
-
-
-// تاریخ شمسی کوتاه برای
-// پیام Cooldown لقب
-const faDate = (iso) => {
-  if (!iso) {
-    return '';
-  }
-
-  try {
-    return new Date(
-      iso
-    ).toLocaleDateString('fa-IR');
-  } catch {
-    return '';
-  }
-};
-
-
-// سوییچ کوچک — همان الگوی
-// MiniSwitch در Roles.jsx
-function MiniSwitch({
-  on,
-  onToggle,
-  color,
-  disabled,
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={on}
-      disabled={disabled}
-      onClick={onToggle}
-      style={{
-        width: 32,
-        height: 18,
-        borderRadius: 99,
-        border:
-          '1px solid var(--line)',
-        background: on
-          ? color ||
-            'rgba(52,211,153,.35)'
-          : 'rgba(255,255,255,.06)',
-        position: 'relative',
-        flexShrink: 0,
-        cursor: disabled
-          ? 'default'
-          : 'pointer',
-        opacity: disabled
-          ? .45
-          : 1,
-        transition:
-          'background .15s ease',
-      }}
-    >
-      <span
-        style={{
-          position: 'absolute',
-          top: 2,
-          insetInlineStart: on
-            ? 15
-            : 2,
-          width: 12,
-          height: 12,
-          borderRadius: '50%',
-          background: on
-            ? '#E8F0FF'
-            : '#7A8DB0',
-          transition:
-            'inset-inline-start .15s ease',
-        }}
-      />
-    </button>
-  );
-}
 
 
 function Picker({
@@ -292,7 +195,7 @@ function WeekChart({
                 justifyContent:
                   'flex-end',
 
-                gap: 4,
+                gap: 'var(--sp-1)',
               }}
             >
               <div
@@ -328,8 +231,7 @@ function WeekChart({
                   color:
                     'var(--txm)',
 
-                  fontSize:
-                    8,
+                  fontSize: 'var(--fs-cap)',
                 }}
               >
                 {String(
@@ -450,7 +352,7 @@ function NicknameCard({
     user.show_real_name !== false;
 
   const nextText = faDate(
-    user.next_change_at
+    user.next_change_at, ''
   );
 
   const pending =
@@ -499,7 +401,7 @@ function NicknameCard({
             style={{
               overflow: 'hidden',
 
-              fontSize: 15,
+              fontSize: 'var(--fs-lg)',
 
               fontWeight: 900,
 
@@ -518,7 +420,8 @@ function NicknameCard({
               color:
                 'var(--txm)',
 
-              fontSize: 9.5,
+              fontSize:
+                'var(--fs-cap)',
 
               marginTop: 3,
             }}
@@ -550,7 +453,7 @@ function NicknameCard({
           onSubmit={submit}
           style={{
             display: 'flex',
-            gap: 7,
+            gap: 'var(--sp-2)',
             marginTop: 12,
           }}
         >
@@ -606,7 +509,7 @@ function NicknameCard({
             color: 'var(--txm)',
             background: 'none',
             border: 0,
-            fontSize: 10,
+            fontSize: 'var(--fs-cap)',
             cursor: 'pointer',
           }}
         >
@@ -617,7 +520,7 @@ function NicknameCard({
       <div
         style={{
           color: 'var(--txm)',
-          fontSize: 9,
+          fontSize: 'var(--fs-cap)',
           marginTop: 9,
         }}
       >
@@ -632,11 +535,11 @@ function NicknameCard({
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 10,
+          gap: 'var(--sp-3)',
         }}
       >
         <div style={{ flex: 1 }}>
-          <b style={{ fontSize: 12 }}>
+          <b style={{ fontSize: 'var(--fs-sm)' }}>
             نمایش اسم واقعی
           </b>
 
@@ -645,7 +548,8 @@ function NicknameCard({
               color:
                 'var(--txm)',
 
-              fontSize: 9.5,
+              fontSize:
+                'var(--fs-cap)',
 
               marginTop: 2,
             }}
@@ -656,7 +560,7 @@ function NicknameCard({
           </div>
         </div>
 
-        <MiniSwitch
+        <Switch
           on={showReal}
           disabled={
             privacyMutation
@@ -1087,21 +991,12 @@ export default function Profile() {
         {isLoading ? (
           <ProfileSkeleton />
         ) : isError ? (
-          <div className="empty card">
-            دریافت پروفایل انجام نشد.
-
-            <button
-              className="btn btn-p"
-              style={{
-                marginTop: 12,
-              }}
-              onClick={() =>
-                refetch()
-              }
-            >
-              تلاش دوباره
-            </button>
-          </div>
+          <PageError
+            text={
+              'دریافت پروفایل انجام نشد.'
+            }
+            onRetry={() => refetch()}
+          />
         ) : (
           <div
             style={{
@@ -1147,8 +1042,7 @@ export default function Profile() {
                       overflow:
                         'hidden',
 
-                      fontSize:
-                        17.5,
+                      fontSize: 'var(--fs-xl)',
 
                       fontWeight:
                         900,
@@ -1172,8 +1066,7 @@ export default function Profile() {
                         color:
                           'var(--txm)',
 
-                        fontSize:
-                          9.5,
+                        fontSize: 'var(--fs-cap)',
 
                         marginTop:
                           2,
@@ -1211,8 +1104,7 @@ export default function Profile() {
                       border:
                         0,
 
-                      fontSize:
-                        10.5,
+                      fontSize: 'var(--fs-cap)',
 
                       cursor:
                         'pointer',
@@ -1236,8 +1128,7 @@ export default function Profile() {
                       gap:
                         5,
 
-                      marginTop:
-                        7,
+                      marginTop: 'var(--sp-2)',
                     }}
                   >
                     <button
@@ -1302,8 +1193,8 @@ export default function Profile() {
                   }
                   style={{
                     display: 'flex',
-                    gap: 7,
-                    marginTop: 14,
+                    gap: 'var(--sp-2)',
+                    marginTop: 'var(--sp-4)',
                   }}
                 >
                   <input
@@ -1414,10 +1305,10 @@ export default function Profile() {
                   gap: 11,
 
                   borderColor:
-                    'rgba(245,158,11,.24)',
+                    'var(--bd-warn)',
 
                   background:
-                    'linear-gradient(145deg,rgba(245,158,11,.09),rgba(16,24,39,.95))',
+                    'linear-gradient(145deg,var(--soft-warn),var(--surf-card))',
                 }}
               >
                 <span
@@ -1434,8 +1325,7 @@ export default function Profile() {
                       color:
                         'var(--warn)',
 
-                      fontSize:
-                        14,
+                      fontSize: 'var(--fs-lg)',
                     }}
                   >
                     رتبه{' '}
@@ -1456,8 +1346,7 @@ export default function Profile() {
                       color:
                         'var(--txm)',
 
-                      fontSize:
-                        10,
+                      fontSize: 'var(--fs-cap)',
 
                       marginTop:
                         2,
@@ -1483,8 +1372,7 @@ export default function Profile() {
               <div
                 className="grid2"
                 style={{
-                  marginBottom:
-                    14,
+                  marginBottom: 'var(--sp-4)',
                 }}
               >
                 {[
@@ -1498,7 +1386,7 @@ export default function Profile() {
 
                     'سؤال',
 
-                    '#70A7FF',
+                    'var(--t-acc)',
                   ],
 
                   [
@@ -1511,7 +1399,7 @@ export default function Profile() {
 
                     'صحیح',
 
-                    '#34D399',
+                    'var(--t-ok)',
                   ],
 
                   [
@@ -1523,7 +1411,7 @@ export default function Profile() {
 
                     'دانلود',
 
-                    '#22D3EE',
+                    'var(--t-info)',
                   ],
 
                   [
@@ -1533,7 +1421,7 @@ export default function Profile() {
 
                     'موفقیت',
 
-                    '#FCD34D',
+                    'var(--t-warn)',
                   ],
                 ].map(
                   ([
@@ -1542,55 +1430,14 @@ export default function Profile() {
                     label,
                     color,
                   ]) => (
-                    <div
+                    <StatTile
                       key={label}
-                      style={{
-                        padding:
-                          10,
-
-                        textAlign:
-                          'center',
-
-                        background:
-                          'rgba(100,116,139,.07)',
-
-                        borderRadius:
-                          13,
-                      }}
-                    >
-                      <div>
-                        {icon}
-                      </div>
-
-                      <div
-                        style={{
-                          color,
-
-                          fontSize:
-                            17,
-
-                          fontWeight:
-                            900,
-
-                          marginTop:
-                            2,
-                        }}
-                      >
-                        {value}
-                      </div>
-
-                      <div
-                        style={{
-                          color:
-                            'var(--txm)',
-
-                          fontSize:
-                            9,
-                        }}
-                      >
-                        {label}
-                      </div>
-                    </div>
+                      variant="grid"
+                      icon={icon}
+                      value={value}
+                      label={label}
+                      color={color}
+                    />
                   )
                 )}
               </div>
@@ -1623,17 +1470,15 @@ export default function Profile() {
                         stats
                           .level
                           .color ||
-                        '#3B82F6'
+                        'var(--acc)'
                       }15`,
 
-                    borderRadius:
-                      12,
+                    borderRadius: 'var(--r-md)',
                   }}
                 >
                   <span
                     style={{
-                      fontSize:
-                        20,
+                      fontSize: 'var(--fs-xl)',
                     }}
                   >
                     {stats
@@ -1657,8 +1502,7 @@ export default function Profile() {
                       color:
                         'var(--txm)',
 
-                      fontSize:
-                        9,
+                      fontSize: 'var(--fs-cap)',
                     }}
                   >
                     سطح فعلی
@@ -1682,11 +1526,9 @@ export default function Profile() {
                       color:
                         'var(--txm)',
 
-                      fontSize:
-                        10.5,
+                      fontSize: 'var(--fs-cap)',
 
-                      marginBottom:
-                        7,
+                      marginBottom: 'var(--sp-2)',
                     }}
                   >
                     ⚡ مباحث نیازمند تمرین
@@ -1798,8 +1640,7 @@ export default function Profile() {
                             color:
                               'var(--tx2)',
 
-                            fontSize:
-                              8.5,
+                            fontSize: 'var(--fs-cap)',
 
                             marginTop:
                               5,
