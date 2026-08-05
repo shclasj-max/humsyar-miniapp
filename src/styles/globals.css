@@ -1,4 +1,32 @@
-@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap');
+/* ── فونت وزیرمتن — self-host (بدون وابستگی به CDN گوگل) ── */
+/* arabic */
+@font-face {
+  font-family: 'Vazirmatn';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(/fonts/vazirmatn-arabic.woff2) format('woff2');
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC, U+102E0-102FB, U+10E60-10E7E, U+10EC2-10EC4, U+10EFC-10EFF, U+1EE00-1EE03, U+1EE05-1EE1F, U+1EE21-1EE22, U+1EE24, U+1EE27, U+1EE29-1EE32, U+1EE34-1EE37, U+1EE39, U+1EE3B, U+1EE42, U+1EE47, U+1EE49, U+1EE4B, U+1EE4D-1EE4F, U+1EE51-1EE52, U+1EE54, U+1EE57, U+1EE59, U+1EE5B, U+1EE5D, U+1EE5F, U+1EE61-1EE62, U+1EE64, U+1EE67-1EE6A, U+1EE6C-1EE72, U+1EE74-1EE77, U+1EE79-1EE7C, U+1EE7E, U+1EE80-1EE89, U+1EE8B-1EE9B, U+1EEA1-1EEA3, U+1EEA5-1EEA9, U+1EEAB-1EEBB, U+1EEF0-1EEF1;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Vazirmatn';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(/fonts/vazirmatn-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Vazirmatn';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(/fonts/vazirmatn-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 
 :root {
   color-scheme: dark;
@@ -104,6 +132,82 @@
       .36,
       1
     );
+
+  /* ═════════════════════════════════════
+     موج W1 — توکن‌های تکمیلی DS
+     (تا امروز مستقیماً در JSX هاردکد بودند؛
+     جایگزینی مقدار‌به‌مقدار، بدون تغییر بصری)
+     ═════════════════════════════════════ */
+
+  /* متن‌های Tone — جفت هر رنگ معنایی */
+  --t-acc:  #70A7FF;
+  --t-ok:   #34D399;
+  --t-warn: #FCD34D;
+  --t-err:  #FB7185;
+  --t-pur:  #C4B5FD;
+  --t-info: #22D3EE;
+  --t-white: #FFFFFF;
+
+  /* سطوح ملایم Tone (پس‌زمینه‌ی آیکن/تایل) */
+  --soft-acc:  rgba(59, 130, 246, .12);
+  --soft-ok:   rgba(16, 185, 129, .12);
+  --soft-warn: rgba(245, 158, 11, .12);
+  --soft-err:  rgba(239, 68, 68, .12);
+  --soft-pur:  rgba(139, 92, 246, .13);
+  --soft-info: rgba(34, 211, 238, .12);
+  --soft-mut:  rgba(100, 116, 139, .08);
+
+  /* خانواده‌ی بنفش کامل */
+  --pur:      #8B5CF6;
+  --pur-dim:  #7C3AED;
+
+  /* سطح کارت یکدست (۲۶ استفاده‌ی inline) */
+  --surf-card: rgba(16, 24, 39, .95);
+
+  /* قرص کامل — برای chip/pill ها */
+  --r-pill: 999px;
+
+  /* تنوع‌های آلفای باقی‌مانده (دور دوم W1) */
+  --soft-acc-2:  rgba(59, 130, 246, .13);
+  --soft-warn-2: rgba(245, 158, 11, .13);
+  --soft-err-2:  rgba(239, 68, 68, .13);
+  --bd-ok:   rgba(16, 185, 129, .25);
+  --bd-warn: rgba(245, 158, 11, .25);
+  --bd-err:  rgba(239, 68, 68, .3);
+  --t-acc-hi: #93C5FD;
+  --t-acc-md: #60A5FA;
+
+  /* اکنت عمیق بنرها + صورتی حمایت */
+  --soft-acc-deep: rgba(29, 78, 216, .21);
+  --soft-pink:     rgba(236, 72, 153, .12);
+
+
+  /* تک‌موردهای W3 — آخرین خام‌ها */
+  --ok-dim:    #059669;
+  --warn-dim:  #D97706;
+  --info-dim:  #0891B2;
+  --bd-pur:    rgba(139, 92, 246, .25);
+  --scrim-strong: rgba(0, 0, 0, .7);
+
+  --t-pink: #F9A8D4;
+  --scrim: rgba(11, 18, 32, .85);
+
+  /* Spacing Scale پنج‌پله (W4) */
+  --sp-1: 4px;
+  --sp-2: 7px;
+  --sp-3: 10px;
+  --sp-4: 14px;
+  --sp-5: 20px;
+
+  /* Type Scale رسمی ۷‌پله (W1) —
+     به‌جای ~۳۰ سایز پراکنده در JSX */
+  --fs-cap:  10.5px;  /* لیبل/نشان کوچک */
+  --fs-meta: 11px;    /* متا/کپشن */
+  --fs-sm:   12px;    /* متن فرعی */
+  --fs-md:   13px;    /* متن اصلی */
+  --fs-lg:   15px;    /* تیتر کارت */
+  --fs-xl:   18px;    /* تیتر بخش */
+  --fs-2xl:  24px;    /* نمایشی */
 }
 
 *,
@@ -118,7 +222,7 @@ html {
   min-height: 100%;
   direction: rtl;
   font-family: var(--font);
-  font-size: 15px;
+  font-size: var(--fs-lg);
   background: var(--bg);
 }
 
@@ -196,6 +300,11 @@ input,
 textarea,
 select {
   font: inherit;
+}
+
+/* نشانگر اشاره برای کنترل‌های کلیکی در دسکتاپ */
+button:not(:disabled) {
+  cursor: pointer;
 }
 
 button,
@@ -377,7 +486,7 @@ a {
   border: 0;
   border-radius: var(--r-md);
   font-family: var(--font);
-  font-size: 13px;
+  font-size: var(--fs-md);
   font-weight: 700;
   line-height: 1.4;
   white-space: nowrap;
@@ -493,7 +602,7 @@ select {
   gap: 4px;
   padding: 2px 8px;
   border-radius: 999px;
-  font-size: 10.5px;
+  font-size: var(--fs-cap);
   font-weight: 700;
   line-height: 1.4;
 }
@@ -591,7 +700,7 @@ select {
   gap: 6px;
   margin-bottom: 10px;
   color: var(--tx);
-  font-size: 13.5px;
+  font-size: var(--fs-md);
   font-weight: 800;
 }
 
@@ -631,7 +740,7 @@ select {
   gap: 10px;
   padding: 46px 20px;
   color: var(--txm);
-  font-size: 11px;
+  font-size: var(--fs-meta);
   line-height: 1.9;
   text-align: center;
 }
@@ -796,7 +905,7 @@ input:focus-visible
   border: 0;
   border-radius: var(--r-md);
   font-family: var(--font);
-  font-size: 11px;
+  font-size: var(--fs-meta);
   font-weight: 700;
   cursor: pointer;
 
@@ -909,7 +1018,7 @@ input:focus-visible
   height: 42px;
   place-items: center;
   color: var(--tx);
-  font-size: 19px;
+  font-size: var(--fs-xl);
   line-height: 1;
 
   background:
@@ -1046,7 +1155,7 @@ input:focus-visible
   overflow: hidden;
   margin-top: 1px;
   color: var(--txm);
-  font-size: 10.5px;
+  font-size: var(--fs-cap);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1175,7 +1284,7 @@ input:focus-visible
 }
 
 .bottom-nav__icon {
-  font-size: 19px;
+  font-size: var(--fs-xl);
   line-height: 1;
 
   transition:
@@ -1194,7 +1303,7 @@ input:focus-visible
 .bottom-nav__label {
   max-width: 100%;
   overflow: hidden;
-  font-size: 8.8px;
+  font-size: var(--fs-cap);
   font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1266,7 +1375,7 @@ input:focus-visible
 
 .more-sheet__title {
   margin-bottom: 9px;
-  font-size: 15px;
+  font-size: var(--fs-lg);
   font-weight: 800;
 }
 
@@ -1313,7 +1422,7 @@ input:focus-visible
 
 .more-sheet__item-title {
   display: block;
-  font-size: 13px;
+  font-size: var(--fs-md);
   font-weight: 700;
 }
 
@@ -1321,7 +1430,7 @@ input:focus-visible
   display: block;
   margin-top: 1px;
   color: var(--txm);
-  font-size: 10.5px;
+  font-size: var(--fs-cap);
 }
 
 .more-sheet__arrow {
@@ -1505,11 +1614,11 @@ input:focus-visible
   }
 
   .bottom-nav__label {
-    font-size: 8px;
+    font-size: var(--fs-cap);
   }
 
   .bottom-nav__icon {
-    font-size: 18px;
+    font-size: var(--fs-xl);
   }
 
   .card {
@@ -1624,7 +1733,7 @@ input:focus-visible
   background: var(--surf);
   color: var(--txm);
   font: inherit;
-  font-size: 10.5px;
+  font-size: var(--fs-cap);
   font-weight: 700;
   cursor: pointer;
   transition:
@@ -1659,7 +1768,7 @@ input:focus-visible
   place-items: center;
   margin-bottom: 9px;
   border-radius: 13px;
-  font-size: 19px;
+  font-size: var(--fs-xl);
 }
 
 .kpi__value {
@@ -1673,7 +1782,7 @@ input:focus-visible
   display: block;
   margin-top: 3px;
   color: var(--txm);
-  font-size: 9.3px;
+  font-size: var(--fs-cap);
 }
 
 .kpi__trend {
@@ -1683,7 +1792,7 @@ input:focus-visible
   margin-top: 7px;
   padding: 2px 8px;
   border-radius: 999px;
-  font-size: 8.8px;
+  font-size: var(--fs-cap);
   font-weight: 800;
 }
 
@@ -1713,13 +1822,13 @@ input:focus-visible
   justify-content: space-between;
   margin-bottom: 10px;
   padding: 0 2px;
-  font-size: 11px;
+  font-size: var(--fs-meta);
   font-weight: 800;
 }
 
 .chart__title span:last-child {
   color: var(--txm);
-  font-size: 9px;
+  font-size: var(--fs-cap);
   font-weight: 400;
 }
 
@@ -1741,12 +1850,12 @@ input:focus-visible
 
 .chart__lbl {
   fill: var(--txm);
-  font-size: 7.5px;
+  font-size: var(--fs-cap);
 }
 
 .chart__val {
   fill: var(--tx2);
-  font-size: 8px;
+  font-size: var(--fs-cap);
   font-weight: 700;
 }
 
@@ -1756,7 +1865,7 @@ input:focus-visible
   gap: 14px;
   padding: 8px 0 4px;
   color: var(--txm);
-  font-size: 9px;
+  font-size: var(--fs-cap);
 }
 
 .chart__dot {
@@ -1775,7 +1884,7 @@ input:focus-visible
   align-items: center;
   gap: 8px;
   padding: 5.5px 0;
-  font-size: 9.8px;
+  font-size: var(--fs-cap);
 }
 
 .hbar__track {
@@ -1795,7 +1904,7 @@ input:focus-visible
 
 .hbar__count {
   color: var(--txm);
-  font-size: 9px;
+  font-size: var(--fs-cap);
   text-align: left;
 }
 
@@ -1818,7 +1927,7 @@ input:focus-visible
   place-items: center;
   border-radius: 12px;
   background: var(--ovr);
-  font-size: 17px;
+  font-size: var(--fs-xl);
 }
 
 .audit-item__body {
@@ -1834,14 +1943,14 @@ input:focus-visible
 }
 
 .audit-item__action {
-  font-size: 11.3px;
+  font-size: var(--fs-meta);
   font-weight: 800;
 }
 
 .audit-item__meta {
   margin-top: 4px;
   color: var(--txm);
-  font-size: 9.3px;
+  font-size: var(--fs-cap);
   line-height: 1.7;
 }
 
@@ -1851,7 +1960,7 @@ input:focus-visible
   border-radius: 10px;
   background: var(--ovr);
   color: var(--tx2);
-  font-size: 9.5px;
+  font-size: var(--fs-cap);
   line-height: 1.8;
   white-space: pre-wrap;
   word-break: break-word;
@@ -1871,7 +1980,7 @@ input:focus-visible
   padding: 5px 9px;
   border: 1px solid var(--bd);
   border-radius: 9px;
-  font-size: 9px;
+  font-size: var(--fs-cap);
 }
 
 .audit-item__change b {
@@ -1892,7 +2001,7 @@ input:focus-visible
 .audit-item__time {
   flex: 0 0 auto;
   color: var(--txm);
-  font-size: 8.6px;
+  font-size: var(--fs-cap);
   white-space: nowrap;
 }
 
@@ -1907,12 +2016,12 @@ input:focus-visible
   border-radius: var(--r-md);
   background: var(--surf);
   color: var(--txm);
-  font-size: 9.8px;
+  font-size: var(--fs-cap);
   line-height: 1.9;
 }
 
 .page-hint span:first-child {
-  font-size: 15px;
+  font-size: var(--fs-lg);
   line-height: 1.6;
 }
 
@@ -1922,7 +2031,7 @@ input:focus-visible
   padding: 2px 8px;
   border-radius: 999px;
   background: var(--ovr);
-  font-size: 8.6px;
+  font-size: var(--fs-cap);
   font-weight: 700;
 }
 
@@ -2006,7 +2115,7 @@ input:focus-visible
   border-radius: 50%;
   background: var(--acc);
   color: #fff;
-  font-size: 10px;
+  font-size: var(--fs-cap);
   font-weight: 900;
   opacity: 0;
   transform: scale(.5);
@@ -2033,14 +2142,14 @@ input:focus-visible
 
 .choice-card__text b {
   display: block;
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 
 .choice-card__text span {
   display: block;
   margin-top: 2px;
   color: var(--txm);
-  font-size: 8.8px;
+  font-size: var(--fs-cap);
 }
 
 /* حلقه نبض صفحه انتظار */
@@ -2081,7 +2190,7 @@ input:focus-visible
   border-radius: 999px;
   background: var(--err);
   color: #fff;
-  font-size: 8.5px;
+  font-size: var(--fs-cap);
   font-weight: 900;
   line-height: 1;
   box-shadow: 0 2px 8px
@@ -2168,7 +2277,7 @@ input:focus-visible
   margin: 12px auto 0;
   max-width: 320px;
   color: var(--tx2);
-  font-size: 11.5px;
+  font-size: var(--fs-meta);
   line-height: 2;
   white-space: pre-line;
 }
@@ -2201,7 +2310,7 @@ input:focus-visible
   background: none;
   color: var(--txm);
   font: inherit;
-  font-size: 10.5px;
+  font-size: var(--fs-cap);
   cursor: pointer;
   transition: color .15s;
 }
@@ -2445,7 +2554,7 @@ textarea:focus:not(:focus-visible) {
   place-items: center;
 
   color: #fff;
-  font-size: 16px;
+  font-size: var(--fs-lg);
 
   border-radius: 11px;
 
@@ -2496,14 +2605,14 @@ textarea:focus:not(:focus-visible) {
 }
 
 .ai-strip__title {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   font-weight: 800;
 }
 
 .ai-strip__sub {
   overflow: hidden;
   color: var(--tx2);
-  font-size: 9.5px;
+  font-size: var(--fs-cap);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -2518,7 +2627,7 @@ textarea:focus:not(:focus-visible) {
 
   color: #FCD34D;
   font-family: inherit;
-  font-size: 9px;
+  font-size: var(--fs-cap);
   font-weight: 700;
 
   border:
@@ -2653,7 +2762,7 @@ textarea:focus:not(:focus-visible) {
   color:
     rgba(255, 255, 255, .64);
 
-  font-size: 9px;
+  font-size: var(--fs-cap);
   font-weight: 800;
 }
 
@@ -2663,7 +2772,7 @@ textarea:focus:not(:focus-visible) {
 
 .msg__text {
   color: inherit;
-  font-size: 12.7px;
+  font-size: var(--fs-sm);
   line-height: 2.05;
   overflow-wrap: anywhere;
   text-align: start;
@@ -2678,7 +2787,7 @@ textarea:focus:not(:focus-visible) {
   color:
     rgba(255, 255, 255, .42);
 
-  font-size: 8px;
+  font-size: var(--fs-cap);
   font-weight: 600;
 
   direction: ltr;
@@ -2715,7 +2824,7 @@ textarea:focus:not(:focus-visible) {
   padding: 5px 9px;
 
   color: var(--txm);
-  font-size: 9px;
+  font-size: var(--fs-cap);
   font-weight: 700;
 
   border-bottom:
@@ -2731,7 +2840,7 @@ textarea:focus:not(:focus-visible) {
 
   color: var(--acc2);
   font-family: inherit;
-  font-size: 9px;
+  font-size: var(--fs-cap);
   font-weight: 800;
 
   border:
@@ -2765,14 +2874,14 @@ textarea:focus:not(:focus-visible) {
     'Courier New',
     monospace;
 
-  font-size: 11px;
+  font-size: var(--fs-meta);
   line-height: 1.75;
   white-space: pre;
 }
 
 .msg-h {
   margin: 3px 0 2px;
-  font-size: 13px;
+  font-size: var(--fs-md);
   font-weight: 800;
 }
 
@@ -2807,7 +2916,7 @@ textarea:focus:not(:focus-visible) {
     'Courier New',
     monospace;
 
-  font-size: 10.5px;
+  font-size: var(--fs-cap);
 
   border:
     1px solid var(--bd);
@@ -2881,7 +2990,7 @@ textarea:focus:not(:focus-visible) {
   color:
     rgba(255, 255, 255, .72);
 
-  font-size: 9px;
+  font-size: var(--fs-cap);
 }
 
 .msg-attach__info b {
@@ -2909,7 +3018,7 @@ textarea:focus:not(:focus-visible) {
 
   color: #70A7FF;
   font-family: inherit;
-  font-size: 9px;
+  font-size: var(--fs-cap);
   font-weight: 700;
 
   border:
@@ -3012,7 +3121,7 @@ textarea:focus:not(:focus-visible) {
 
 .typing__label {
   color: var(--tx2);
-  font-size: 9.5px;
+  font-size: var(--fs-cap);
 }
 
 /* ─────────────────────────────────────
@@ -3066,7 +3175,7 @@ textarea:focus:not(:focus-visible) {
 }
 
 .chat-empty__title {
-  font-size: 19px;
+  font-size: var(--fs-xl);
   font-weight: 800;
 }
 
@@ -3075,7 +3184,7 @@ textarea:focus:not(:focus-visible) {
   margin-top: 7px;
 
   color: var(--tx2);
-  font-size: 11.5px;
+  font-size: var(--fs-meta);
   line-height: 2;
 }
 
@@ -3132,7 +3241,7 @@ textarea:focus:not(:focus-visible) {
   height: 32px;
   place-items: center;
 
-  font-size: 16px;
+  font-size: var(--fs-lg);
 
   border:
     1px solid var(--bd);
@@ -3150,13 +3259,13 @@ textarea:focus:not(:focus-visible) {
 }
 
 .sugg__title {
-  font-size: 10.5px;
+  font-size: var(--fs-cap);
   font-weight: 800;
 }
 
 .sugg__desc {
   color: var(--txm);
-  font-size: 9px;
+  font-size: var(--fs-cap);
   line-height: 1.7;
 }
 
@@ -3224,7 +3333,7 @@ textarea:focus:not(:focus-visible) {
 
   color: var(--tx);
   font-family: inherit;
-  font-size: 12.5px;
+  font-size: var(--fs-sm);
   line-height: 1.85;
 
   border: 0;
@@ -3245,7 +3354,7 @@ textarea:focus:not(:focus-visible) {
   place-items: center;
 
   color: var(--tx2);
-  font-size: 17px;
+  font-size: var(--fs-xl);
 
   border:
     1px solid var(--bd);
@@ -3283,7 +3392,7 @@ textarea:focus:not(:focus-visible) {
   place-items: center;
 
   color: #fff;
-  font-size: 17px;
+  font-size: var(--fs-xl);
 
   border: 0;
   border-radius: 50%;
@@ -3324,7 +3433,7 @@ textarea:focus:not(:focus-visible) {
   padding: 1px 7px;
 
   color: var(--txm);
-  font-size: 8px;
+  font-size: var(--fs-cap);
   font-weight: 700;
 
   border:
@@ -3403,7 +3512,7 @@ textarea:focus:not(:focus-visible) {
 
 .cmp-file__name {
   overflow: hidden;
-  font-size: 10.5px;
+  font-size: var(--fs-cap);
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -3411,7 +3520,7 @@ textarea:focus:not(:focus-visible) {
 
 .cmp-file__meta {
   color: var(--tx2);
-  font-size: 8.5px;
+  font-size: var(--fs-cap);
 }
 
 .cmp-file__audio {
@@ -3429,7 +3538,7 @@ textarea:focus:not(:focus-visible) {
 
   color: #FDA4AF;
   font-family: inherit;
-  font-size: 18px;
+  font-size: var(--fs-xl);
 
   border:
     1px solid
@@ -3489,12 +3598,12 @@ textarea:focus:not(:focus-visible) {
   flex-direction: column;
 
   color: var(--tx2);
-  font-size: 10px;
+  font-size: var(--fs-cap);
 }
 
 .cmp-rec__txt b {
   color: var(--tx);
-  font-size: 11px;
+  font-size: var(--fs-meta);
 }
 
 /* بار پیشرفت آپلود در کف کامپوزر */
@@ -3504,7 +3613,7 @@ textarea:focus:not(:focus-visible) {
 
 .cmp__hint {
   color: var(--txm);
-  font-size: 8.2px;
+  font-size: var(--fs-cap);
   line-height: 1.7;
   text-align: center;
 }
@@ -3524,7 +3633,7 @@ textarea:focus:not(:focus-visible) {
 
   color: #fff;
   font-family: inherit;
-  font-size: 10px;
+  font-size: var(--fs-cap);
   font-weight: 800;
 
   border:
@@ -3568,7 +3677,7 @@ textarea:focus:not(:focus-visible) {
 
   color: #fff;
   font-family: inherit;
-  font-size: 12.5px;
+  font-size: var(--fs-sm);
   font-weight: 800;
 
   border: 0;
@@ -3639,7 +3748,7 @@ textarea:focus:not(:focus-visible) {
   height: 38px;
   place-items: center;
 
-  font-size: 18px;
+  font-size: var(--fs-xl);
 
   border:
     1px solid var(--bd);
@@ -3679,7 +3788,7 @@ textarea:focus:not(:focus-visible) {
   align-items: center;
   gap: 6px;
 
-  font-size: 12px;
+  font-size: var(--fs-sm);
   font-weight: 800;
 }
 
@@ -3691,13 +3800,13 @@ textarea:focus:not(:focus-visible) {
 
 .conv__pin {
   flex: 0 0 auto;
-  font-size: 9px;
+  font-size: var(--fs-cap);
 }
 
 .conv__preview {
   overflow: hidden;
   color: var(--txm);
-  font-size: 9.5px;
+  font-size: var(--fs-cap);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -3708,7 +3817,7 @@ textarea:focus:not(:focus-visible) {
   gap: 6px;
 
   color: var(--txm);
-  font-size: 8.5px;
+  font-size: var(--fs-cap);
 }
 
 .conv__count {
@@ -3737,7 +3846,7 @@ textarea:focus:not(:focus-visible) {
 
   color: var(--tx2);
   font-family: inherit;
-  font-size: 13px;
+  font-size: var(--fs-md);
 
   border:
     1px solid var(--bd);
@@ -3788,7 +3897,7 @@ textarea:focus:not(:focus-visible) {
   padding: 24px 8px;
 
   color: var(--txm);
-  font-size: 11px;
+  font-size: var(--fs-meta);
   text-align: center;
 }
 
@@ -3799,7 +3908,7 @@ textarea:focus:not(:focus-visible) {
 
   color: var(--txm);
   font-family: inherit;
-  font-size: 10px;
+  font-size: var(--fs-cap);
 
   border:
     1px solid var(--bd);
@@ -4025,7 +4134,7 @@ textarea:focus:not(:focus-visible) {
   display: block;
   overflow: hidden;
 
-  font-size: 12px;
+  font-size: var(--fs-sm);
 
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -4037,7 +4146,7 @@ textarea:focus:not(:focus-visible) {
   margin-top: 2px;
 
   color: var(--txm);
-  font-size: 9.5px;
+  font-size: var(--fs-cap);
 
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -4047,7 +4156,7 @@ textarea:focus:not(:focus-visible) {
   padding: 16px 10px;
 
   color: var(--txm);
-  font-size: 10.5px;
+  font-size: var(--fs-cap);
   text-align: center;
 }
 
@@ -4101,7 +4210,7 @@ textarea:focus:not(:focus-visible) {
   padding: 1px 6px;
 
   color: rgb(52, 211, 153);
-  font-size: 8px;
+  font-size: var(--fs-cap);
   font-weight: 700;
 
   border:
@@ -4134,7 +4243,7 @@ textarea:focus:not(:focus-visible) {
   width: 42px;
   height: 42px;
 
-  font-size: 19px;
+  font-size: var(--fs-xl);
 }
 
 /* ── اکشن‌شیت عملیات گفت‌وگو ──
@@ -4260,7 +4369,7 @@ textarea:focus:not(:focus-visible) {
   place-items: center;
 
   color: var(--tx2);
-  font-size: 16px;
+  font-size: var(--fs-lg);
   line-height: 1;
 
   background: var(--elev);
@@ -4321,7 +4430,7 @@ textarea:focus:not(:focus-visible) {
   display: block;
 
   color: var(--txm);
-  font-size: 9.5px;
+  font-size: var(--fs-cap);
   font-weight: 700;
 }
 
@@ -4513,7 +4622,7 @@ button.badge:active {
 /* ستاره‌های دیویژن (III⭐ · II⭐⭐ · I⭐⭐⭐) */
 .pr-stars {
   color: var(--warn);
-  font-size: 10px;
+  font-size: var(--fs-cap);
   letter-spacing: 1.5px;
 }
 
@@ -4531,7 +4640,7 @@ button.badge:active {
       var(--prc, var(--acc2)) 88%,
       var(--tx)
     );
-  font-size: 9.5px;
+  font-size: var(--fs-cap);
   font-weight: 700;
   line-height: 1.6;
   white-space: nowrap;
@@ -4589,7 +4698,7 @@ button.badge:active {
   padding: 3px 9px;
 
   color: var(--tx);
-  font-size: 11px;
+  font-size: var(--fs-meta);
   font-weight: 800;
   line-height: 1.6;
 
@@ -4607,7 +4716,7 @@ button.badge:active {
 }
 
 .name-chip__icon {
-  font-size: 12px;
+  font-size: var(--fs-sm);
 }
 
 /* ── جشن ارتقا (CelebrationOverlay) ── */
