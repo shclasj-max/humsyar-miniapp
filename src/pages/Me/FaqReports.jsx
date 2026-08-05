@@ -169,8 +169,7 @@ export function Faq() {
               placeItems:
                 'center',
 
-              borderRadius:
-                11,
+              borderRadius: 'var(--r-md)',
 
               background:
                 'var(--acc-soft)',
@@ -189,8 +188,7 @@ export function Faq() {
             style={{
               flex: 1,
 
-              fontSize:
-                12.5,
+              fontSize: 'var(--fs-sm)',
 
               lineHeight:
                 1.7,
@@ -262,13 +260,12 @@ export function Faq() {
             padding:
               17,
 
-            marginBottom:
-              14,
+            marginBottom: 'var(--sp-4)',
 
             /* موج ۳.۱۰ — سینک با دستورِ
                hero-card--purple */
             background:
-              'linear-gradient(145deg,rgba(139,92,246,.15),rgba(16,24,39,.95) 55%,rgba(59,130,246,.09))',
+              'linear-gradient(145deg,var(--soft-pur),var(--surf-card) 55%,var(--soft-acc))',
           }}
         >
           <div
@@ -297,11 +294,10 @@ export function Faq() {
                 placeItems:
                   'center',
 
-                borderRadius:
-                  16,
+                borderRadius: 'var(--r-lg)',
 
                 background:
-                  'linear-gradient(135deg,#7C3AED,#3B82F6)',
+                  'linear-gradient(135deg,var(--pur-dim),var(--acc))',
 
                 fontSize:
                   24,
@@ -313,8 +309,7 @@ export function Faq() {
             <div>
               <b
                 style={{
-                  fontSize:
-                    16,
+                  fontSize: 'var(--fs-lg)',
                 }}
               >
                 چطور می‌تونیم راهنمایی
@@ -326,8 +321,7 @@ export function Faq() {
                   color:
                     'var(--txm)',
 
-                  fontSize:
-                    10,
+                  fontSize: 'var(--fs-cap)',
 
                   marginTop:
                     3,
@@ -725,11 +719,10 @@ export function Reports() {
             padding:
               17,
 
-            marginBottom:
-              14,
+            marginBottom: 'var(--sp-4)',
 
             background:
-              'linear-gradient(145deg,rgba(239,68,68,.12),rgba(16,24,39,.95) 55%,rgba(245,158,11,.07))',
+              'linear-gradient(145deg,var(--soft-err-2),var(--surf-card) 55%,var(--soft-warn))',
           }}
         >
           <div
@@ -758,11 +751,10 @@ export function Reports() {
                 placeItems:
                   'center',
 
-                borderRadius:
-                  16,
+                borderRadius: 'var(--r-lg)',
 
                 background:
-                  'rgba(239,68,68,.14)',
+                  'var(--soft-err)',
 
                 fontSize:
                   24,
@@ -774,8 +766,7 @@ export function Reports() {
             <div>
               <b
                 style={{
-                  fontSize:
-                    16,
+                  fontSize: 'var(--fs-lg)',
                 }}
               >
                 گزارش دقیق، محتوای بهتر
@@ -786,8 +777,7 @@ export function Reports() {
                   color:
                     'var(--txm)',
 
-                  fontSize:
-                    10,
+                  fontSize: 'var(--fs-cap)',
 
                   lineHeight:
                     1.6,
@@ -813,7 +803,7 @@ export function Reports() {
             style={{
               color:
                 tab === 'new'
-                  ? '#fff'
+                  ? 'var(--t-white)'
                   : 'var(--tx2)',
 
               background:
@@ -833,7 +823,7 @@ export function Reports() {
             style={{
               color:
                 tab === 'history'
-                  ? '#fff'
+                  ? 'var(--t-white)'
                   : 'var(--tx2)',
 
               background:
@@ -855,8 +845,7 @@ export function Reports() {
                 display:
                   'grid',
 
-                gap:
-                  10,
+                gap: 'var(--sp-3)',
               }}
             >
               <label
@@ -864,8 +853,7 @@ export function Reports() {
                   color:
                     'var(--txm)',
 
-                  fontSize:
-                    10,
+                  fontSize: 'var(--fs-cap)',
                 }}
               >
                 نوع محتوا
@@ -918,8 +906,7 @@ export function Reports() {
                   color:
                     'var(--txm)',
 
-                  fontSize:
-                    10,
+                  fontSize: 'var(--fs-cap)',
                 }}
               >
                 شناسه{' '}
@@ -954,8 +941,7 @@ export function Reports() {
                   color:
                     'var(--txm)',
 
-                  fontSize:
-                    10,
+                  fontSize: 'var(--fs-cap)',
                 }}
               >
                 دلیل گزارش
@@ -999,7 +985,7 @@ export function Reports() {
                         border:
                           form.reason ===
                           item.key
-                            ? '1px solid rgba(239,68,68,.3)'
+                            ? '1px solid var(--bd-err)'
                             : '1px solid transparent',
 
                         cursor:
@@ -1017,8 +1003,7 @@ export function Reports() {
                   color:
                     'var(--txm)',
 
-                  fontSize:
-                    10,
+                  fontSize: 'var(--fs-cap)',
                 }}
               >
                 توضیح بیشتر (اختیاری)
@@ -1127,8 +1112,7 @@ export function Reports() {
                         alignItems:
                           'flex-start',
 
-                        gap:
-                          10,
+                        gap: 'var(--sp-3)',
                       }}
                     >
                       <span
@@ -1145,14 +1129,12 @@ export function Reports() {
                           placeItems:
                             'center',
 
-                          borderRadius:
-                            13,
+                          borderRadius: 'var(--r-md)',
 
                           background:
-                            'rgba(100,116,139,.1)',
+                            'var(--soft-mut)',
 
-                          fontSize:
-                            19,
+                          fontSize: 'var(--fs-xl)',
                         }}
                       >
                         {icon}
@@ -1166,8 +1148,7 @@ export function Reports() {
                       >
                         <b
                           style={{
-                            fontSize:
-                              12.5,
+                            fontSize: 'var(--fs-sm)',
                           }}
                         >
                           {item.target_type ===
@@ -1185,8 +1166,7 @@ export function Reports() {
                             color:
                               'var(--txm)',
 
-                            fontSize:
-                              9.5,
+                            fontSize: 'var(--fs-cap)',
 
                             marginTop:
                               3,
@@ -1221,13 +1201,11 @@ export function Reports() {
                             'var(--tx2)',
 
                           background:
-                            'rgba(100,116,139,.08)',
+                            'var(--soft-mut)',
 
-                          borderRadius:
-                            11,
+                          borderRadius: 'var(--r-md)',
 
-                          fontSize:
-                            10.5,
+                          fontSize: 'var(--fs-cap)',
                         }}
                       >
                         «{item.note}»
