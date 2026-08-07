@@ -121,7 +121,35 @@ export default function SubscriptionAdmin() {
     percent: 10,
     max_uses: 0,
     expires_at: '',
+    target_plan_ids: [],
+    per_user_limit: 0,
   });
+
+  // 🎟 موج D1 — کمپین تخفیف (پیش‌نمایش/انتشار/آمار)
+  const [
+    discountPreview,
+    setDiscountPreview,
+  ] = useState(null);
+
+  const [
+    discountStats,
+    setDiscountStats,
+  ] = useState(null);
+
+  const [
+    broadcastTarget,
+    setBroadcastTarget,
+  ] = useState('all');
+
+  const [
+    broadcastResult,
+    setBroadcastResult,
+  ] = useState(null);
+
+  const [
+    campaignLoading,
+    setCampaignLoading,
+  ] = useState(null);
 
   const [
     card,
@@ -494,6 +522,19 @@ export default function SubscriptionAdmin() {
             expires_at:
               discount.expires_at ||
               null,
+
+            // 🎟 موج D1 — خالی = همه پلن‌های فعال
+            target_plan_ids:
+              (discount.target_plan_ids ||
+                []).length
+                ? discount.target_plan_ids
+                : null,
+
+            per_user_limit:
+              Number(
+                discount.per_user_limit ||
+                0
+              ),
           }
         );
       }
@@ -558,6 +599,8 @@ export default function SubscriptionAdmin() {
           percent: 10,
           max_uses: 0,
           expires_at: '',
+          target_plan_ids: [],
+          per_user_limit: 0,
         });
       }
 
@@ -622,6 +665,128 @@ export default function SubscriptionAdmin() {
     )
       ? discounts
       : [];
+
+
+  // 🎟 موج D1 — کمپین: Preview / Stats / Broadcast
+  const handleDiscountPreview = async (code) => {
+    if (discountPreview?.code === code) {
+      setDiscountPreview(null);
+      return;
+    }
+    setCampaignLoading(code);
+    haptic('light');
+    try {
+      const { data: dl } = await api.post(
+        `/api/subscription-admin/discounts/${encodeURIComponent(code)}/preview`
+      );
+      setDiscountStats(null);
+      setBroadcastResult(null);
+      setDiscountPreview({ code, text: dl.text });
+      hapticNotif('success');
+    } catch (e) {
+      toast(
+        e?.response?.data?.detail || 'پیش‌نمایش ناموفق بود',
+        'error'
+      );
+    } finally {
+      setCampaignLoading(null);
+    }
+  };
+
+  const handleDiscountStats = async (code) => {
+    if (discountStats?.code === code) {
+      setDiscountStats(null);
+      return;
+    }
+    setCampaignLoading(code);
+    haptic('light');
+    try {
+      const { data: dl } = await api.get(
+        `/api/subscription-admin/discounts/${encodeURIComponent(code)}/stats`
+      );
+      setDiscountPreview(null);
+      setBroadcastResult(null);
+      setDiscountStats({ code, ...dl });
+      hapticNotif('success');
+    } catch (e) {
+      toast(
+        e?.response?.data?.detail || 'دریافت آمار ناموفق بود',
+        'error'
+      );
+    } finally {
+      setCampaignLoading(null);
+    }
+  };
+
+  const handleBroadcastStart = (code) => {
+    haptic('light');
+    setDiscountPreview(null);
+    setDiscountStats(null);
+    setBroadcastTarget('all');
+    setBroadcastResult({ code, state: 'picking' });
+  };
+
+  const handleBroadcastSend = async (code) => {
+    setCampaignLoading(code);
+    setBroadcastResult({ code, state: 'sending' });
+    haptic('light');
+    try {
+      const { data: dl } = await api.post(
+        `/api/subscription-admin/discounts/${encodeURIComponent(code)}/broadcast`,
+        { target: broadcastTarget }
+      );
+      const bid = dl.broadcast_id;
+      // نظرس پویا هر ۳ ثانیه تا تکمیل
+      const poll = async () => {
+        try {
+          const { data: st } = await api.get(
+            `/api/subscription-admin/discounts/${encodeURIComponent(code)}/broadcast/${bid}`
+          );
+          if (st.status === 'sending') {
+            setBroadcastResult({ code, state: 'sending', status: st, bid });
+            setTimeout(poll, 3000);
+          } else {
+            setBroadcastResult({ code, state: 'done', summary: st, bid });
+            if (st.status === 'cancelled') {
+              toast('انتشار متوقف شد ⛔', 'info');
+            } else {
+              hapticNotif('success');
+              toast('انتشار کامل شد ✅', 'success');
+            }
+            refresh();
+          }
+        } catch {
+          setBroadcastResult({ code, state: 'done', summary: null });
+        }
+      };
+      setTimeout(poll, 2500);
+    } catch (e) {
+      setBroadcastResult(null);
+      toast(
+        e?.response?.data?.detail || 'شروع انتشار ناموفق بود',
+        'error'
+      );
+    } finally {
+      setCampaignLoading(null);
+    }
+  };
+
+  // ⛔ توقف انتشار در حال اجرا — حلقه‌ی بک‌اند هر ۲۰ نفر وضعیت را می‌خواند
+  const handleBroadcastCancel = async (code, bid) => {
+    if (!bid) return;
+    haptic('light');
+    try {
+      await api.post(
+        `/api/subscription-admin/discounts/${encodeURIComponent(code)}/broadcast/${bid}/cancel`
+      );
+      toast('درخواست توقف ثبت شد ⛔', 'info');
+    } catch (e) {
+      toast(
+        e?.response?.data?.detail || 'توقف انتشار ممکن نشد',
+        'error'
+      );
+    }
+  };
 
 
   if (isLoading) {
@@ -2048,6 +2213,81 @@ export default function SubscriptionAdmin() {
                 />
               </div>
 
+              {/* 🎟 موج D1 — هدف پلن + سقف هر کاربر */}
+              <div
+                style={{
+                  display: 'grid',
+                  gap: 6,
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 'var(--fs-cap)',
+                    color: 'var(--txm)',
+                  }}
+                >
+                  📦 پلن‌های قابل استفاده
+                  (خالی = همه پلن‌های فعال)
+                </span>
+
+                <div className="chip-row">
+                  {plans.map((pl) => {
+                    const on = (
+                      discount.target_plan_ids ||
+                      []
+                    ).includes(pl.id);
+                    return (
+                      <button
+                        key={pl.id}
+                        type="button"
+                        className={
+                          'chip' +
+                          (on
+                            ? ' chip--active'
+                            : '')
+                        }
+                        onClick={() => {
+                          const cur =
+                            discount.target_plan_ids ||
+                            [];
+                          setDiscount({
+                            ...discount,
+
+                            target_plan_ids: on
+                              ? cur.filter(
+                                  (x) => x !== pl.id
+                                )
+                              : [...cur, pl.id],
+                          });
+                        }}
+                      >
+                        {pl.name}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <input
+                  className="inp"
+                  type="number"
+                  min="0"
+                  value={
+                    discount.per_user_limit ||
+                    0
+                  }
+                  onChange={(event) =>
+                    setDiscount({
+                      ...discount,
+
+                      per_user_limit:
+                        event.target
+                          .value,
+                    })
+                  }
+                  placeholder="سقف استفاده‌ی هر کاربر (0 = نامحدود)"
+                />
+              </div>
+
               <button
                 className="btn btn-p"
                 disabled={
@@ -2154,6 +2394,29 @@ export default function SubscriptionAdmin() {
                       </span>
                     </div>
 
+                    {/* 🎟 موج D1 — نمایش پلن‌های هدف */}
+                    {item.target_plan_ids?.length ? (
+                      <div
+                        style={{
+                          marginTop: 6,
+                          color: 'var(--txm)',
+                          fontSize: 'var(--fs-cap)',
+                        }}
+                      >
+                        📦 فقط {_fa(item.target_plan_ids.length)} پلن خاص
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          marginTop: 6,
+                          color: 'var(--txm)',
+                          fontSize: 'var(--fs-cap)',
+                        }}
+                      >
+                        📦 همه پلن‌های فعال
+                      </div>
+                    )}
+
                     <div
                       style={{
                         display:
@@ -2208,6 +2471,233 @@ export default function SubscriptionAdmin() {
                         🗑
                       </button>
                     </div>
+
+                    {/* 🎟 موج D1 — اکشن‌های کمپین */}
+                    <div
+                      style={{
+                        display:
+                          'flex',
+
+                        gap: 'var(--sp-2)',
+
+                        marginTop:
+                          7,
+                      }}
+                    >
+                      <button
+                        className="btn btn-p"
+                        style={{ flex: 1 }}
+                        disabled={campaignLoading === item.code}
+                        onClick={() => handleDiscountPreview(item.code)}
+                      >
+                        👁 پیش‌نمایش
+                      </button>
+
+                      <button
+                        className="btn btn-p"
+                        style={{ flex: 1 }}
+                        disabled={campaignLoading === item.code}
+                        onClick={() =>
+                          handleDiscountStats(item.code)
+                        }
+                      >
+                        📊 آمار
+                      </button>
+
+                      <button
+                        className="btn btn-dark"
+                        style={{ flex: 1 }}
+                        disabled={campaignLoading === item.code}
+                        onClick={() =>
+                          handleBroadcastStart(item.code)
+                        }
+                      >
+                        📣 انتشار
+                      </button>
+                    </div>
+
+                    {/* پیش‌نمایش پیام کمپین */}
+                    {discountPreview?.code === item.code && (
+                      <div
+                        className="card"
+                        style={{
+                          marginTop: 8,
+                          background: 'var(--soft-acc)',
+                          whiteSpace: 'pre-wrap',
+                          fontSize: 'var(--fs-sm)',
+                          lineHeight: 1.8,
+                        }}
+                      >
+                        {discountPreview.text}
+                      </div>
+                    )}
+
+                    {/* آمار کد */}
+                    {discountStats?.code === item.code && (
+                      <div
+                        className="card"
+                        style={{
+                          marginTop: 8,
+                          display: 'grid',
+                          gap: 6,
+                          fontSize: 'var(--fs-sm)',
+                        }}
+                      >
+                        <b>📊 آمار {item.code}</b>
+                        <span>
+                          🎟 مصرف: {faNum(discountStats.used_count)}
+                          {discountStats.max_uses
+                            ? ` از ${faNum(discountStats.max_uses)} — باقی ${faNum(discountStats.remaining_uses ?? 0)}`
+                            : ' (نامحدود)'}
+                        </span>
+                        <span>
+                          💳 تأییدشده: {faNum(discountStats.payments?.usage_approved ?? 0)}
+                        </span>
+                        <span>
+                          💰 تخفیف‌داده‌شده: {fmtToman(discountStats.payments?.discount_given ?? 0)}
+                        </span>
+                        <span>
+                          📥 درآمد: {fmtToman(discountStats.payments?.revenue ?? 0)}
+                        </span>
+                        {discountStats.remaining_uses != null &&
+                          discountStats.remaining_uses <= 5 && (
+                            <span style={{ color: 'var(--t-warn)' }}>
+                              ⚡ فقط {faNum(discountStats.remaining_uses)} استفاده باقی!
+                            </span>
+                          )}
+                      </div>
+                    )}
+
+                    {/* وضعیت انتشار */}
+                    {broadcastResult?.code === item.code && (
+                      <div
+                        className="card"
+                        style={{
+                          marginTop: 8,
+                          fontSize: 'var(--fs-sm)',
+                        }}
+                      >
+                        {broadcastResult.state === 'picking' ? (
+                          <>
+                            <b>📣 انتشار {item.code}</b>
+                            <div
+                              style={{
+                                marginTop: 6,
+                                display: 'grid',
+                                gap: 6,
+                              }}
+                            >
+                              {['all', 'subscribers', 'no_sub'].map((t) => (
+                                <label
+                                  key={t}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                    fontSize: 'var(--fs-sm)',
+                                  }}
+                                >
+                                  <input
+                                    type="radio"
+                                    name={`bc-${item.code}`}
+                                    checked={broadcastTarget === t}
+                                    onChange={() => setBroadcastTarget(t)}
+                                  />
+                                  {t === 'all'
+                                    ? '📨 همه کاربران تأییدشده'
+                                    : t === 'subscribers'
+                                      ? '💎 فقط دارای اشتراک فعال'
+                                      : '🆓 فقط بدون اشتراک فعال'}
+                                </label>
+                              ))}
+                              <div style={{ display: 'flex', gap: 7 }}>
+                                <button
+                                  className="btn btn-p"
+                                  style={{ flex: 1 }}
+                                  disabled={campaignLoading === item.code}
+                                  onClick={() =>
+                                    handleBroadcastSend(item.code)
+                                  }
+                                >
+                                  شروع ارسال
+                                </button>
+                                <button
+                                  className="btn btn-dark"
+                                  onClick={() => setBroadcastResult(null)}
+                                >
+                                  انصراف
+                                </button>
+                              </div>
+                            </div>
+                          </>
+                        ) : broadcastResult.state === 'sending' ? (
+                          <div style={{ display: 'grid', gap: 4 }}>
+                            <b>⏳ در حال ارسال…</b>
+                            {broadcastResult.status && (
+                              <span>
+                                {faNum(broadcastResult.status.sent || 0)}/
+                                {faNum(broadcastResult.status.total || 0)}
+                                {broadcastResult.status.blocked
+                                  ? ` — 🚫 ${faNum(broadcastResult.status.blocked)}`
+                                  : ''}
+                              </span>
+                            )}
+                            {broadcastResult.bid && (
+                              <button
+                                className="btn btn-dark"
+                                style={{ marginTop: 4 }}
+                                onClick={() =>
+                                  handleBroadcastCancel(
+                                    item.code,
+                                    broadcastResult.bid,
+                                  )
+                                }
+                              >
+                                ⛔ توقف انتشار
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <div style={{ display: 'grid', gap: 4 }}>
+                            <b>
+                              {broadcastResult.summary?.status === 'cancelled'
+                                ? '⛔ انتشار متوقف شد'
+                                : '✅ گزارش انتشار'}
+                            </b>
+                            {broadcastResult.summary && (
+                              <>
+                                <span>
+                                  👥 {_fa(broadcastResult.summary.total)} نفر — ✅{' '}
+                                  {faNum(broadcastResult.summary.sent)} | ❌{' '}
+                                  {faNum(broadcastResult.summary.failed)} | 🚫{' '}
+                                  {faNum(broadcastResult.summary.blocked)}
+                                </span>
+                                <span>
+                                  📨 نرخ موفقیت:{' '}
+                                  {faNum(
+                                    broadcastResult.summary.total
+                                      ? Math.round(
+                                          (broadcastResult.summary.sent /
+                                            broadcastResult.summary.total) *
+                                            10000,
+                                        ) / 100
+                                      : 0,
+                                  )}
+                                  ٪
+                                </span>
+                              </>
+                            )}
+                            <button
+                              className="btn btn-dark"
+                              style={{ marginTop: 4 }}
+                              onClick={() => setBroadcastResult(null)}
+                            >
+                              بستن
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </article>
                 )
               )}
@@ -2217,4 +2707,16 @@ export default function SubscriptionAdmin() {
       </main>
     </>
   );
+}
+
+// ── کمک‌نمایش ──
+function faNum(n) {
+  return String(Number(n) || 0).replace(/[0-9]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[d]);
+}
+function fmtToman(n) {
+  const v = Number(n) || 0;
+  return v.toLocaleString('en-US').replace(/,/g, '٬') + ' تومان';
+}
+function _fa(n) {
+  return faNum(n);
 }
