@@ -2,9 +2,14 @@ import { number } from '../../lib/format';
 
 import { confirmAction } from '../../lib/confirm';
 import {
+  useEffect,
   useMemo,
   useState,
 } from 'react';
+
+import {
+  useSearchParams,
+} from 'react-router-dom';
 
 import {
   useMutation,
@@ -107,6 +112,13 @@ export default function Subscription() {
   const queryClient =
     useQueryClient();
 
+  // 🎟 موج D1 — Deep Link از پیام کمپین:
+  // ?discount=CODE → کد پیش‌پُر و پس از انتخاب پلن Auto-Validate
+  const [
+    searchParams,
+    setSearchParams,
+  ] = useSearchParams();
+
 
   const {
     data,
@@ -176,7 +188,8 @@ export default function Subscription() {
 
   const discountMutation =
     useMutation({
-      mutationFn: () =>
+      // موج D1 — کد را می‌توان مستقیم به mutate داد (Deep-Link)
+      mutationFn: (explicitCode) =>
         api.post(
           '/api/subscription/discount',
 
@@ -185,7 +198,10 @@ export default function Subscription() {
               selectedId,
 
             code:
-              discountCode.trim(),
+              (
+                explicitCode ??
+                discountCode
+              ).trim(),
           }
         ),
 
@@ -229,6 +245,37 @@ export default function Subscription() {
         );
       },
     });
+
+
+  // 🎟 موج D1 — Deep Link ?discount=CODE
+  // کد پیش‌پُر می‌شود و بعد از انتخاب پلن،
+  // اعتبارسنجی خودکار انجام می‌گیرد (سرور re-validate می‌کند)
+  const deepLinkCode = useMemo(
+    () =>
+      (
+        searchParams.get('discount') || ''
+      )
+        .trim()
+        .toUpperCase(),
+    [searchParams]
+  );
+
+  useEffect(() => {
+    if (deepLinkCode) {
+      setDiscountCode(deepLinkCode);
+    }
+  }, [deepLinkCode]);
+
+  useEffect(() => {
+    if (!deepLinkCode || !selectedId || discount) return;
+    let alive = true;
+    const t = setTimeout(() => {
+      if (!alive) return;
+      discountMutation.mutate(deepLinkCode);
+      setSearchParams({}, { replace: true });
+    }, 0);
+    return () => { alive = false; clearTimeout(t); };
+  }, [deepLinkCode, selectedId, discount]);
 
 
   const buyMutation =
