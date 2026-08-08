@@ -15,6 +15,14 @@ import api from '../../lib/api';
 import Header from '../../components/layout/Header';
 
 import {
+  useContentScope,
+} from '../../hooks/useContentScope';
+
+import {
+  useNavigate,
+} from 'react-router-dom';
+
+import {
   Spinner,
 } from '../../components/shared/Loading';
 
@@ -39,6 +47,79 @@ import {
 
 
 
+
+
+/* 🌊 موج C1 — گیت انتخاب ورودی برای ادمین ارشد:
+   مدیریت محتوا فقط در متن یک ورودی معتبر انجام می‌شود */
+function ContentScopeGate() {
+  const navigate = useNavigate();
+
+  return (
+    <>
+      <Header
+        title="مدیریت محتوا"
+        subtitle="انتخاب ورودی"
+      />
+
+      <main className="page fade-up">
+        <div className="empty card">
+          برای مدیریت محتوا ابتدا ورودی
+          را انتخاب کنید.
+
+          <button
+            type="button"
+            className="btn btn-p"
+            style={{ marginTop: 12 }}
+            onClick={() =>
+              navigate('/admin/content')
+            }
+          >
+            📅 انتخاب ورودی
+          </button>
+        </div>
+      </main>
+    </>
+  );
+}
+
+
+/* 🌊 C1 — بنر کوچک «ورودی فعلی» بالای ابزارها */
+function ContentScopeBanner({
+  scope,
+}) {
+  return (
+    <div
+      className="card"
+      style={{
+        display: 'flex',
+
+        alignItems: 'center',
+
+        gap: 8,
+
+        padding: 10,
+
+        marginBottom: 12,
+      }}
+    >
+      <span>📅</span>
+
+      <span
+        style={{
+          color: 'var(--txm)',
+
+          fontSize: 'var(--fs-cap)',
+        }}
+      >
+        {scope.isScoped
+          ? 'ورودی تحت مدیریت:'
+          : 'ورودی فعلی:'}
+      </span>
+
+      <b>{scope.label}</b>
+    </div>
+  );
+}
 
 
 function DeleteButton({
@@ -114,6 +195,11 @@ export function BasicScienceAdmin() {
   const queryClient =
     useQueryClient();
 
+  /* 🌊 C1 — scope ورودی پنل محتوا */
+  const cscope = useContentScope();
+
+  const iv = cscope.intake ?? '';
+
 
   const {
     data: terms = [
@@ -147,6 +233,7 @@ export function BasicScienceAdmin() {
   } = useQuery({
     queryKey: [
       'bs-admin-lessons',
+      iv,
       term,
     ],
 
@@ -158,6 +245,7 @@ export function BasicScienceAdmin() {
           {
             params: {
               term,
+              intake: iv,
             },
           }
         )
@@ -166,6 +254,9 @@ export function BasicScienceAdmin() {
             response.data
               ?.lessons || []
         ),
+
+    enabled:
+      cscope.intake !== null,
   });
 
 
@@ -175,6 +266,7 @@ export function BasicScienceAdmin() {
   } = useQuery({
     queryKey: [
       'bs-admin-sessions',
+      iv,
       lesson?.id,
     ],
 
@@ -200,6 +292,7 @@ export function BasicScienceAdmin() {
   } = useQuery({
     queryKey: [
       'bs-admin-content',
+      iv,
       session?.id,
     ],
 
@@ -258,6 +351,7 @@ export function BasicScienceAdmin() {
 
           {
             term,
+            intake: iv,
 
             ...lessonForm,
           }
@@ -425,6 +519,12 @@ export function BasicScienceAdmin() {
   };
 
 
+  /* 🌊 C1 — بدون انتخاب ورودی، ابزار باز نمی‌شود */
+  if (cscope.needsPicker) {
+    return <ContentScopeGate />;
+  }
+
+
   return (
     <>
       <Header
@@ -450,6 +550,7 @@ export function BasicScienceAdmin() {
       />
 
       <main className="page fade-up">
+        <ContentScopeBanner scope={cscope} />
         {!lesson && (
           <>
             <section
@@ -1233,6 +1334,11 @@ export function ReferencesAdmin() {
   const queryClient =
     useQueryClient();
 
+  /* 🌊 C1 — scope ورودی پنل محتوا */
+  const cscope = useContentScope();
+
+  const iv = cscope.intake ?? '';
+
 
   const {
     data: subjects = [],
@@ -1240,18 +1346,28 @@ export function ReferencesAdmin() {
   } = useQuery({
     queryKey: [
       'ref-admin-subjects',
+      iv,
     ],
 
     queryFn: () =>
       api
         .get(
-          '/api/content/references/subjects'
+          '/api/content/references/subjects',
+
+          {
+            params: {
+              intake: iv,
+            },
+          }
         )
         .then(
           (response) =>
             response.data
               ?.subjects || []
         ),
+
+    enabled:
+      cscope.intake !== null,
   });
 
 
@@ -1260,6 +1376,7 @@ export function ReferencesAdmin() {
   } = useQuery({
     queryKey: [
       'ref-admin-books',
+      iv,
       subject?.id,
     ],
 
@@ -1284,6 +1401,7 @@ export function ReferencesAdmin() {
   } = useQuery({
     queryKey: [
       'ref-admin-files',
+      iv,
       book?.id,
     ],
 
@@ -1343,6 +1461,7 @@ export function ReferencesAdmin() {
           {
             name:
               name.trim(),
+            intake: iv,
           }
         );
       }
@@ -1453,6 +1572,12 @@ export function ReferencesAdmin() {
   };
 
 
+  /* 🌊 C1 — بدون انتخاب ورودی، ابزار باز نمی‌شود */
+  if (cscope.needsPicker) {
+    return <ContentScopeGate />;
+  }
+
+
   return (
     <>
       <Header
@@ -1470,6 +1595,7 @@ export function ReferencesAdmin() {
       />
 
       <main className="page fade-up">
+        <ContentScopeBanner scope={cscope} />
         <section
           className={
             'card card-glow'
@@ -1956,6 +2082,11 @@ export function QbankAdmin() {
   const queryClient =
     useQueryClient();
 
+  /* 🌊 C1 — scope ورودی پنل محتوا */
+  const cscope = useContentScope();
+
+  const iv = cscope.intake ?? '';
+
 
   const {
     data = [],
@@ -1965,18 +2096,28 @@ export function QbankAdmin() {
   } = useQuery({
     queryKey: [
       'qbank-admin',
+      iv,
     ],
 
     queryFn: () =>
       api
         .get(
-          '/api/content/qbank/files'
+          '/api/content/qbank/files',
+
+          {
+            params: {
+              intake: iv,
+            },
+          }
         )
         .then(
           (response) =>
             response.data
               ?.files || []
         ),
+
+    enabled:
+      cscope.intake !== null,
   });
 
 
@@ -2005,6 +2146,11 @@ export function QbankAdmin() {
       body.append(
         'lesson',
         form.lesson.trim()
+      );
+
+      body.append(
+        'intake',
+        iv
       );
 
       body.append(
@@ -2061,6 +2207,12 @@ export function QbankAdmin() {
       : [];
 
 
+  /* 🌊 C1 — بدون انتخاب ورودی، ابزار باز نمی‌شود */
+  if (cscope.needsPicker) {
+    return <ContentScopeGate />;
+  }
+
+
   return (
     <>
       <Header
@@ -2069,6 +2221,7 @@ export function QbankAdmin() {
       />
 
       <main className="page fade-up">
+        <ContentScopeBanner scope={cscope} />
         <section
           className={
             'card card-glow'
