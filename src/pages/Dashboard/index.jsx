@@ -714,7 +714,7 @@ export default function Dashboard() {
     admin: '👑 مدیر',
 
     content_admin:
-      '🎓 مدیر محتوا',
+      '🎓 ادمین ارشد محتوا',
 
     support:
       '🛟 پشتیبان',
