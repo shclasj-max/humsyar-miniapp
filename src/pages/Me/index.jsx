@@ -179,7 +179,7 @@ export default function Me() {
       admin: 'مدیر اصلی',
 
       content_admin:
-        'مدیر محتوا',
+        'ادمین ارشد محتوا',
 
       support:
         'پشتیبان',
