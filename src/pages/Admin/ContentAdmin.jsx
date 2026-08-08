@@ -31,6 +31,10 @@ import {
   useUIStore,
 } from '../../stores/uiStore';
 
+import {
+  useContentScope,
+} from '../../hooks/useContentScope';
+
 
 const LETTERS = [
   'الف',
@@ -337,6 +341,11 @@ export function ContentQuestions() {
   const queryClient =
     useQueryClient();
 
+  /* 🌊 C1 — scope ورودی پنل محتوا */
+  const cscope = useContentScope();
+
+  const iv = cscope.intake ?? '';
+
 
   const {
     data = [],
@@ -347,18 +356,28 @@ export function ContentQuestions() {
   } = useQuery({
     queryKey: [
       'pending-content-questions',
+      iv,
     ],
 
     queryFn: () =>
       api
         .get(
-          '/api/content/questions/pending'
+          '/api/content/questions/pending',
+
+          {
+            params: {
+              intake: iv,
+            },
+          }
         )
         .then(
           (response) =>
             response.data
               ?.questions || []
         ),
+
+    enabled:
+      cscope.intake !== null,
   });
 
 
@@ -456,7 +475,7 @@ export function ContentQuestions() {
     <>
       <Header
         title="بررسی سؤال‌ها"
-        subtitle={`${questions.length} سؤال در انتظار`}
+        subtitle={`${questions.length} سؤال در انتظار · ${cscope.label || '—'}`}
         right={
           <button
             type="button"
