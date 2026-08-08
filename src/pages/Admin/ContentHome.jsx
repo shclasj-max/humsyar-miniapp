@@ -1,551 +1,501 @@
-import EmptyState from '../../components/shared/EmptyState';
-
-import { errorText } from '../../lib/format';
-
-import { confirmAction } from '../../lib/confirm';
-import { useState } from 'react';
+import {
+  useEffect,
+} from 'react';
 
 import {
-  useMutation,
   useQuery,
-  useQueryClient,
 } from '@tanstack/react-query';
 
+import {
+  useNavigate,
+} from 'react-router-dom';
+
 import api from '../../lib/api';
+
+import {
+  useContentScopeStore,
+} from '../../stores/contentScopeStore';
 import Header from '../../components/layout/Header';
 
 import {
-  Spinner,
 } from '../../components/shared/Loading';
 
 import {
-  LibraryTilesSkeleton,
-  LibraryRowsSkeleton,
+  ContentHomeSkeleton,
 } from '../../components/shared/skeletons';
 
 import {
-  hapticNotif,
+  haptic,
 } from '../../lib/telegram';
 
-import {
-  useUIStore,
-} from '../../stores/uiStore';
 
-import {
-  useContentScope,
-} from '../../hooks/useContentScope';
+const TOOLS = [
+  {
+    icon: '🧪',
+    title: 'بررسی سؤال‌ها',
 
+    desc:
+      'تأیید یا رد سؤال‌های جدید',
 
-const LETTERS = [
-  'الف',
-  'ب',
-  'ج',
-  'د',
-  'هـ',
-  'و',
+    route:
+      '/admin/content/questions',
+
+    color:
+      'var(--t-pur)',
+
+    soft:
+      'var(--soft-pur)',
+  },
+
+  {
+    icon: '📅',
+    title: 'برنامه درسی',
+
+    desc:
+      'کلاس، امتحان و زمان منعطف',
+
+    route:
+      '/admin/content/schedule',
+
+    color:
+      'var(--t-acc)',
+
+    soft:
+      'var(--soft-acc)',
+  },
+
+  {
+    icon: '📊',
+    title: 'مدیریت نمرات',
+
+    desc:
+      'ثبت دسته‌ای، ویرایش و حذف',
+
+    route:
+      '/admin/content/grades',
+
+    color:
+      'var(--t-ok)',
+
+    soft:
+      'var(--soft-ok)',
+  },
+
+  {
+    icon: '🔬',
+    title: 'علوم پایه',
+
+    desc:
+      'درس، جلسه و محتوای آموزشی',
+
+    route:
+      '/admin/content/basic-science',
+
+    color:
+      'var(--t-info)',
+
+    soft:
+      'var(--soft-info)',
+  },
+
+  {
+    icon: '📘',
+    title: 'رفرنس‌ها',
+
+    desc:
+      'درس، کتاب و جلدهای فارسی و لاتین',
+
+    route:
+      '/admin/content/references',
+
+    color:
+      'var(--t-acc)',
+
+    soft:
+      'var(--soft-acc)',
+  },
+
+  {
+    icon: '📦',
+    title: 'بانک فایل سؤال',
+
+    desc:
+      'فایل‌های تست و بانک سؤال',
+
+    route:
+      '/admin/content/qbank',
+
+    color:
+      'var(--t-warn)',
+
+    soft:
+      'var(--soft-warn)',
+  },
+
+  {
+    icon: '❓',
+    title: 'سؤالات متداول',
+
+    desc:
+      'ایجاد و حذف پاسخ‌های راهنما',
+
+    route:
+      '/admin/content/faq',
+
+    color:
+      'var(--t-pur)',
+
+    soft:
+      'var(--soft-pur)',
+  },
+
+  {
+    icon: '🚩',
+    title: 'گزارش‌های محتوا',
+
+    desc:
+      'بررسی و تعیین وضعیت گزارش‌ها',
+
+    route:
+      '/admin/content/reports',
+
+    color:
+      'var(--t-err)',
+
+    soft:
+      'var(--soft-err)',
+  },
 ];
 
 
+/* 🌊 موج C1 — ابزارهایی که در بک‌اند فقط برای
+   ادمین ارشد محتوا/مالک باز هستند (GLOBAL_USER)؛
+   برای ادمین ورودی خاص پنهان می‌شوند (بک‌اند هم ۴۰۳ می‌دهد) */
+const SCOPED_HIDDEN_ROUTES = new Set([
+  '/admin/content/schedule',
+  '/admin/content/grades',
+  '/admin/content/reports',
+]);
 
 
+export default function ContentHome() {
+  const navigate =
+    useNavigate();
 
+  /* ── 🌊 C1: متن ورودی پنل محتوا ── */
+  const intake =
+    useContentScopeStore(
+      (state) => state.intake
+    );
 
+  const intakeLabel =
+    useContentScopeStore(
+      (state) => state.label
+    );
 
+  const scopeMode =
+    useContentScopeStore(
+      (state) => state.mode
+    );
 
-function QuestionDetails({
-  question,
-  pending,
-  onApprove,
-  onReject,
-  onClose,
-}) {
-  const options =
-    Array.isArray(
-      question.options
-    )
-      ? question.options
-      : [];
+  const setScope =
+    useContentScopeStore(
+      (state) => state.setScope
+    );
 
-  return (
-    <div
-      className="more-sheet"
-      role="presentation"
-      onClick={onClose}
-    >
-      <div
-        className={
-          'more-sheet__panel ' +
-          'glass sheet-in'
-        }
-        role="dialog"
-        aria-modal="true"
-        aria-label="جزئیات سؤال"
-        onClick={(event) =>
-          event.stopPropagation()
-        }
-      >
-        <div className="more-sheet__handle" />
+  const setIntake =
+    useContentScopeStore(
+      (state) => state.setIntake
+    );
 
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 5,
-            marginBottom: 11,
-          }}
-        >
-          <span className="badge b-acc">
-            {question.lesson ||
-              'درس'}
-          </span>
-
-          <span className="badge b-gray">
-            {question.topic ||
-              'مبحث'}
-          </span>
-
-          <span
-            className={`badge ${
-              question.difficulty
-                ?.includes('سخت')
-                ? 'b-red'
-
-                : question.difficulty
-                    ?.includes('آسان')
-                  ? 'b-grn'
-
-                  : 'b-yel'
-            }`}
-          >
-            {question.difficulty ||
-              'متوسط'}
-          </span>
-        </div>
-
-
-        <div
-          style={{
-            fontSize: 'var(--fs-md)',
-            fontWeight: 750,
-            lineHeight: 1.9,
-            marginBottom: 12,
-          }}
-        >
-          {question.question ||
-            'متن سؤال موجود نیست'}
-        </div>
-
-
-        <div
-          style={{
-            display: 'grid',
-            gap: 'var(--sp-2)',
-          }}
-        >
-          {options.map(
-            (
-              option,
-              index
-            ) => {
-              const correct =
-                index ===
-                question.correct;
-
-              return (
-                <div
-                  key={index}
-                  style={{
-                    display: 'flex',
-                    gap: 8,
-                    padding:
-                      '9px 10px',
-
-                    color:
-                      correct
-                        ? 'var(--ok)'
-                        : 'var(--tx2)',
-
-                    background:
-                      correct
-                        ? 'var(--soft-ok)'
-                        : 'var(--soft-mut)',
-
-                    border:
-                      `1px solid ${
-                        correct
-                          ? 'var(--bd-ok)'
-                          : 'var(--bd)'
-                      }`,
-
-                    borderRadius: 'var(--r-md)',
-                  }}
-                >
-                  <b>
-                    {LETTERS[index] ||
-                      index + 1}
-                  </b>
-
-                  <span>
-                    {option}
-                  </span>
-
-                  {correct && (
-                    <span
-                      style={{
-                        marginRight:
-                          'auto',
-                      }}
-                    >
-                      ✓ صحیح
-                    </span>
-                  )}
-                </div>
-              );
-            }
-          )}
-        </div>
-
-
-        {question.explanation && (
-          <div
-            style={{
-              marginTop: 11,
-              padding:
-                '10px 11px',
-
-              color:
-                'var(--tx2)',
-
-              background:
-                'var(--soft-acc)',
-
-              borderRadius: 'var(--r-md)',
-
-              fontSize: 'var(--fs-cap)',
-
-              lineHeight:
-                1.8,
-            }}
-          >
-            <b
-              style={{
-                color:
-                  'var(--acc2)',
-              }}
-            >
-              توضیح پاسخ:
-            </b>
-
-            <br />
-
-            {question.explanation}
-          </div>
-        )}
-
-
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            marginTop: 12,
-            color: 'var(--txm)',
-            fontSize: 'var(--fs-cap)',
-          }}
-        >
-          <span>
-            طراح:{' '}
-
-            {question.creator_name ||
-              'نامشخص'}
-          </span>
-
-          <span>•</span>
-
-          <span>
-            {question.created_at ||
-              '—'}
-          </span>
-
-          <span
-            className="badge b-gray"
-            style={{
-              marginRight:
-                'auto',
-            }}
-          >
-            {question.source ===
-            'webapp'
-              ? 'Mini App'
-              : 'ربات'}
-          </span>
-        </div>
-
-
-        <div
-          style={{
-            display: 'flex',
-            gap: 8,
-            marginTop: 'var(--sp-4)',
-          }}
-        >
-          <button
-            className="btn btn-p"
-            style={{
-              flex: 1,
-            }}
-            disabled={pending}
-            onClick={onApprove}
-          >
-            {pending ? (
-              <Spinner size={14} />
-            ) : (
-              '✅ تأیید سؤال'
-            )}
-          </button>
-
-          <button
-            className="btn btn-d"
-            style={{
-              flex: 1,
-            }}
-            disabled={pending}
-            onClick={onReject}
-          >
-            ❌ رد سؤال
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-
-/* مدیریت سؤال‌ها */
-
-export function ContentQuestions() {
-  const [
-    selected,
-    setSelected,
-  ] = useState(null);
-
-  const [
-    filter,
-    setFilter,
-  ] = useState('all');
-
-  const toast = useUIStore(
-    (state) => state.toast
-  );
-
-  const queryClient =
-    useQueryClient();
-
-  /* 🌊 C1 — scope ورودی پنل محتوا */
-  const cscope = useContentScope();
-
-  const iv = cscope.intake ?? '';
-
-
+  /* ورودی‌های فعال + scope واقعی از بک‌اند
+     (منبع تصمیم: سرور — این صفحه فقط UX است) */
   const {
-    data = [],
-    isLoading,
-    isError,
-    refetch,
-    isRefetching,
+    data: scopeData,
+    isLoading: scopeLoading,
   } = useQuery({
     queryKey: [
-      'pending-content-questions',
-      iv,
+      'content-intakes',
     ],
 
     queryFn: () =>
       api
         .get(
-          '/api/content/questions/pending',
+          '/api/content/intakes'
+        )
+        .then(
+          (response) =>
+            response.data
+        ),
 
+    staleTime:
+      60_000,
+  });
+
+
+  const backendKind =
+    scopeData?.scope_kind;
+
+
+  const storeReady =
+    Boolean(scopeData);
+
+
+  /* قفل‌کردن scope از روی پاسخ بک‌اند:
+     scoped → همیشه scope خودش، بدون انتخاب */
+  useEffect(() => {
+    if (!scopeData) {
+      return;
+    }
+
+    if (
+      scopeData.scope_kind === 'scoped'
+    ) {
+      setScope(
+        scopeData.scope_intake || '',
+        scopeData.scope_label || '',
+        'scoped'
+      );
+    } else if (
+      scopeMode !== 'global'
+    ) {
+      setScope(
+        intake,
+        intakeLabel,
+        'global'
+      );
+    }
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, [scopeData]);
+
+
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: [
+      'content-overview',
+      intake,
+    ],
+
+    queryFn: () =>
+      api
+        .get(
+          '/api/content/overview',
           {
             params: {
-              intake: iv,
+              intake:
+                intake || '',
             },
           }
         )
         .then(
           (response) =>
             response.data
-              ?.questions || []
         ),
 
     enabled:
-      cscope.intake !== null,
+      intake !== null,
+
+    staleTime:
+      60_000,
   });
 
 
-  const refresh = () =>
-    queryClient.invalidateQueries({
-      queryKey: [
-        'pending-content-questions',
-      ],
-    });
+  const open = (route) => {
+    haptic('light');
+    navigate(route);
+  };
 
 
-  const action = useMutation({
-    mutationFn: ({
-      id,
-      type,
-    }) =>
-      api.post(
-        `/api/content/questions/${id}/${type}`
-      ),
-
-    onSuccess: async (
-      _,
-      variables
-    ) => {
-      hapticNotif(
-        'success'
-      );
-
-      toast(
-        variables.type ===
-        'approve'
-          ? 'سؤال تأیید شد ✅'
-          : 'سؤال رد و حذف شد',
-
-        variables.type ===
-        'approve'
-          ? 'success'
-          : 'info'
-      );
-
-      setSelected(null);
-
-      await Promise.all([
-        refresh(),
-
-        queryClient
-          .invalidateQueries({
-            queryKey: [
-              'content-overview',
-            ],
-          }),
-      ]);
-    },
-
-    onError: (error) =>
-      toast(
-        errorText(
-          error,
-          'عملیات انجام نشد'
-        ),
-        'error'
-      ),
-  });
+  const pending =
+    Number(
+      data?.pending_questions
+    ) || 0;
 
 
-  const questions =
-    Array.isArray(data)
-      ? data
-      : [];
+  /* ── 🌊 C1: اولین صفحه‌ی ادمین ارشد = انتخاب ورودی ── */
+  const showPicker =
+    storeReady &&
+    backendKind === 'global' &&
+    intake === null;
 
 
-  const lessons = [
-    ...new Set(
-      questions
-        .map(
+  const activeIntakes = (
+    scopeData?.intakes || []
+  ).filter(
+    (item) =>
+      item.code !== '' &&
+      item.code != null
+  );
+
+
+  if (showPicker) {
+    return (
+      <>
+        <Header
+          title="پنل ادمین محتوا"
+          subtitle={
+            'انتخاب ورودی برای مدیریت'
+          }
+        />
+
+        <main className="page fade-up">
+          <div className="sec-title">
+            🎓 محتوای کدام ورودی را
+            مدیریت می‌کنید؟
+          </div>
+
+          <section
+            style={{
+              display: 'grid',
+              gap: 9,
+            }}
+          >
+            {activeIntakes.map(
+              (item) => (
+                <button
+                  type="button"
+                  key={item.code}
+                  className={
+                    'card card-tap pop-in'
+                  }
+                  onClick={() => {
+                    haptic('light');
+                    setIntake(
+                      item.code,
+                      item.label
+                    );
+                  }}
+                  style={{
+                    display: 'flex',
+
+                    alignItems:
+                      'center',
+
+                    gap: 11,
+
+                    padding: 14,
+
+                    width: '100%',
+
+                    textAlign: 'right',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 22,
+                    }}
+                  >
+                    📅
+                  </span>
+
+                  <b
+                    style={{
+                      flex: 1,
+                    }}
+                  >
+                    {item.label}
+                  </b>
+
+                  <span>←</span>
+                </button>
+              )
+            )}
+
+            <button
+              type="button"
+              className={
+                'card card-tap pop-in'
+              }
+              onClick={() => {
+                haptic('light');
+                setIntake(
+                  '',
+                  '🌐 سراسری'
+                );
+              }}
+              style={{
+                display: 'flex',
+
+                alignItems:
+                  'center',
+
+                gap: 11,
+
+                padding: 14,
+
+                width: '100%',
+
+                textAlign: 'right',
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 22,
+                }}
+              >
+                🌐
+              </span>
+
+              <b
+                style={{
+                  flex: 1,
+                }}
+              >
+                سراسری
+              </b>
+
+              <span
+                style={{
+                  color: 'var(--txm)',
+
+                  fontSize:
+                    'var(--fs-cap)',
+                }}
+              >
+                محتوای مشترک و قدیمی
+              </span>
+
+              <span>←</span>
+            </button>
+          </section>
+        </main>
+      </>
+    );
+  }
+
+
+  /* ابزارهای قابل استفاده در این scope
+     (بک‌اند مرجع نهایی است؛ این فقط UX) */
+  const visibleTools =
+    scopeMode === 'scoped'
+      ? TOOLS.filter(
           (item) =>
-            item.lesson
+            !SCOPED_HIDDEN_ROUTES.has(
+              item.route
+            )
         )
-        .filter(Boolean)
-    ),
-  ];
+      : TOOLS;
 
 
-  const rows =
-    filter === 'all'
-      ? questions
-
-      : questions.filter(
-          (item) =>
-            item.lesson === filter
-        );
+  const shownIntakeLabel =
+    intakeLabel ||
+    (intake === ''
+      ? '🌐 سراسری'
+      : intake);
 
 
   return (
     <>
       <Header
-        title="بررسی سؤال‌ها"
-        subtitle={`${questions.length} سؤال در انتظار · ${cscope.label || '—'}`}
-        right={
-          <button
-            type="button"
-            onClick={() =>
-              refetch()
-            }
-            disabled={
-              isRefetching
-            }
-            aria-label="به‌روزرسانی"
-            style={{
-              width: 35,
-              height: 35,
-
-              borderRadius: 'var(--r-md)',
-
-              background:
-                'var(--elev)',
-
-              border:
-                '1px solid var(--bd)',
-            }}
-          >
-            ↻
-          </button>
+        title="مدیریت محتوا"
+        subtitle={
+          'کتابخانه، سؤال و برنامه'
         }
       />
-
-
-      {selected && (
-        <QuestionDetails
-          question={selected}
-          pending={
-            action.isPending
-          }
-          onClose={() => {
-            if (
-              !action.isPending
-            ) {
-              setSelected(null);
-            }
-          }}
-          onApprove={() =>
-            action.mutate({
-              id:
-                selected.id,
-
-              type:
-                'approve',
-            })
-          }
-          onReject={async () => {
-            const accepted =
-              await confirmAction(
-                'این سؤال رد و حذف شود؟'
-              );
-
-            if (accepted) {
-              action.mutate({
-                id:
-                  selected.id,
-
-                type:
-                  'reject',
-              });
-            }
-          }}
-        />
-      )}
-
 
       <main className="page fade-up">
         <section
@@ -553,40 +503,57 @@ export function ContentQuestions() {
             'card card-glow'
           }
           style={{
-            padding: 17,
+            padding:
+              18,
+
             marginBottom: 'var(--sp-4)',
 
             background:
-              'linear-gradient(145deg,var(--soft-pur),var(--surf-card) 55%,var(--soft-warn))',
+              'linear-gradient(145deg,var(--soft-ok),var(--surf-card) 55%,var(--soft-info))',
           }}
         >
           <div
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 13,
+              display:
+                'flex',
+
+              alignItems:
+                'center',
+
+              gap:
+                13,
             }}
           >
             <span
               style={{
-                display: 'grid',
-                width: 52,
-                height: 52,
-                placeItems: 'center',
+                display:
+                  'grid',
+
+                width:
+                  56,
+
+                height:
+                  56,
+
+                placeItems:
+                  'center',
+
                 borderRadius: 'var(--r-lg)',
 
                 background:
-                  'linear-gradient(135deg,var(--pur-dim),var(--acc))',
+                  'linear-gradient(135deg,var(--ok-dim),var(--info))',
 
-                fontSize: 25,
+                fontSize:
+                  27,
               }}
             >
-              🔍
+              🎓
             </span>
 
             <div
               style={{
-                flex: 1,
+                flex:
+                  1,
               }}
             >
               <div
@@ -597,18 +564,21 @@ export function ContentQuestions() {
                   fontSize: 'var(--fs-cap)',
                 }}
               >
-                صف بررسی علمی
+                مرکز محتوای آموزشی
               </div>
 
               <b
                 style={{
-                  display: 'block',
-                  fontSize: 'var(--fs-lg)',
-                  marginTop: 2,
+                  display:
+                    'block',
+
+                  fontSize: 'var(--fs-xl)',
+
+                  marginTop:
+                    2,
                 }}
               >
-                {questions.length} سؤال
-                نیازمند تصمیم
+                کنترل کیفیت و انتشار محتوا
               </b>
 
               <div
@@ -622,665 +592,95 @@ export function ContentQuestions() {
                     3,
                 }}
               >
-                متن، گزینه صحیح و توضیح را
-                قبل از انتشار بررسی کنید.
+                تمام ابزارهای علمی هامزیار
+                در یک صفحه
               </div>
             </div>
           </div>
         </section>
 
 
-        {lessons.length > 1 && (
-          <div className="tab-bar">
-            <button
-              className="tab-btn"
-              onClick={() =>
-                setFilter('all')
-              }
-              style={{
-                color:
-                  filter === 'all'
-                    ? 'var(--t-white)'
-                    : 'var(--tx2)',
-
-                background:
-                  filter === 'all'
-                    ? 'var(--grad-brand)'
-                    : 'transparent',
-              }}
-            >
-              همه ({questions.length})
-            </button>
-
-            {lessons.map(
-              (lesson) => (
-                <button
-                  key={lesson}
-                  className="tab-btn"
-                  onClick={() =>
-                    setFilter(
-                      lesson
-                    )
-                  }
-                  style={{
-                    color:
-                      filter === lesson
-                        ? 'var(--t-white)'
-                        : 'var(--tx2)',
-
-                    background:
-                      filter === lesson
-                        ? 'var(--grad-brand)'
-                        : 'transparent',
-                  }}
-                >
-                  {lesson}
-                </button>
-              )
-            )}
-          </div>
-        )}
-
-
-        {isLoading ? (
-          <LibraryTilesSkeleton />
-        ) : isError ? (
-          <EmptyState icon="🌐">
-            دریافت سؤال‌ها انجام نشد.
-
-            <button
-              className="btn btn-p"
-              style={{
-                marginTop: 12,
-              }}
-              onClick={() =>
-                refetch()
-              }
-            >
-              تلاش دوباره
-            </button>
-          </EmptyState>
-        ) : rows.length === 0 ? (
-          <EmptyState icon="✅">
-            سؤالی در انتظار بررسی نیست.
-          </EmptyState>
-        ) : (
-          <section
-            style={{
-              display: 'grid',
-              gap: 9,
-            }}
-          >
-            {rows.map(
-              (
-                item,
-                index
-              ) => (
-                <article
-                  key={item.id}
-                  className={
-                    'card pop-in'
-                  }
-                  style={{
-                    animationDelay:
-                      `${
-                        Math.min(
-                          index,
-                          8
-                        ) * 30
-                      }ms`,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: 5,
-                      marginBottom: 8,
-                    }}
-                  >
-                    <span className="badge b-acc">
-                      {item.lesson ||
-                        'درس'}
-                    </span>
-
-                    <span className="badge b-gray">
-                      {item.topic ||
-                        'مبحث'}
-                    </span>
-
-                    <span
-                      className={`badge ${
-                        item.difficulty
-                          ?.includes(
-                            'سخت'
-                          )
-                          ? 'b-red'
-
-                          : item.difficulty
-                              ?.includes(
-                                'آسان'
-                              )
-                            ? 'b-grn'
-
-                            : 'b-yel'
-                      }`}
-                    >
-                      {item.difficulty ||
-                        'متوسط'}
-                    </span>
-                  </div>
-
-                  <div
-                    style={{
-                      display:
-                        '-webkit-box',
-
-                      overflow:
-                        'hidden',
-
-                      fontSize: 'var(--fs-sm)',
-
-                      fontWeight:
-                        650,
-
-                      lineHeight:
-                        1.8,
-
-                      WebkitBoxOrient:
-                        'vertical',
-
-                      WebkitLineClamp:
-                        3,
-                    }}
-                  >
-                    {item.question}
-                  </div>
-
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      marginTop: 9,
-                      color: 'var(--txm)',
-                      fontSize: 'var(--fs-cap)',
-                    }}
-                  >
-                    <span>
-                      ✍️{' '}
-
-                      {item.creator_name ||
-                        'نامشخص'}
-                    </span>
-
-                    <span
-                      style={{
-                        marginRight:
-                          'auto',
-                      }}
-                    >
-                      {item.created_at ||
-                        '—'}
-                    </span>
-                  </div>
-
-                  <div
-                    style={{
-                      display: 'flex',
-                      gap: 'var(--sp-2)',
-                      marginTop: 'var(--sp-3)',
-                    }}
-                  >
-                    <button
-                      className={
-                        'btn btn-dark'
-                      }
-                      style={{
-                        flex: 1,
-                      }}
-                      onClick={() =>
-                        setSelected(
-                          item
-                        )
-                      }
-                    >
-                      مشاهده کامل
-                    </button>
-
-                    <button
-                      className={
-                        'btn btn-p'
-                      }
-                      style={{
-                        flex: 1,
-                      }}
-                      disabled={
-                        action.isPending
-                      }
-                      onClick={() =>
-                        action.mutate({
-                          id:
-                            item.id,
-
-                          type:
-                            'approve',
-                        })
-                      }
-                    >
-                      ✅ تأیید
-                    </button>
-
-                    <button
-                      className={
-                        'btn btn-d'
-                      }
-                      disabled={
-                        action.isPending
-                      }
-                      onClick={async () => {
-                        const accepted =
-                          await confirmAction(
-                            'سؤال رد شود؟'
-                          );
-
-                        if (accepted) {
-                          action.mutate({
-                            id:
-                              item.id,
-
-                            type:
-                              'reject',
-                          });
-                        }
-                      }}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                </article>
-              )
-            )}
-          </section>
-        )}
-      </main>
-    </>
-  );
-}
-
-
-/* مدیریت FAQ */
-
-export function ContentFaq() {
-  const [
-    formOpen,
-    setFormOpen,
-  ] = useState(false);
-
-  const [
-    form,
-    setForm,
-  ] = useState({
-    category:
-      'عمومی',
-
-    question:
-      '',
-
-    answer:
-      '',
-  });
-
-  const [
-    openId,
-    setOpenId,
-  ] = useState(null);
-
-  const toast = useUIStore(
-    (state) => state.toast
-  );
-
-  const queryClient =
-    useQueryClient();
-
-
-  const {
-    data = [],
-    isLoading,
-    isError,
-    refetch,
-  } = useQuery({
-    queryKey: [
-      'content-faq',
-    ],
-
-    queryFn: () =>
-      api
-        .get(
-          '/api/content/faq'
-        )
-        .then(
-          (response) =>
-            response.data
-              ?.items || []
-        ),
-  });
-
-
-  const refresh = () =>
-    queryClient.invalidateQueries({
-      queryKey: [
-        'content-faq',
-      ],
-    });
-
-
-  const mutation = useMutation({
-    mutationFn: ({
-      type,
-      id,
-    }) => {
-      if (type === 'add') {
-        return api.post(
-          '/api/content/faq',
-          form
-        );
-      }
-
-      return api.delete(
-        `/api/content/faq/${id}`
-      );
-    },
-
-    onSuccess: async (
-      _,
-      variables
-    ) => {
-      hapticNotif(
-        'success'
-      );
-
-      toast(
-        variables.type === 'add'
-          ? 'سؤال متداول اضافه شد ✅'
-          : 'سؤال حذف شد',
-
-        variables.type === 'add'
-          ? 'success'
-          : 'info'
-      );
-
-      setForm({
-        category:
-          'عمومی',
-
-        question:
-          '',
-
-        answer:
-          '',
-      });
-
-      setFormOpen(false);
-
-      await refresh();
-    },
-
-    onError: (error) =>
-      toast(
-        errorText(
-          error,
-          'عملیات انجام نشد'
-        ),
-        'error'
-      ),
-  });
-
-
-  const items =
-    Array.isArray(data)
-      ? data
-      : [];
-
-
-  const categories = [
-    ...new Set(
-      items
-        .map(
-          (item) =>
-            item.category
-        )
-        .filter(Boolean)
-    ),
-  ];
-
-
-  const valid =
-    form.question
-      .trim()
-      .length >= 5 &&
-    form.answer
-      .trim()
-      .length >= 5;
-
-
-  if (formOpen) {
-    return (
-      <>
-        <Header
-          title="FAQ جدید"
-          subtitle={
-            'افزودن پاسخ به راهنمای کاربران'
-          }
-          onBack={() =>
-            setFormOpen(false)
-          }
-        />
-
-        <main className="page fade-up">
-          <section
-            className={
-              'card card-glow'
-            }
-            style={{
-              display: 'grid',
-              gap: 'var(--sp-3)',
-            }}
-          >
-            <input
-              className="inp"
-              list="faq-categories"
-              value={
-                form.category
-              }
-              onChange={(event) =>
-                setForm({
-                  ...form,
-
-                  category:
-                    event.target
-                      .value,
-                })
-              }
-              placeholder="دسته‌بندی"
-            />
-
-            <datalist id="faq-categories">
-              {categories.map(
-                (item) => (
-                  <option
-                    key={item}
-                    value={item}
-                  />
-                )
-              )}
-            </datalist>
-
-            <textarea
-              className="inp"
-              rows={3}
-              maxLength={500}
-              value={
-                form.question
-              }
-              onChange={(event) =>
-                setForm({
-                  ...form,
-
-                  question:
-                    event.target
-                      .value,
-                })
-              }
-              placeholder="متن سؤال..."
-            />
-
-            <textarea
-              className="inp"
-              rows={7}
-              maxLength={4000}
-              value={
-                form.answer
-              }
-              onChange={(event) =>
-                setForm({
-                  ...form,
-
-                  answer:
-                    event.target
-                      .value,
-                })
-              }
-              placeholder={
-                'پاسخ کامل و واضح...'
-              }
-            />
-          </section>
-
-          <button
-            className={
-              'btn btn-p btn-full'
-            }
-            style={{
-              marginTop: 12,
-            }}
-            disabled={
-              !valid ||
-              mutation.isPending
-            }
-            onClick={() =>
-              mutation.mutate({
-                type:
-                  'add',
-              })
-            }
-          >
-            {mutation.isPending ? (
-              <Spinner size={15} />
-            ) : (
-              '💾 ذخیره سؤال متداول'
-            )}
-          </button>
-        </main>
-      </>
-    );
-  }
-
-
-  return (
-    <>
-      <Header
-        title="مدیریت FAQ"
-        subtitle={`${items.length} سؤال متداول`}
-      />
-
-      <main className="page fade-up">
+        {/* 🌊 C1 — بنر scope ورودی (scoped: قفل؛
+            global: نمایش انتخاب فعلی + تغییر ورودی) */}
         <section
-          className={
-            'card card-glow'
-          }
+          className="card"
           style={{
             display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            marginBottom: 13,
 
-            background:
-              'linear-gradient(145deg,var(--soft-pur),var(--surf-card))',
+            alignItems: 'center',
+
+            gap: 'var(--sp-3)',
+
+            padding: 12,
+
+            marginBottom: 'var(--sp-4)',
           }}
         >
           <span
             style={{
-              display: 'grid',
-              width: 50,
-              height: 50,
-              placeItems: 'center',
-              borderRadius: 'var(--r-lg)',
-
-              background:
-                'linear-gradient(135deg,var(--pur-dim),var(--acc))',
-
-              fontSize: 24,
+              fontSize: 20,
             }}
           >
-            ❓
+            📅
           </span>
 
-          <div
+          <span
             style={{
               flex: 1,
             }}
           >
+            <span
+              style={{
+                color: 'var(--txm)',
+
+                fontSize:
+                  'var(--fs-cap)',
+              }}
+            >
+              {scopeMode === 'scoped'
+                ? 'ورودی تحت مدیریت'
+                : 'ورودی فعلی'}
+            </span>
+
             <b
               style={{
-                fontSize: 'var(--fs-lg)',
+                display: 'block',
               }}
             >
-              راهنمای کاربران
+              {shownIntakeLabel}
             </b>
+          </span>
 
-            <div
+          {scopeMode === 'global' && (
+            <button
+              type="button"
+              className="btn"
+              onClick={() => {
+                haptic('light');
+                setIntake(null, '');
+              }}
               style={{
-                color:
-                  'var(--txm)',
-
-                fontSize: 'var(--fs-cap)',
-
-                marginTop:
-                  3,
+                fontSize:
+                  'var(--fs-cap)',
               }}
             >
-              پاسخ‌های واضح، تعداد تیکت‌ها
-              را کاهش می‌دهد.
-            </div>
-          </div>
+              🔄 تغییر ورودی
+            </button>
+          )}
         </section>
 
 
-        <button
-          className={
-            'btn btn-p btn-full'
-          }
-          style={{
-            marginBottom: 'var(--sp-4)',
-          }}
-          onClick={() =>
-            setFormOpen(true)
-          }
-        >
-          ＋ افزودن سؤال متداول
-        </button>
-
-
         {isLoading ? (
-          <LibraryRowsSkeleton />
+          <ContentHomeSkeleton />
         ) : isError ? (
-          <EmptyState icon="🌐">
-            دریافت FAQ انجام نشد.
+          <div className="empty card">
+            دریافت آمار محتوا انجام نشد.
 
             <button
               className="btn btn-p"
               style={{
-                marginTop: 12,
+                marginTop:
+                  12,
               }}
               onClick={() =>
                 refetch()
@@ -1288,161 +688,375 @@ export function ContentFaq() {
             >
               تلاش دوباره
             </button>
-          </EmptyState>
-        ) : items.length === 0 ? (
-          <EmptyState>
-            هنوز سؤالی ثبت نشده است.
-          </EmptyState>
+          </div>
         ) : (
           <section
+            className="grid2"
             style={{
-              display: 'grid',
-              gap: 8,
+              marginBottom:
+                16,
             }}
           >
-            {items.map(
-              (
-                item,
-                index
-              ) => {
-                const open =
-                  openId === item.id;
+            <div
+              className="card"
+              style={{
+                textAlign:
+                  'center',
 
-                return (
-                  <article
-                    key={item.id}
-                    className={
-                      'card pop-in'
-                    }
-                    style={{
-                      animationDelay:
-                        `${
-                          Math.min(
-                            index,
-                            8
-                          ) * 30
-                        }ms`,
+                padding:
+                  12,
+              }}
+            >
+              <b
+                style={{
+                  color:
+                    pending
+                      ? 'var(--warn)'
+                      : 'var(--ok)',
 
-                      borderColor:
-                        open
-                          ? 'var(--bdg)'
-                          : 'var(--bd)',
-                    }}
-                  >
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setOpenId(
-                          open
-                            ? null
-                            : item.id
-                        )
-                      }
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        width: '100%',
-                        gap: 9,
-                        color: 'var(--tx)',
-                        textAlign: 'right',
-                        background: 'none',
-                        border: 0,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <span className="badge b-pur">
-                        {item.category ||
-                          'عمومی'}
-                      </span>
+                  fontSize: 'var(--fs-xl)',
+                }}
+              >
+                {pending}
+              </b>
 
-                      <b
-                        style={{
-                          flex: 1,
+              <div
+                style={{
+                  color:
+                    'var(--txm)',
 
-                          fontSize: 'var(--fs-sm)',
+                  fontSize: 'var(--fs-cap)',
+                }}
+              >
+                سؤال در انتظار
+              </div>
+            </div>
 
-                          lineHeight:
-                            1.7,
-                        }}
-                      >
-                        {item.question}
-                      </b>
+            <div
+              className="card"
+              style={{
+                textAlign:
+                  'center',
 
-                      <span
-                        style={{
-                          color:
-                            'var(--txm)',
+                padding:
+                  12,
+              }}
+            >
+              <b
+                style={{
+                  color:
+                    'var(--ok)',
 
-                          transform:
-                            open
-                              ? 'rotate(90deg)'
-                              : 'none',
+                  fontSize: 'var(--fs-xl)',
+                }}
+              >
+                {Number(
+                  data
+                    ?.approved_questions
+                ) || 0}
+              </b>
 
-                          transition:
-                            'transform .2s',
-                        }}
-                      >
-                        ←
-                      </span>
-                    </button>
+              <div
+                style={{
+                  color:
+                    'var(--txm)',
 
-                    {open && (
-                      <>
-                        <div
-                          style={{
-                            padding:
-                              '11px 0 3px',
+                  fontSize: 'var(--fs-cap)',
+                }}
+              >
+                سؤال تأییدشده
+              </div>
+            </div>
 
-                            color:
-                              'var(--tx2)',
+            <div
+              className="card"
+              style={{
+                textAlign:
+                  'center',
 
-                            fontSize: 'var(--fs-cap)',
+                padding:
+                  12,
+              }}
+            >
+              <b
+                style={{
+                  color:
+                    'var(--acc2)',
 
-                            lineHeight:
-                              1.9,
-                          }}
-                        >
-                          {item.answer}
-                        </div>
+                  fontSize: 'var(--fs-xl)',
+                }}
+              >
+                {Number(
+                  data
+                    ?.total_resources
+                ) || 0}
+              </b>
 
-                        <button
-                          className={
-                            'btn btn-d btn-full'
-                          }
-                          style={{
-                            marginTop:
-                              9,
-                          }}
-                          disabled={
-                            mutation.isPending
-                          }
-                          onClick={async () => {
-                            const accepted =
-                              await confirmAction(
-                                'این سؤال متداول حذف شود؟'
-                              );
+              <div
+                style={{
+                  color:
+                    'var(--txm)',
 
-                            if (accepted) {
-                              mutation.mutate({
-                                type:
-                                  'delete',
+                  fontSize: 'var(--fs-cap)',
+                }}
+              >
+                محتوای آموزشی
+              </div>
+            </div>
 
-                                id:
-                                  item.id,
-                              });
-                            }
-                          }}
-                        >
-                          🗑 حذف
-                        </button>
-                      </>
-                    )}
-                  </article>
-                );
-              }
-            )}
+            <div
+              className="card"
+              style={{
+                textAlign:
+                  'center',
+
+                padding:
+                  12,
+              }}
+            >
+              <b
+                style={{
+                  color:
+                    'var(--err)',
+
+                  fontSize: 'var(--fs-xl)',
+                }}
+              >
+                {Number(
+                  data
+                    ?.upcoming_exams
+                ) || 0}
+              </b>
+
+              <div
+                style={{
+                  color:
+                    'var(--txm)',
+
+                  fontSize: 'var(--fs-cap)',
+                }}
+              >
+                امتحان پیش‌رو
+              </div>
+            </div>
           </section>
         )}
+
+
+        {pending > 0 && (
+          <button
+            type="button"
+            className={
+              'card card-tap'
+            }
+            onClick={() =>
+              open(
+                '/admin/content/questions'
+              )
+            }
+            style={{
+              display:
+                'flex',
+
+              alignItems:
+                'center',
+
+              width:
+                '100%',
+
+              gap: 'var(--sp-3)',
+
+              marginBottom: 'var(--sp-4)',
+
+              textAlign:
+                'right',
+
+              borderColor:
+                'var(--bd-warn)',
+            }}
+          >
+            <span
+              style={{
+                fontSize:
+                  22,
+              }}
+            >
+              ⏳
+            </span>
+
+            <span
+              style={{
+                flex:
+                  1,
+              }}
+            >
+              <b
+                style={{
+                  color:
+                    'var(--warn)',
+                }}
+              >
+                {pending} سؤال منتظر بررسی
+                است
+              </b>
+
+              <span
+                style={{
+                  display:
+                    'block',
+
+                  color:
+                    'var(--txm)',
+
+                  fontSize: 'var(--fs-cap)',
+                }}
+              >
+                برای حفظ کیفیت بانک سؤال
+                بررسی کنید.
+              </span>
+            </span>
+
+            <span>←</span>
+          </button>
+        )}
+
+
+        <div className="sec-title">
+          ابزارهای محتوا
+        </div>
+
+        <section
+          style={{
+            display:
+              'grid',
+
+            gap:
+              9,
+          }}
+        >
+          {visibleTools.map(
+            (
+              item,
+              index
+            ) => (
+              <button
+                type="button"
+                key={item.route}
+                className={
+                  'card card-tap pop-in'
+                }
+                onClick={() =>
+                  open(item.route)
+                }
+                style={{
+                  display:
+                    'flex',
+
+                  alignItems:
+                    'center',
+
+                  width:
+                    '100%',
+
+                  gap:
+                    11,
+
+                  padding:
+                    13,
+
+                  textAlign:
+                    'right',
+
+                  animationDelay:
+                    `${
+                      index * 28
+                    }ms`,
+                }}
+              >
+                <span
+                  style={{
+                    display:
+                      'grid',
+
+                    width:
+                      45,
+
+                    height:
+                      45,
+
+                    placeItems:
+                      'center',
+
+                    borderRadius: 'var(--r-md)',
+
+                    color:
+                      item.color,
+
+                    background:
+                      item.soft,
+
+                    fontSize:
+                      21,
+                  }}
+                >
+                  {item.icon}
+                </span>
+
+                <span
+                  style={{
+                    flex:
+                      1,
+                  }}
+                >
+                  <b
+                    style={{
+                      display:
+                        'block',
+
+                      fontSize: 'var(--fs-sm)',
+                    }}
+                  >
+                    {item.title}
+                  </b>
+
+                  <span
+                    style={{
+                      display:
+                        'block',
+
+                      color:
+                        'var(--txm)',
+
+                      fontSize: 'var(--fs-cap)',
+
+                      marginTop:
+                        3,
+                    }}
+                  >
+                    {item.desc}
+                  </span>
+                </span>
+
+                {item.route ===
+                  '/admin/content/questions' &&
+                  pending > 0 && (
+                  <span className="badge b-yel">
+                    {pending}
+                  </span>
+                )}
+
+                <span
+                  style={{
+                    color:
+                      'var(--txm)',
+                  }}
+                >
+                  ←
+                </span>
+              </button>
+            )
+          )}
+        </section>
       </main>
     </>
   );
