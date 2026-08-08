@@ -672,7 +672,7 @@ export function AdminUsers() {
 
                         : user.role ===
                             'content_admin'
-                          ? 'مدیر محتوا'
+                          ? 'ادمین ارشد محتوا'
 
                           : user.role ===
                               'support'
@@ -2346,7 +2346,7 @@ export function AdminContentAdmins() {
           }}
         >
           <div className="sec-title">
-            افزودن مدیر محتوا
+            افزودن ادمین ارشد محتوا
           </div>
 
           <SearchField
@@ -2443,7 +2443,7 @@ export function AdminContentAdmins() {
           />
         ) : adminList.length === 0 ? (
           <EmptyState>
-            مدیر محتوایی ثبت نشده است.
+            ادمین ارشد محتوایی ثبت نشده است.
           </EmptyState>
         ) : (
           <section
@@ -2495,7 +2495,7 @@ export function AdminContentAdmins() {
                         fontSize: 'var(--fs-cap)',
                       }}
                     >
-                      مدیر محتوا
+                      ادمین ارشد محتوا
                     </span>
                   </span>
 
